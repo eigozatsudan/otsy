@@ -1,90 +1,25 @@
 # サブスクリプション・優先マッチングシステム
 
-おつかいDXプラットフォームのサブスクリプション管理と優先マッチングシステムは、ユーザーの利用体験を向上させ、プレミアムサービスを提供します。
+おつかいDXプラットフォームのサブスクリプションシステムは、ユーザーに段階的なサービス向上と優先マッチング機能を提供します。
 
 ## 機能概要
 
-### サブスクリプション管理
-- **階層制サブスクリプション**: Free、Basic、Premium、VIPの4段階
-- **柔軟な特典システム**: 各階層に応じた特典とサービス制限
-- **サービスクレジット**: SLA違反時の補償システム
-- **自動課金管理**: 月額課金とアップグレード/ダウングレード
+### サブスクリプション階層
+- **Free**: 基本的な注文機能（月5回まで）
+- **Basic**: 月20回注文、10%配送料割引、優先サポート
+- **Premium**: 月50回注文、20%割引、優先マッチング、時間帯保証
+- **VIP**: 無制限注文、30%割引、専用サポート、即日配送保証
 
 ### 優先マッチングシステム
-- **スマートマッチング**: 複数要因を考慮した最適ショッパー選択
-- **ショッパー評価システム**: 5段階評価とカテゴリ別評価
-- **時間枠保証**: プレミアムユーザー向け配達時間保証
-- **ショッパー設定管理**: 作業時間、配達範囲、注文設定
+- **互換性スコア**: ショッパーとの適合度を100点満点で評価
+- **地理的最適化**: 距離と配送時間を考慮した最適マッチング
+- **設定ベースマッチング**: ユーザーとショッパーの設定に基づく自動マッチング
+- **リアルタイム可用性**: オンライン状態と現在の注文数を考慮
 
-## サブスクリプション階層
-
-### Free (無料)
-```json
-{
-  "monthly_fee": 0,
-  "benefits": {
-    "priority_matching": false,
-    "guaranteed_time_slots": 0,
-    "free_deliveries": 0,
-    "premium_shoppers": false,
-    "dedicated_support": false,
-    "service_credits_multiplier": 1.0,
-    "max_concurrent_orders": 1,
-    "early_access_features": false
-  }
-}
-```
-
-### Basic (¥980/月)
-```json
-{
-  "monthly_fee": 980,
-  "benefits": {
-    "priority_matching": true,
-    "guaranteed_time_slots": 4,
-    "free_deliveries": 2,
-    "premium_shoppers": false,
-    "dedicated_support": false,
-    "service_credits_multiplier": 1.2,
-    "max_concurrent_orders": 2,
-    "early_access_features": false
-  }
-}
-```
-
-### Premium (¥1,980/月)
-```json
-{
-  "monthly_fee": 1980,
-  "benefits": {
-    "priority_matching": true,
-    "guaranteed_time_slots": 12,
-    "free_deliveries": 5,
-    "premium_shoppers": true,
-    "dedicated_support": true,
-    "service_credits_multiplier": 1.5,
-    "max_concurrent_orders": 3,
-    "early_access_features": true
-  }
-}
-```
-
-### VIP (¥3,980/月)
-```json
-{
-  "monthly_fee": 3980,
-  "benefits": {
-    "priority_matching": true,
-    "guaranteed_time_slots": 24,
-    "free_deliveries": 10,
-    "premium_shoppers": true,
-    "dedicated_support": true,
-    "service_credits_multiplier": 2.0,
-    "max_concurrent_orders": 5,
-    "early_access_features": true
-  }
-}
-```
+### サービスクレジット
+- **遅延補償**: 配送遅延時の自動クレジット付与
+- **品質保証**: 初回利用者への全額返金保証
+- **有効期限管理**: 6ヶ月の有効期限とFIFO使用
 
 ## API エンドポイント
 
@@ -98,9 +33,11 @@ Content-Type: application/json
 
 {
   "tier": "premium",
-  "start_date": "2024-01-01T00:00:00Z",
-  "payment_method_id": "pm_xxx",
-  "promo_code": "WELCOME2024"
+  "preferred_time_slots": ["morning", "evening"],
+  "default_priority": "express",
+  "preferred_store_types": ["supermarket", "pharmacy"],
+  "max_delivery_distance": 15,
+  "auto_accept_orders": false
 }
 ```
 
@@ -117,273 +54,353 @@ Authorization: Bearer <user_token>
   "user_id": "user-uuid",
   "tier": "premium",
   "status": "active",
-  "start_date": "2024-01-01T00:00:00Z",
-  "end_date": "2024-02-01T00:00:00Z",
-  "next_billing_date": "2024-02-01T00:00:00Z",
-  "monthly_fee": 1980,
-  "benefits": {
-    "priority_matching": true,
-    "guaranteed_time_slots": 12,
-    "free_deliveries": 5,
-    "premium_shoppers": true,
-    "dedicated_support": true,
-    "service_credits_multiplier": 1.5,
-    "max_concurrent_orders": 3,
-    "early_access_features": true
-  },
-  "created_at": "2024-01-01T00:00:00Z",
-  "updated_at": "2024-01-01T00:00:00Z"
+  "current_period_start": "2024-01-01T00:00:00Z",
+  "current_period_end": "2024-02-01T00:00:00Z",
+  "preferred_time_slots": ["morning", "evening"],
+  "default_priority": "express",
+  "orders_this_period": 15,
+  "orders_limit": 50,
+  "priority_orders_used": 3,
+  "priority_orders_limit": 10,
+  "service_credits": 500
 }
 ```
 
-#### サブスクリプション更新
+#### サブスクリプション使用状況
 ```http
-PUT /v1/subscriptions/my-subscription
+GET /v1/subscriptions/usage
+Authorization: Bearer <user_token>
+```
+
+#### サブスクリプションアップグレード
+```http
+POST /v1/subscriptions/upgrade
 Authorization: Bearer <user_token>
 Content-Type: application/json
 
 {
-  "tier": "vip"
+  "new_tier": "vip",
+  "prorate": true
 }
 ```
 
-#### サブスクリプション解約
+#### サブスクリプションキャンセル
 ```http
-DELETE /v1/subscriptions/my-subscription
+POST /v1/subscriptions/cancel
 Authorization: Bearer <user_token>
 Content-Type: application/json
 
 {
-  "reason": "サービスを利用しなくなったため"
+  "reason": "Moving to different area",
+  "feedback": "Great service, but no longer needed",
+  "cancel_immediately": false
 }
 ```
 
-### サービスクレジット
+### マッチングシステム
 
-#### サービスクレジット残高取得
+#### ショッパー検索
 ```http
-GET /v1/subscriptions/service-credits
-Authorization: Bearer <user_token>
-```
-
-**レスポンス:**
-```json
-{
-  "credits": [
-    {
-      "id": "credit-uuid",
-      "amount": 1500,
-      "original_amount": 1000,
-      "reason": "sla_violation",
-      "description": "配達遅延による補償",
-      "expires_at": "2025-01-01T00:00:00Z",
-      "created_at": "2024-01-01T00:00:00Z"
-    }
-  ],
-  "total_balance": 2500
-}
-```
-
-#### サービスクレジット使用
-```http
-POST /v1/subscriptions/service-credits/use
+POST /v1/matching/find-shoppers
 Authorization: Bearer <user_token>
 Content-Type: application/json
 
 {
   "order_id": "order-uuid",
-  "amount": 500
+  "priority": "express",
+  "max_distance": 20,
+  "preferred_time_slot": "morning",
+  "min_shopper_rating": 4.0,
+  "subscriber_only": true
 }
 ```
 
-### 特典確認
-
-#### 機能アクセス確認
-```http
-GET /v1/subscriptions/benefits/check/premium_shoppers
-Authorization: Bearer <user_token>
+**レスポンス:**
+```json
+[
+  {
+    "shopper_id": "shopper-uuid",
+    "shopper_name": "田中 太郎",
+    "shopper_rating": 4.8,
+    "distance": 2.3,
+    "estimated_delivery_time": 45,
+    "compatibility_score": 92,
+    "is_preferred_shopper": true,
+    "subscription_tier": "premium",
+    "reasons": [
+      "Rating: 24.0",
+      "Success rate: 19.2",
+      "Distance: 17.7",
+      "Time slot: 15.0",
+      "Online bonus: 5"
+    ]
+  }
+]
 ```
 
-#### 制限値取得
+#### 自動アサイン
 ```http
-GET /v1/subscriptions/benefits/limit/max_concurrent_orders
-Authorization: Bearer <user_token>
+POST /v1/matching/auto-assign/{order_id}
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "priority": "urgent",
+  "max_distance": 25
+}
 ```
 
-#### 同時注文制限確認
+### ショッパー設定
+
+#### ショッパー設定取得
 ```http
-GET /v1/subscriptions/concurrent-orders/check
-Authorization: Bearer <user_token>
+GET /v1/matching/shopper/preferences
+Authorization: Bearer <shopper_token>
 ```
 
-### マッチングシステム
-
-#### ショッパー設定管理
+#### ショッパー設定更新
 ```http
 PUT /v1/matching/shopper/preferences
 Authorization: Bearer <shopper_token>
 Content-Type: application/json
 
 {
-  "max_distance_km": 15,
+  "available_time_slots": ["morning", "afternoon"],
+  "preferred_store_types": ["supermarket", "convenience"],
+  "max_delivery_distance": 25,
   "max_concurrent_orders": 3,
-  "preferred_store_chains": ["セブンイレブン", "ファミリーマート"],
-  "excluded_categories": ["アルコール", "タバコ"],
-  "min_order_value": 1000,
-  "accepts_premium_orders": true,
-  "accepts_bulk_orders": false,
-  "working_hours": {
-    "monday": { "start": "09:00", "end": "18:00" },
-    "tuesday": { "start": "09:00", "end": "18:00" },
-    "wednesday": { "start": "09:00", "end": "18:00" },
-    "thursday": { "start": "09:00", "end": "18:00" },
-    "friday": { "start": "09:00", "end": "18:00" },
-    "saturday": { "start": "10:00", "end": "16:00" },
-    "sunday": { "start": "休み", "end": "休み" }
-  }
+  "accepts_urgent_orders": true,
+  "accepts_large_orders": true,
+  "min_order_value": 500,
+  "max_order_value": 10000
 }
 ```
+
+#### 可用性設定
+```http
+POST /v1/matching/shopper/set-availability
+Authorization: Bearer <shopper_token>
+Content-Type: application/json
+
+{
+  "is_available": false,
+  "unavailable_until": "2024-01-15T18:00:00Z",
+  "reason": "Personal appointment"
+}
+```
+
+### 評価システム
 
 #### ショッパー評価
 ```http
-POST /v1/matching/ratings
+POST /v1/matching/rate-shopper/{order_id}
 Authorization: Bearer <user_token>
 Content-Type: application/json
 
 {
-  "order_id": "order-uuid",
-  "rating": 5,
-  "comment": "とても丁寧で迅速な対応でした",
-  "would_recommend": true,
-  "rating_categories": {
-    "communication": 5,
-    "item_quality": 5,
-    "timeliness": 4,
-    "professionalism": 5
+  "overall_rating": 5,
+  "communication_rating": 5,
+  "accuracy_rating": 4,
+  "timeliness_rating": 5,
+  "comment": "Excellent service! Very professional and fast.",
+  "tags": ["friendly", "fast", "accurate"]
+}
+```
+
+#### ショッパー評価取得
+```http
+GET /v1/matching/shopper/{shopper_id}/ratings?page=1&limit=10
+Authorization: Bearer <token>
+```
+
+#### ショッパー統計
+```http
+GET /v1/matching/shopper/{shopper_id}/stats
+Authorization: Bearer <token>
+```
+
+**レスポンス:**
+```json
+{
+  "total_orders": 156,
+  "avg_rating": 4.7,
+  "success_rate": 98.5,
+  "avg_delivery_time": 42,
+  "total_earnings": 234500,
+  "rating_breakdown": {
+    "5_star": 78,
+    "4_star": 12,
+    "3_star": 2,
+    "2_star": 0,
+    "1_star": 0
   }
 }
 ```
 
-#### 時間枠保証リクエスト
+### サービスクレジット
+
+#### クレジット追加（管理者）
 ```http
-POST /v1/matching/time-slot-guarantee
-Authorization: Bearer <user_token>
+POST /v1/subscriptions/admin/service-credits/{user_id}
+Authorization: Bearer <admin_token>
 Content-Type: application/json
 
 {
-  "requested_date": "2024-01-15T00:00:00Z",
-  "time_slot": "10:00-12:00",
-  "special_instructions": "玄関先に置いてください"
+  "amount": 500,
+  "reason": "delivery_delay",
+  "description": "Order was delayed by 30 minutes",
+  "order_id": "order-uuid"
+}
+```
+
+#### マイクレジット取得
+```http
+GET /v1/subscriptions/service-credits
+Authorization: Bearer <user_token>
+```
+
+## サブスクリプション階層詳細
+
+### Free階層
+```json
+{
+  "name": "Free",
+  "price_monthly": 0,
+  "orders_per_month": 5,
+  "priority_orders_per_month": 0,
+  "delivery_fee_discount": 0,
+  "priority_matching": false,
+  "guaranteed_time_slots": false,
+  "dedicated_support": false,
+  "service_credits_on_delay": 0,
+  "max_concurrent_orders": 1,
+  "features": [
+    "Basic order placement",
+    "Standard delivery"
+  ]
+}
+```
+
+### Basic階層
+```json
+{
+  "name": "Basic",
+  "price_monthly": 980,
+  "orders_per_month": 20,
+  "priority_orders_per_month": 2,
+  "delivery_fee_discount": 10,
+  "priority_matching": false,
+  "guaranteed_time_slots": false,
+  "dedicated_support": false,
+  "service_credits_on_delay": 100,
+  "max_concurrent_orders": 2,
+  "features": [
+    "20 orders/month",
+    "10% delivery discount",
+    "Priority support"
+  ]
+}
+```
+
+### Premium階層
+```json
+{
+  "name": "Premium",
+  "price_monthly": 1980,
+  "orders_per_month": 50,
+  "priority_orders_per_month": 10,
+  "delivery_fee_discount": 20,
+  "priority_matching": true,
+  "guaranteed_time_slots": true,
+  "dedicated_support": true,
+  "service_credits_on_delay": 200,
+  "max_concurrent_orders": 3,
+  "features": [
+    "50 orders/month",
+    "20% delivery discount",
+    "Priority matching",
+    "Guaranteed time slots"
+  ]
+}
+```
+
+### VIP階層
+```json
+{
+  "name": "VIP",
+  "price_monthly": 3980,
+  "orders_per_month": -1,
+  "priority_orders_per_month": -1,
+  "delivery_fee_discount": 30,
+  "priority_matching": true,
+  "guaranteed_time_slots": true,
+  "dedicated_support": true,
+  "service_credits_on_delay": 500,
+  "max_concurrent_orders": 5,
+  "features": [
+    "Unlimited orders",
+    "30% delivery discount",
+    "VIP matching",
+    "Dedicated support",
+    "Same-day guarantee"
+  ]
 }
 ```
 
 ## マッチングアルゴリズム
 
-### スコア計算要因
+### 互換性スコア計算
 
-#### 距離要因 (0-25点)
-- ショッパーと配達先の距離
-- 近距離ほど高スコア
+#### 評価要素（合計100点）
+1. **ショッパー評価** (0-25点): `(rating / 5) * 25`
+2. **成功率** (0-20点): `(success_rate / 100) * 20`
+3. **距離** (0-20点): `max(0, 20 - (distance / max_distance) * 20)`
+4. **時間帯適合性** (0-15点): 設定マッチで15点、不一致で0点
+5. **店舗タイプ適合性** (0-10点): `(matching_types / total_types) * 10`
+6. **注文金額適合性** (0-10点): 設定範囲内で10点、範囲外で減点
+7. **オンライン状態ボーナス** (0-5点): オンラインで5点
+8. **可用性ボーナス** (0-5点): `max(0, 5 - current_orders)`
 
-#### 評価要因 (0-25点)
-- ショッパーの平均評価
-- 評価数も考慮（新人ショッパーには基本点付与）
+#### サブスクリプション優先度
+- **VIP/Premium**: サブスクリプション持ちショッパーを優先
+- **Basic**: 標準マッチング
+- **Free**: 標準マッチング
 
-#### 可用性要因 (0-20点)
-- 現在の注文数と最大受注数の比率
-- 空きが多いほど高スコア
-
-#### 設定適合要因 (0-15点)
-- ショッパーの設定と注文内容の適合度
-- 除外カテゴリ、最小注文金額、プレミアム注文対応など
-
-#### サブスクリプション要因 (0-10点)
-- ユーザーの優先マッチング権限
-- ショッパーのプレミアム対応可否
-
-#### 経験要因 (0-5点)
-- 完了注文数に基づく経験値
-- 10注文完了で満点
-
-### マッチング例
+### 地理的最適化
 ```javascript
-{
-  "shopperId": "shopper-uuid",
-  "score": 87.5,
-  "factors": {
-    "distance": 22.0,    // 2km (近距離)
-    "rating": 23.0,      // 4.6/5.0 (高評価)
-    "availability": 16.0, // 2/3注文 (余裕あり)
-    "preference": 12.0,   // 設定適合
-    "subscription": 10.0, // プレミアムマッチング
-    "experience": 4.5     // 9注文完了
-  }
+// Haversine距離計算
+function calculateDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371; // 地球の半径（km）
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 ```
 
-## サービスクレジットシステム
-
-### 付与理由
-- **配達遅延**: 約束時間を30分以上超過
-- **品質問題**: 商品の品質に問題があった場合
-- **ショッパーキャンセル**: ショッパー都合でのキャンセル
-- **システムエラー**: プラットフォーム側の問題
-- **SLA違反**: サービスレベル合意違反
-- **補償**: その他の補償
-
-### 計算方法
-```
-最終クレジット = 基本金額 × サブスクリプション倍率
-
-例：
-- Free: 1000円 × 1.0 = 1000円
-- Basic: 1000円 × 1.2 = 1200円  
-- Premium: 1000円 × 1.5 = 1500円
-- VIP: 1000円 × 2.0 = 2000円
-```
-
-### 使用ルール
-- 注文時に自動適用または手動選択
-- 古いクレジットから優先使用
-- 有効期限は1年間
-- 部分使用可能
-
-## SLA (Service Level Agreement)
-
-### 配達時間保証
-- **Basic**: 指定時間±30分
-- **Premium**: 指定時間±15分  
-- **VIP**: 指定時間±10分
-
-### 応答時間保証
-- **Free**: チャット応答24時間以内
-- **Basic**: チャット応答12時間以内
-- **Premium**: チャット応答6時間以内、専用サポート
-- **VIP**: チャット応答2時間以内、専用サポート
-
-### 違反時の補償
+### 配送時間推定
 ```javascript
-const compensationRules = {
-  delivery_delay: {
-    "30-60min": 200,
-    "60-120min": 500,
-    "120min+": 1000
-  },
-  quality_issue: {
-    minor: 300,
-    major: 800,
-    severe: 1500
-  },
-  shopper_cancellation: {
-    "< 2hours": 500,
-    "< 30min": 1000
+function estimateDeliveryTime(distance, avgDeliveryTime) {
+  const shoppingTime = 30; // 基本買い物時間（分）
+  const travelTime = distance * 3; // 移動時間（km当たり3分）
+  const baseEstimate = shoppingTime + travelTime;
+  
+  // ショッパーの過去実績で調整
+  if (avgDeliveryTime > 0) {
+    return Math.round((baseEstimate + avgDeliveryTime) / 2);
   }
-};
+  
+  return Math.round(baseEstimate);
+}
 ```
 
 ## 管理機能
 
-### サブスクリプション統計
+### 管理者統計
 ```http
 GET /v1/subscriptions/admin/stats
 Authorization: Bearer <admin_token>
@@ -392,97 +409,120 @@ Authorization: Bearer <admin_token>
 **レスポンス:**
 ```json
 {
-  "total_subscribers": 1250,
-  "subscribers_by_tier": {
-    "free": 800,
-    "basic": 300,
-    "premium": 120,
+  "total_subscriptions": 1250,
+  "active_subscriptions": 1180,
+  "subscriptions_by_tier": {
+    "free": 450,
+    "basic": 520,
+    "premium": 180,
     "vip": 30
   },
-  "monthly_revenue": 485400,
-  "service_credits_issued": 125000,
-  "service_credits_count": 89
+  "monthly_revenue": 1456000,
+  "churn_rate": 5.2
 }
 ```
 
 ### マッチング統計
 ```http
-GET /v1/matching/admin/stats
+GET /v1/matching/analytics/matching-stats
 Authorization: Bearer <admin_token>
 ```
 
-### SLA違反処理
-```http
-POST /v1/subscriptions/admin/sla-violation
-Authorization: Bearer <admin_token>
-Content-Type: application/json
-
+**レスポンス:**
+```json
 {
-  "order_id": "order-uuid",
-  "violation_type": "delivery_delay",
-  "compensation_amount": 500
+  "total_matches": 5420,
+  "successful_matches": 5180,
+  "success_rate": 95.6,
+  "avg_matching_time": 8.5,
+  "top_shoppers": [
+    {
+      "id": "shopper-1",
+      "name": "田中 太郎",
+      "total_orders": 156,
+      "avg_rating": 4.8
+    }
+  ]
 }
 ```
+
+### サブスクリプション更新処理
+```http
+POST /v1/subscriptions/admin/process-renewals
+Authorization: Bearer <admin_token>
+```
+
+## 自動化機能
+
+### サブスクリプション更新
+- **月次更新**: 期間終了時の自動更新
+- **使用量リセット**: 注文回数・優先注文回数のリセット
+- **請求処理**: Stripe連携による自動請求
+
+### サービスクレジット管理
+- **自動付与**: 配送遅延時の自動クレジット付与
+- **有効期限管理**: 6ヶ月後の自動失効
+- **FIFO使用**: 古いクレジットから優先使用
+
+### マッチング最適化
+- **リアルタイム更新**: ショッパーの可用性リアルタイム追跡
+- **動的調整**: 需要に応じたマッチング基準の動的調整
+- **緊急マッチング**: 通常マッチング失敗時の拡張検索
+
+## パフォーマンス最適化
+
+### データベース最適化
+- **インデックス**: 地理的検索用のGiSTインデックス
+- **キャッシュ**: ショッパー評価・統計のRedisキャッシュ
+- **分割**: 大量データの時系列分割
+
+### アルゴリズム最適化
+- **並列処理**: 複数ショッパーの同時評価
+- **早期終了**: 十分なマッチが見つかった時点での処理終了
+- **バッチ処理**: 複数注文の一括マッチング
 
 ## セキュリティ
 
 ### アクセス制御
-- JWT認証による API アクセス制御
-- ロールベースアクセス制御 (RBAC)
-- サブスクリプション特典の適切な検証
+- **ロールベース**: ユーザー・ショッパー・管理者の権限分離
+- **データ保護**: 個人情報の適切な匿名化
+- **監査ログ**: 全ての重要操作の記録
 
-### データ保護
-- 決済情報の暗号化
-- 個人情報の適切な匿名化
-- 監査ログによる操作追跡
-
-### 不正利用防止
-- サービスクレジットの重複付与防止
-- 異常なアップグレード/ダウングレードの検出
-- 不正評価の検出と対策
-
-## パフォーマンス最適化
-
-### マッチングアルゴリズム
-- インデックス最適化による高速検索
-- キャッシュによる計算結果の再利用
-- 非同期処理による応答時間短縮
-
-### データベース設計
-- 適切なインデックス設計
-- パーティショニングによる大量データ対応
-- 読み取り専用レプリカの活用
+### 不正防止
+- **評価操作防止**: 同一注文の重複評価防止
+- **サブスクリプション不正**: 重複サブスクリプションの防止
+- **クレジット不正**: サービスクレジットの不正使用防止
 
 ## 監視・アラート
 
-### 重要メトリクス
-- サブスクリプション解約率
-- マッチング成功率
-- 平均マッチング時間
-- SLA違反発生率
+### KPI監視
+- **サブスクリプション解約率**: 月次解約率の監視
+- **マッチング成功率**: リアルタイムマッチング成功率
+- **ショッパー稼働率**: アクティブショッパーの割合
+- **収益指標**: ARR、ARPU、LTVの追跡
 
 ### アラート設定
-- 解約率の異常上昇
-- マッチング失敗率の上昇
-- サービスクレジット大量発行
-- システムエラー発生
+- **解約率上昇**: 解約率が閾値を超えた場合
+- **マッチング失敗**: マッチング成功率低下
+- **ショッパー不足**: 利用可能ショッパー数不足
+- **システム負荷**: API応答時間の悪化
 
 ## 今後の拡張予定
 
-### サブスクリプション機能
-- [ ] 年間プラン割引
-- [ ] 企業向けプラン
-- [ ] ファミリープラン
-- [ ] 学生割引プラン
-
-### マッチング機能
-- [ ] AI による需要予測
-- [ ] 動的価格設定
-- [ ] ショッパーのスキル認定
-- [ ] 地域別特化マッチング
+### 機能拡張
+- [ ] 企業向けサブスクリプション
+- [ ] 家族プラン・グループプラン
+- [ ] ポイント・リワードプログラム
+- [ ] AI予測による需要予測マッチング
 
 ### 分析機能
-- [ ] ユーザー行動分析
-- [ ] 収益最適化分析
-- [ ] チャーン予測モデル
-- [ ] LTV (Life Time Value) 分析
+- [ ] 機械学習による最適マッチング
+- [ ] 予測分析ダッシュボード
+- [ ] A/Bテスト機能
+- [ ] カスタマーセグメンテーション
+
+### 国際化
+- [ ] 多通貨対応
+- [ ] 地域別価格設定
+- [ ] 現地決済手段対応
+- [ ] 多言語サポート

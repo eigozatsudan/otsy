@@ -14,10 +14,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import {
+  MatchingCriteriaDto,
   ShopperPreferenceDto,
   ShopperRatingDto,
-  MatchingPreferencesDto,
-  TimeSlotGuaranteeDto,
 } from '../subscriptions/dto/subscription.dto';
 
 @Controller('matching')
@@ -25,277 +24,265 @@ import {
 export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
 
-  // Shopper preference management
+  // Order matching
+  @Post('find-shoppers')
+  @UseGuards(RolesGuard)
+  @Roles('user', 'admin')
+  async findShoppersForOrder(
+    @Body() criteria: MatchingCriteriaDto,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.matchingService.findBestShoppers(criteria.order_id, criteria, limitNum);
+  }
+
+  @Post('auto-assign/:orderId')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'system')
+  async autoAssignShopper(
+    @Param('orderId') orderId: string,
+    @Body() criteria?: Partial<MatchingCriteriaDto>,
+  ) {
+    return this.matchingService.autoAssignBestShopper(orderId, criteria);
+  }
+
+  // Shopper preferences
   @Get('shopper/preferences')
   @UseGuards(RolesGuard)
   @Roles('shopper')
-  async getMyPreferences(@CurrentUser() user: any) {
+  async getShopperPreferences(@CurrentUser() user: any) {
     return this.matchingService.getShopperPreferences(user.id);
   }
 
   @Put('shopper/preferences')
   @UseGuards(RolesGuard)
   @Roles('shopper')
-  async updateMyPreferences(
+  async updateShopperPreferences(
     @CurrentUser() user: any,
     @Body() preferences: ShopperPreferenceDto,
   ) {
-    return this.matchingService.updateShopperPreferences(user.id, preferences);
+    await this.matchingService.updateShopperPreferences(user.id, preferences);
+    return { success: true, message: 'Preferences updated successfully' };
   }
 
-  // Rating system
-  @Post('ratings')
+  // Shopper availability
+  @Post('shopper/set-availability')
   @UseGuards(RolesGuard)
-  @Roles('user')
-  async rateShopper(
+  @Roles('shopper')
+  async setShopperAvailability(
     @CurrentUser() user: any,
-    @Body() ratingDto: ShopperRatingDto,
+    @Body() body: { 
+      is_available: boolean; 
+      unavailable_until?: string;
+      reason?: string;
+    },
   ) {
-    return this.matchingService.rateShopperPerformance(user.id, ratingDto);
+    return this.matchingService.setShopperAvailability(
+      user.id,
+      body.is_available,
+      body.unavailable_until ? new Date(body.unavailable_until) : undefined,
+      body.reason,
+    );
   }
 
-  @Get('ratings/my-ratings')
+  @Get('shopper/available-orders')
   @UseGuards(RolesGuard)
-  @Roles('user')
-  async getMyRatings(
+  @Roles('shopper')
+  async getAvailableOrders(
     @CurrentUser() user: any,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    // TODO: Implement user's rating history
-    return {
-      message: 'User rating history - to be implemented',
-      page: page || 1,
-      limit: limit || 20,
-    };
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    
+    return this.matchingService.getAvailableOrdersForShopper(user.id, pageNum, limitNum);
   }
 
-  @Get('ratings/shopper/:shopperId')
+  // Rating system
+  @Post('rate-shopper/:orderId')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async rateShopperForOrder(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+    @Body() rating: ShopperRatingDto,
+  ) {
+    await this.matchingService.addShopperRating(orderId, user.id, rating);
+    return { success: true, message: 'Rating submitted successfully' };
+  }
+
+  @Get('shopper/:shopperId/ratings')
   async getShopperRatings(
     @Param('shopperId') shopperId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    // TODO: Implement shopper rating display
-    return {
-      message: 'Shopper rating display - to be implemented',
-      shopper_id: shopperId,
-      page: page || 1,
-      limit: limit || 20,
-    };
-  }
-
-  // Time slot guarantees
-  @Post('time-slot-guarantee')
-  @UseGuards(RolesGuard)
-  @Roles('user')
-  async requestTimeSlotGuarantee(
-    @CurrentUser() user: any,
-    @Body() guaranteeDto: TimeSlotGuaranteeDto,
-  ) {
-    return this.matchingService.requestTimeSlotGuarantee(user.id, guaranteeDto);
-  }
-
-  @Get('time-slot-guarantees')
-  @UseGuards(RolesGuard)
-  @Roles('user')
-  async getMyTimeSlotGuarantees(
-    @CurrentUser() user: any,
-    @Query('status') status?: string,
-  ) {
-    // TODO: Implement user's time slot guarantee history
-    return {
-      message: 'Time slot guarantee history - to be implemented',
-      status,
-    };
-  }
-
-  // Matching preferences (for users)
-  @Get('user/preferences')
-  @UseGuards(RolesGuard)
-  @Roles('user')
-  async getMyMatchingPreferences(@CurrentUser() user: any) {
-    // TODO: Implement user matching preferences
-    return {
-      message: 'User matching preferences - to be implemented',
-    };
-  }
-
-  @Put('user/preferences')
-  @UseGuards(RolesGuard)
-  @Roles('user')
-  async updateMyMatchingPreferences(
-    @CurrentUser() user: any,
-    @Body() preferences: MatchingPreferencesDto,
-  ) {
-    // TODO: Implement user matching preferences update
-    return {
-      message: 'User matching preferences update - to be implemented',
-      preferences,
-    };
-  }
-
-  // Shopper discovery and search
-  @Get('shoppers/search')
-  @UseGuards(RolesGuard)
-  @Roles('user')
-  async searchShoppers(
-    @Query('location') location?: string,
-    @Query('rating') minRating?: string,
-    @Query('availability') availability?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    // TODO: Implement shopper search functionality
-    return {
-      message: 'Shopper search - to be implemented',
-      filters: {
-        location,
-        min_rating: minRating,
-        availability,
-      },
-      page: page || 1,
-      limit: limit || 20,
-    };
-  }
-
-  @Get('shoppers/:shopperId/profile')
-  async getShopperProfile(@Param('shopperId') shopperId: string) {
-    // TODO: Implement shopper profile display
-    return {
-      message: 'Shopper profile display - to be implemented',
-      shopper_id: shopperId,
-    };
-  }
-
-  // Manual matching (admin only)
-  @Post('admin/manual-match')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  async manualMatch(
-    @Body() body: { order_id: string; shopper_id: string; reason?: string },
-  ) {
-    // TODO: Implement manual matching for admin
-    return {
-      message: 'Manual matching - to be implemented',
-      order_id: body.order_id,
-      shopper_id: body.shopper_id,
-      reason: body.reason,
-    };
-  }
-
-  @Post('admin/find-match/:orderId')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  async findMatchForOrder(@Param('orderId') orderId: string) {
-    const shopperId = await this.matchingService.findBestShopper(orderId);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
     
-    return {
-      order_id: orderId,
-      matched_shopper_id: shopperId,
-      success: !!shopperId,
-    };
+    return this.matchingService.getShopperRatings(shopperId, pageNum, limitNum);
   }
 
-  // Matching analytics and stats
-  @Get('admin/stats')
+  @Get('shopper/:shopperId/stats')
+  async getShopperStats(@Param('shopperId') shopperId: string) {
+    return this.matchingService.getShopperStats(shopperId);
+  }
+
+  // Matching analytics
+  @Get('analytics/performance')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async getMatchingPerformance(
+    @Query('days') days?: string,
+    @Query('tier') tier?: string,
+  ) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.matchingService.getMatchingPerformance(daysNum, tier);
+  }
+
+  @Get('analytics/shopper-utilization')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async getShopperUtilization() {
+    return this.matchingService.getShopperUtilization();
+  }
+
+  @Get('analytics/matching-stats')
   @UseGuards(RolesGuard)
   @Roles('admin')
   async getMatchingStats() {
     return this.matchingService.getMatchingStats();
   }
 
-  @Get('admin/analytics/matching-performance')
+  // Priority matching for subscribers
+  @Post('priority-match/:orderId')
   @UseGuards(RolesGuard)
-  @Roles('admin')
-  async getMatchingPerformanceAnalytics(
-    @Query('start_date') startDate?: string,
-    @Query('end_date') endDate?: string,
+  @Roles('user')
+  async requestPriorityMatching(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+    @Body() body: { use_priority_slot?: boolean },
   ) {
-    // TODO: Implement matching performance analytics
-    return {
-      message: 'Matching performance analytics - to be implemented',
-      start_date: startDate,
-      end_date: endDate,
-    };
+    return this.matchingService.requestPriorityMatching(
+      user.id,
+      orderId,
+      body.use_priority_slot,
+    );
   }
 
-  @Get('admin/analytics/shopper-performance')
+  // Shopper recommendations for users
+  @Get('recommended-shoppers')
   @UseGuards(RolesGuard)
-  @Roles('admin')
-  async getShopperPerformanceAnalytics(
-    @Query('shopper_id') shopperId?: string,
-    @Query('period') period?: string,
+  @Roles('user')
+  async getRecommendedShoppers(
+    @CurrentUser() user: any,
+    @Query('limit') limit?: string,
   ) {
-    // TODO: Implement shopper performance analytics
-    return {
-      message: 'Shopper performance analytics - to be implemented',
-      shopper_id: shopperId,
-      period: period || 'month',
-    };
+    const limitNum = limit ? parseInt(limit, 10) : 5;
+    return this.matchingService.getRecommendedShoppersForUser(user.id, limitNum);
   }
 
-  // Matching algorithm testing and optimization
-  @Post('admin/test-matching')
+  @Post('favorite-shopper/:shopperId')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async addFavoriteShopper(
+    @CurrentUser() user: any,
+    @Param('shopperId') shopperId: string,
+  ) {
+    return this.matchingService.addFavoriteShopper(user.id, shopperId);
+  }
+
+  @Delete('favorite-shopper/:shopperId')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async removeFavoriteShopper(
+    @CurrentUser() user: any,
+    @Param('shopperId') shopperId: string,
+  ) {
+    return this.matchingService.removeFavoriteShopper(user.id, shopperId);
+  }
+
+  @Get('favorite-shoppers')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async getFavoriteShoppers(@CurrentUser() user: any) {
+    return this.matchingService.getFavoriteShoppers(user.id);
+  }
+
+  // Matching algorithm tuning (admin)
+  @Get('admin/algorithm-config')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async testMatchingAlgorithm(
-    @Body() body: {
-      order_id: string;
-      algorithm_version?: string;
-      dry_run?: boolean;
+  async getAlgorithmConfig() {
+    return this.matchingService.getAlgorithmConfig();
+  }
+
+  @Put('admin/algorithm-config')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async updateAlgorithmConfig(
+    @Body() config: {
+      rating_weight?: number;
+      distance_weight?: number;
+      success_rate_weight?: number;
+      availability_weight?: number;
+      subscription_boost?: number;
     },
   ) {
-    // TODO: Implement matching algorithm testing
-    return {
-      message: 'Matching algorithm testing - to be implemented',
-      order_id: body.order_id,
-      algorithm_version: body.algorithm_version || 'current',
-      dry_run: body.dry_run || true,
-    };
+    return this.matchingService.updateAlgorithmConfig(config);
   }
 
-  // Shopper availability management
-  @Get('shopper/availability')
+  // Emergency matching
+  @Post('emergency-match/:orderId')
   @UseGuards(RolesGuard)
-  @Roles('shopper')
-  async getMyAvailability(@CurrentUser() user: any) {
-    // TODO: Implement shopper availability display
-    return {
-      message: 'Shopper availability display - to be implemented',
-      shopper_id: user.id,
-    };
-  }
-
-  @Put('shopper/availability')
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  async updateMyAvailability(
-    @CurrentUser() user: any,
-    @Body() body: { is_available: boolean; reason?: string },
+  @Roles('admin')
+  async emergencyMatch(
+    @Param('orderId') orderId: string,
+    @Body() body: { 
+      expand_radius?: number;
+      ignore_preferences?: boolean;
+      urgent_bonus?: number;
+    },
   ) {
-    // TODO: Implement shopper availability update
-    return {
-      message: 'Shopper availability update - to be implemented',
-      shopper_id: user.id,
-      is_available: body.is_available,
-      reason: body.reason,
-    };
+    return this.matchingService.emergencyMatch(orderId, {
+      expandRadius: body.expand_radius,
+      ignorePreferences: body.ignore_preferences,
+      urgentBonus: body.urgent_bonus,
+    });
   }
 
-  // Matching notifications and alerts
-  @Get('notifications/matching-opportunities')
+  // Matching queue management
+  @Get('admin/matching-queue')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async getMatchingQueue() {
+    return this.matchingService.getMatchingQueue();
+  }
+
+  @Post('admin/process-queue')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async processMatchingQueue() {
+    return this.matchingService.processMatchingQueue();
+  }
+
+  // Shopper performance tracking
+  @Get('shopper/my-performance')
   @UseGuards(RolesGuard)
   @Roles('shopper')
-  async getMatchingOpportunities(
+  async getMyPerformance(@CurrentUser() user: any) {
+    return this.matchingService.getShopperPerformance(user.id);
+  }
+
+  @Get('shopper/earnings-forecast')
+  @UseGuards(RolesGuard)
+  @Roles('shopper')
+  async getEarningsForecast(
     @CurrentUser() user: any,
-    @Query('radius') radius?: string,
+    @Query('days') days?: string,
   ) {
-    // TODO: Implement matching opportunity notifications
-    return {
-      message: 'Matching opportunity notifications - to be implemented',
-      shopper_id: user.id,
-      radius: radius || '10km',
-    };
+    const daysNum = days ? parseInt(days, 10) : 7;
+    return this.matchingService.getShopperEarningsForecast(user.id, daysNum);
   }
 }

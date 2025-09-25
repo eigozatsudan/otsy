@@ -77,7 +77,7 @@
   - Write tests for real-time communication features
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [-] 10. Build subscription and priority matching system
+- [x] 10. Build subscription and priority matching system
   - Implement subscription tier management
   - Create priority matching algorithm for subscribers
   - Build shopper preference and rating system

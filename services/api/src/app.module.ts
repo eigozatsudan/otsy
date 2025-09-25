@@ -15,6 +15,10 @@ import { ChatModule } from './chat/chat.module';
 import { NotificationModule } from './notifications/notification.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { MatchingModule } from './matching/matching.module';
+import { SubscriptionModule } from './subscriptions/subscription.module';
+import { MatchingModule } from './matching/matching.module';
+import { SubscriptionModule } from './subscriptions/subscription.module';
+import { MatchingModule } from './matching/matching.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -37,6 +41,10 @@ import { RolesGuard } from './auth/guards/roles.guard';
     PaymentsModule,
     ChatModule,
     NotificationModule,
+    SubscriptionModule,
+    MatchingModule,
+    SubscriptionModule,
+    MatchingModule,
     SubscriptionModule,
     MatchingModule,
   ],

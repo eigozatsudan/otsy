@@ -1,72 +1,83 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { 
   CreateSubscriptionDto, 
   UpdateSubscriptionDto,
-  SubscriptionTier, 
+  SubscriptionResponseDto,
+  SubscriptionTier,
   SubscriptionStatus,
-  SubscriptionBenefits,
+  SubscriptionTierConfig,
   ServiceCreditDto,
-  UseServiceCreditDto,
-  ServiceCreditReason 
+  UpgradeSubscriptionDto,
+  CancelSubscriptionDto,
+  DeliveryPriority,
+  TimeSlotPreference
 } from './dto/subscription.dto';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private prisma: PrismaService) {}
-
-  // Subscription tier benefits configuration
-  private readonly tierBenefits: Record<SubscriptionTier, SubscriptionBenefits> = {
+  private readonly tierConfigs: Record<SubscriptionTier, SubscriptionTierConfig> = {
     [SubscriptionTier.FREE]: {
+      name: 'Free',
+      price_monthly: 0,
+      price_yearly: 0,
+      orders_per_month: 5,
+      priority_orders_per_month: 0,
+      delivery_fee_discount: 0,
       priority_matching: false,
-      guaranteed_time_slots: 0,
-      free_deliveries: 0,
-      premium_shoppers: false,
+      guaranteed_time_slots: false,
       dedicated_support: false,
-      service_credits_multiplier: 1.0,
+      service_credits_on_delay: 0,
       max_concurrent_orders: 1,
-      early_access_features: false,
+      features: ['Basic order placement', 'Standard delivery'],
     },
     [SubscriptionTier.BASIC]: {
-      priority_matching: true,
-      guaranteed_time_slots: 4,
-      free_deliveries: 2,
-      premium_shoppers: false,
+      name: 'Basic',
+      price_monthly: 980,
+      price_yearly: 9800,
+      orders_per_month: 20,
+      priority_orders_per_month: 2,
+      delivery_fee_discount: 10,
+      priority_matching: false,
+      guaranteed_time_slots: false,
       dedicated_support: false,
-      service_credits_multiplier: 1.2,
+      service_credits_on_delay: 100,
       max_concurrent_orders: 2,
-      early_access_features: false,
+      features: ['20 orders/month', '10% delivery discount', 'Priority support'],
     },
     [SubscriptionTier.PREMIUM]: {
+      name: 'Premium',
+      price_monthly: 1980,
+      price_yearly: 19800,
+      orders_per_month: 50,
+      priority_orders_per_month: 10,
+      delivery_fee_discount: 20,
       priority_matching: true,
-      guaranteed_time_slots: 12,
-      free_deliveries: 5,
-      premium_shoppers: true,
+      guaranteed_time_slots: true,
       dedicated_support: true,
-      service_credits_multiplier: 1.5,
+      service_credits_on_delay: 200,
       max_concurrent_orders: 3,
-      early_access_features: true,
+      features: ['50 orders/month', '20% delivery discount', 'Priority matching', 'Guaranteed time slots'],
     },
     [SubscriptionTier.VIP]: {
+      name: 'VIP',
+      price_monthly: 3980,
+      price_yearly: 39800,
+      orders_per_month: -1, // Unlimited
+      priority_orders_per_month: -1, // Unlimited
+      delivery_fee_discount: 30,
       priority_matching: true,
-      guaranteed_time_slots: 24,
-      free_deliveries: 10,
-      premium_shoppers: true,
+      guaranteed_time_slots: true,
       dedicated_support: true,
-      service_credits_multiplier: 2.0,
+      service_credits_on_delay: 500,
       max_concurrent_orders: 5,
-      early_access_features: true,
+      features: ['Unlimited orders', '30% delivery discount', 'VIP matching', 'Dedicated support', 'Same-day guarantee'],
     },
   };
 
-  private readonly tierPricing: Record<SubscriptionTier, number> = {
-    [SubscriptionTier.FREE]: 0,
-    [SubscriptionTier.BASIC]: 980,
-    [SubscriptionTier.PREMIUM]: 1980,
-    [SubscriptionTier.VIP]: 3980,
-  };
+  constructor(private prisma: PrismaService) {}
 
-  async createSubscription(userId: string, createDto: CreateSubscriptionDto) {
+  async createSubscription(userId: string, createSubscriptionDto: CreateSubscriptionDto): Promise<SubscriptionResponseDto> {
     // Check if user already has an active subscription
     const existingSubscription = await this.prisma.subscription.findFirst({
       where: {
@@ -79,80 +90,68 @@ export class SubscriptionService {
       throw new BadRequestException('User already has an active subscription');
     }
 
-    const startDate = createDto.start_date ? new Date(createDto.start_date) : new Date();
-    const endDate = createDto.tier === SubscriptionTier.FREE 
-      ? null 
-      : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const tierConfig = this.tierConfigs[createSubscriptionDto.tier];
+    const now = new Date();
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
     const subscription = await this.prisma.subscription.create({
       data: {
         user_id: userId,
-        tier: createDto.tier,
+        tier: createSubscriptionDto.tier,
         status: SubscriptionStatus.ACTIVE,
-        start_date: startDate,
-        end_date: endDate,
-        next_billing_date: endDate,
-        monthly_fee: this.tierPricing[createDto.tier],
-        benefits: this.tierBenefits[createDto.tier],
+        current_period_start: now,
+        current_period_end: periodEnd,
+        preferred_time_slots: createSubscriptionDto.preferred_time_slots || [TimeSlotPreference.ANYTIME],
+        default_priority: createSubscriptionDto.default_priority || DeliveryPriority.STANDARD,
+        preferred_store_types: createSubscriptionDto.preferred_store_types || [],
+        max_delivery_distance: createSubscriptionDto.max_delivery_distance || 10,
+        auto_accept_orders: createSubscriptionDto.auto_accept_orders || false,
+        orders_limit: tierConfig.orders_per_month,
+        priority_orders_limit: tierConfig.priority_orders_per_month,
+        metadata: createSubscriptionDto.metadata,
       },
     });
-
-    // Initialize service credits for new subscribers
-    if (createDto.tier !== SubscriptionTier.FREE) {
-      await this.addServiceCredit(userId, {
-        amount: 500, // Welcome bonus
-        reason: ServiceCreditReason.COMPENSATION,
-        description: 'Welcome bonus for new subscription',
-      });
-    }
 
     // Create audit log
     await this.prisma.subscriptionAuditLog.create({
       data: {
         subscription_id: subscription.id,
+        user_id: userId,
         action: 'subscription_created',
-        actor_id: userId,
-        actor_role: 'user',
+        old_tier: null,
+        new_tier: createSubscriptionDto.tier,
         payload: {
-          tier: createDto.tier,
-          monthly_fee: this.tierPricing[createDto.tier],
+          tier_config: tierConfig,
+          preferences: {
+            time_slots: createSubscriptionDto.preferred_time_slots,
+            priority: createSubscriptionDto.default_priority,
+            store_types: createSubscriptionDto.preferred_store_types,
+          },
         },
       },
     });
 
-    return this.formatSubscriptionResponse(subscription);
+    return this.formatSubscriptionResponse(subscription, tierConfig);
   }
 
-  async getUserSubscription(userId: string) {
+  async getSubscription(userId: string): Promise<SubscriptionResponseDto | null> {
     const subscription = await this.prisma.subscription.findFirst({
       where: {
         user_id: userId,
-        status: SubscriptionStatus.ACTIVE,
+        status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELLED] },
       },
       orderBy: { created_at: 'desc' },
     });
 
     if (!subscription) {
-      // Return default free subscription
-      return {
-        id: null,
-        user_id: userId,
-        tier: SubscriptionTier.FREE,
-        status: SubscriptionStatus.ACTIVE,
-        start_date: new Date(),
-        end_date: null,
-        next_billing_date: null,
-        monthly_fee: 0,
-        benefits: this.tierBenefits[SubscriptionTier.FREE],
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
+      return null;
     }
 
-    return this.formatSubscriptionResponse(subscription);
+    const tierConfig = this.tierConfigs[subscription.tier as SubscriptionTier];
+    return this.formatSubscriptionResponse(subscription, tierConfig);
   }
 
-  async updateSubscription(userId: string, updateDto: UpdateSubscriptionDto) {
+  async updateSubscription(userId: string, updateSubscriptionDto: UpdateSubscriptionDto): Promise<SubscriptionResponseDto> {
     const subscription = await this.prisma.subscription.findFirst({
       where: {
         user_id: userId,
@@ -164,70 +163,218 @@ export class SubscriptionService {
       throw new NotFoundException('No active subscription found');
     }
 
-    const updateData: any = {};
-
-    if (updateDto.tier && updateDto.tier !== subscription.tier) {
-      updateData.tier = updateDto.tier;
-      updateData.monthly_fee = this.tierPricing[updateDto.tier];
-      updateData.benefits = this.tierBenefits[updateDto.tier];
-      
-      // If upgrading, apply immediately. If downgrading, apply at next billing cycle
-      if (this.isUpgrade(subscription.tier as SubscriptionTier, updateDto.tier)) {
-        updateData.updated_at = new Date();
-      }
-    }
-
-    if (updateDto.status) {
-      updateData.status = updateDto.status;
-      
-      if (updateDto.status === SubscriptionStatus.CANCELLED) {
-        updateData.end_date = new Date();
-        updateData.cancellation_reason = updateDto.cancellation_reason;
-      }
-    }
-
     const updatedSubscription = await this.prisma.subscription.update({
       where: { id: subscription.id },
-      data: updateData,
+      data: {
+        preferred_time_slots: updateSubscriptionDto.preferred_time_slots,
+        default_priority: updateSubscriptionDto.default_priority,
+        preferred_store_types: updateSubscriptionDto.preferred_store_types,
+        max_delivery_distance: updateSubscriptionDto.max_delivery_distance,
+        auto_accept_orders: updateSubscriptionDto.auto_accept_orders,
+        metadata: updateSubscriptionDto.metadata,
+        updated_at: new Date(),
+      },
     });
 
     // Create audit log
     await this.prisma.subscriptionAuditLog.create({
       data: {
         subscription_id: subscription.id,
+        user_id: userId,
         action: 'subscription_updated',
-        actor_id: userId,
-        actor_role: 'user',
-        payload: updateDto,
+        old_tier: subscription.tier,
+        new_tier: subscription.tier,
+        payload: {
+          changes: updateSubscriptionDto,
+        },
       },
     });
 
-    return this.formatSubscriptionResponse(updatedSubscription);
+    const tierConfig = this.tierConfigs[subscription.tier as SubscriptionTier];
+    return this.formatSubscriptionResponse(updatedSubscription, tierConfig);
   }
 
-  async cancelSubscription(userId: string, reason?: string) {
-    return this.updateSubscription(userId, {
-      status: SubscriptionStatus.CANCELLED,
-      cancellation_reason: reason,
+  async upgradeSubscription(userId: string, upgradeDto: UpgradeSubscriptionDto): Promise<SubscriptionResponseDto> {
+    const currentSubscription = await this.prisma.subscription.findFirst({
+      where: {
+        user_id: userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (!currentSubscription) {
+      throw new NotFoundException('No active subscription found');
+    }
+
+    const currentTier = currentSubscription.tier as SubscriptionTier;
+    const newTier = upgradeDto.new_tier;
+
+    // Validate upgrade path
+    const tierOrder = [SubscriptionTier.FREE, SubscriptionTier.BASIC, SubscriptionTier.PREMIUM, SubscriptionTier.VIP];
+    const currentIndex = tierOrder.indexOf(currentTier);
+    const newIndex = tierOrder.indexOf(newTier);
+
+    if (newIndex <= currentIndex) {
+      throw new BadRequestException('Can only upgrade to a higher tier');
+    }
+
+    const newTierConfig = this.tierConfigs[newTier];
+    const now = new Date();
+
+    // Calculate prorated amount if needed
+    let proratedAmount = 0;
+    if (upgradeDto.prorate && currentTier !== SubscriptionTier.FREE) {
+      const daysRemaining = Math.ceil((currentSubscription.current_period_end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const totalDays = Math.ceil((currentSubscription.current_period_end.getTime() - currentSubscription.current_period_start.getTime()) / (1000 * 60 * 60 * 24));
+      const currentTierConfig = this.tierConfigs[currentTier];
+      
+      proratedAmount = ((newTierConfig.price_monthly - currentTierConfig.price_monthly) * daysRemaining) / totalDays;
+    }
+
+    const updatedSubscription = await this.prisma.subscription.update({
+      where: { id: currentSubscription.id },
+      data: {
+        tier: newTier,
+        orders_limit: newTierConfig.orders_per_month,
+        priority_orders_limit: newTierConfig.priority_orders_per_month,
+        updated_at: now,
+      },
+    });
+
+    // Create audit log
+    await this.prisma.subscriptionAuditLog.create({
+      data: {
+        subscription_id: currentSubscription.id,
+        user_id: userId,
+        action: 'subscription_upgraded',
+        old_tier: currentTier,
+        new_tier: newTier,
+        payload: {
+          prorated_amount: proratedAmount,
+          old_tier_config: this.tierConfigs[currentTier],
+          new_tier_config: newTierConfig,
+        },
+      },
+    });
+
+    return this.formatSubscriptionResponse(updatedSubscription, newTierConfig);
+  }
+
+  async cancelSubscription(userId: string, cancelDto: CancelSubscriptionDto): Promise<void> {
+    const subscription = await this.prisma.subscription.findFirst({
+      where: {
+        user_id: userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('No active subscription found');
+    }
+
+    const now = new Date();
+    const cancelAt = cancelDto.cancel_immediately ? now : subscription.current_period_end;
+
+    await this.prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        status: cancelDto.cancel_immediately ? SubscriptionStatus.CANCELLED : SubscriptionStatus.ACTIVE,
+        cancelled_at: cancelAt,
+        cancellation_reason: cancelDto.reason,
+        cancellation_feedback: cancelDto.feedback,
+        updated_at: now,
+      },
+    });
+
+    // Create audit log
+    await this.prisma.subscriptionAuditLog.create({
+      data: {
+        subscription_id: subscription.id,
+        user_id: userId,
+        action: 'subscription_cancelled',
+        old_tier: subscription.tier,
+        new_tier: null,
+        payload: {
+          reason: cancelDto.reason,
+          feedback: cancelDto.feedback,
+          cancel_immediately: cancelDto.cancel_immediately,
+          cancelled_at: cancelAt,
+        },
+      },
     });
   }
 
-  // Service Credits Management
-  async addServiceCredit(userId: string, creditDto: ServiceCreditDto) {
-    const subscription = await this.getUserSubscription(userId);
-    const multiplier = subscription.benefits.service_credits_multiplier;
-    const finalAmount = Math.round(creditDto.amount * multiplier);
+  async getSubscriptionUsage(userId: string): Promise<any> {
+    const subscription = await this.prisma.subscription.findFirst({
+      where: {
+        user_id: userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+
+    if (!subscription) {
+      throw new NotFoundException('No active subscription found');
+    }
+
+    // Count orders in current period
+    const ordersThisPeriod = await this.prisma.order.count({
+      where: {
+        user_id: userId,
+        created_at: {
+          gte: subscription.current_period_start,
+          lte: subscription.current_period_end,
+        },
+      },
+    });
+
+    // Count priority orders in current period
+    const priorityOrdersUsed = await this.prisma.order.count({
+      where: {
+        user_id: userId,
+        priority: { in: [DeliveryPriority.EXPRESS, DeliveryPriority.URGENT, DeliveryPriority.IMMEDIATE] },
+        created_at: {
+          gte: subscription.current_period_start,
+          lte: subscription.current_period_end,
+        },
+      },
+    });
+
+    // Get service credits balance
+    const serviceCredits = await this.prisma.serviceCredit.aggregate({
+      where: {
+        user_id: userId,
+        used_at: null,
+        expires_at: { gt: new Date() },
+      },
+      _sum: { amount: true },
+    });
+
+    const daysUntilRenewal = Math.ceil((subscription.current_period_end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      orders_this_period: ordersThisPeriod,
+      orders_limit: subscription.orders_limit,
+      priority_orders_used: priorityOrdersUsed,
+      priority_orders_limit: subscription.priority_orders_limit,
+      service_credits_balance: serviceCredits._sum.amount || 0,
+      next_billing_date: subscription.current_period_end,
+      days_until_renewal: Math.max(0, daysUntilRenewal),
+    };
+  }
+
+  async addServiceCredit(userId: string, creditDto: ServiceCreditDto): Promise<any> {
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + 6); // Credits expire in 6 months
 
     const serviceCredit = await this.prisma.serviceCredit.create({
       data: {
         user_id: userId,
-        amount: finalAmount,
-        original_amount: creditDto.amount,
+        amount: creditDto.amount,
         reason: creditDto.reason,
         description: creditDto.description,
         order_id: creditDto.order_id,
-        expires_at: creditDto.expires_at ? new Date(creditDto.expires_at) : 
-          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year default
+        expires_at: expiresAt,
+        metadata: creditDto.metadata,
       },
     });
 
@@ -235,13 +382,13 @@ export class SubscriptionService {
     await this.prisma.serviceCreditAuditLog.create({
       data: {
         service_credit_id: serviceCredit.id,
+        user_id: userId,
         action: 'credit_added',
-        actor_id: 'system',
-        actor_role: 'system',
+        amount: creditDto.amount,
         payload: {
-          amount: finalAmount,
           reason: creditDto.reason,
-          multiplier,
+          description: creditDto.description,
+          order_id: creditDto.order_id,
         },
       },
     });
@@ -249,7 +396,7 @@ export class SubscriptionService {
     return serviceCredit;
   }
 
-  async useServiceCredit(userId: string, useDto: UseServiceCreditDto) {
+  async useServiceCredit(userId: string, amount: number, orderId: string): Promise<boolean> {
     // Get available credits
     const availableCredits = await this.prisma.serviceCredit.findMany({
       where: {
@@ -257,217 +404,200 @@ export class SubscriptionService {
         used_at: null,
         expires_at: { gt: new Date() },
       },
-      orderBy: { created_at: 'asc' }, // Use oldest credits first
+      orderBy: { expires_at: 'asc' }, // Use oldest credits first
     });
 
-    const totalAvailable = availableCredits.reduce((sum, credit) => sum + credit.amount, 0);
-
-    if (totalAvailable < useDto.amount) {
-      throw new BadRequestException('Insufficient service credits');
+    let totalAvailable = availableCredits.reduce((sum, credit) => sum + credit.amount, 0);
+    
+    if (totalAvailable < amount) {
+      return false; // Insufficient credits
     }
 
-    let remainingAmount = useDto.amount;
-    const usedCredits = [];
-
+    // Use credits in FIFO order
+    let remainingAmount = amount;
     for (const credit of availableCredits) {
       if (remainingAmount <= 0) break;
 
       const useAmount = Math.min(credit.amount, remainingAmount);
       
-      await this.prisma.serviceCredit.update({
-        where: { id: credit.id },
-        data: {
-          used_at: new Date(),
-          used_amount: useAmount,
-          used_for_order_id: useDto.order_id,
-        },
-      });
+      if (useAmount === credit.amount) {
+        // Use entire credit
+        await this.prisma.serviceCredit.update({
+          where: { id: credit.id },
+          data: { 
+            used_at: new Date(),
+            used_for_order_id: orderId,
+          },
+        });
+      } else {
+        // Partial use - split the credit
+        await this.prisma.serviceCredit.update({
+          where: { id: credit.id },
+          data: { amount: credit.amount - useAmount },
+        });
 
-      usedCredits.push({ id: credit.id, amount: useAmount });
+        // Create new credit for used amount
+        await this.prisma.serviceCredit.create({
+          data: {
+            user_id: userId,
+            amount: useAmount,
+            reason: credit.reason,
+            description: `Partial use of credit ${credit.id}`,
+            expires_at: credit.expires_at,
+            used_at: new Date(),
+            used_for_order_id: orderId,
+          },
+        });
+      }
+
       remainingAmount -= useAmount;
     }
 
-    // Create audit log
-    await this.prisma.serviceCreditAuditLog.create({
-      data: {
-        service_credit_id: usedCredits[0]?.id || null,
-        action: 'credit_used',
-        actor_id: userId,
-        actor_role: 'user',
-        payload: {
-          order_id: useDto.order_id,
-          amount_used: useDto.amount,
-          credits_used: usedCredits,
-        },
-      },
-    });
-
-    return {
-      amount_used: useDto.amount,
-      credits_used: usedCredits,
-      remaining_balance: totalAvailable - useDto.amount,
-    };
+    return true;
   }
 
-  async getUserServiceCredits(userId: string) {
-    const [credits, totalBalance] = await Promise.all([
-      this.prisma.serviceCredit.findMany({
-        where: {
-          user_id: userId,
-          used_at: null,
-          expires_at: { gt: new Date() },
-        },
-        orderBy: { created_at: 'desc' },
-      }),
-      this.prisma.serviceCredit.aggregate({
-        where: {
-          user_id: userId,
-          used_at: null,
-          expires_at: { gt: new Date() },
-        },
-        _sum: { amount: true },
-      }),
-    ]);
-
-    return {
-      credits,
-      total_balance: totalBalance._sum.amount || 0,
-    };
+  async getTierConfigs(): Promise<Record<SubscriptionTier, SubscriptionTierConfig>> {
+    return this.tierConfigs;
   }
 
-  // Subscription Benefits Validation
-  async canUserAccessFeature(userId: string, feature: keyof SubscriptionBenefits): Promise<boolean> {
-    const subscription = await this.getUserSubscription(userId);
-    return subscription.benefits[feature] as boolean;
-  }
-
-  async getUserBenefitLimit(userId: string, benefit: keyof SubscriptionBenefits): Promise<number> {
-    const subscription = await this.getUserSubscription(userId);
-    return subscription.benefits[benefit] as number;
-  }
-
-  async checkConcurrentOrderLimit(userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
-    const subscription = await this.getUserSubscription(userId);
-    const limit = subscription.benefits.max_concurrent_orders;
-
-    const currentOrders = await this.prisma.order.count({
-      where: {
-        user_id: userId,
-        status: { in: ['NEW', 'ACCEPTED', 'SHOPPING', 'RECEIPT_PENDING'] },
-      },
-    });
-
-    return {
-      allowed: currentOrders < limit,
-      current: currentOrders,
-      limit,
-    };
-  }
-
-  // SLA Violation Handling
-  async handleSLAViolation(orderId: string, violationType: string, compensationAmount: number) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { user: true },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    // Add service credit as compensation
-    await this.addServiceCredit(order.user_id, {
-      amount: compensationAmount,
-      reason: ServiceCreditReason.SLA_VIOLATION,
-      description: `SLA violation compensation: ${violationType}`,
-      order_id: orderId,
-    });
-
-    // Create SLA violation record
-    await this.prisma.slaViolation.create({
-      data: {
-        order_id: orderId,
-        user_id: order.user_id,
-        violation_type: violationType,
-        compensation_amount: compensationAmount,
-        detected_at: new Date(),
-      },
-    });
-
-    return {
-      violation_type: violationType,
-      compensation_amount: compensationAmount,
-      order_id: orderId,
-    };
-  }
-
-  // Helper methods
-  private isUpgrade(currentTier: SubscriptionTier, newTier: SubscriptionTier): boolean {
-    const tierOrder = [SubscriptionTier.FREE, SubscriptionTier.BASIC, SubscriptionTier.PREMIUM, SubscriptionTier.VIP];
-    return tierOrder.indexOf(newTier) > tierOrder.indexOf(currentTier);
-  }
-
-  private formatSubscriptionResponse(subscription: any) {
-    return {
-      id: subscription.id,
-      user_id: subscription.user_id,
-      tier: subscription.tier,
-      status: subscription.status,
-      start_date: subscription.start_date,
-      end_date: subscription.end_date,
-      next_billing_date: subscription.next_billing_date,
-      monthly_fee: subscription.monthly_fee,
-      benefits: subscription.benefits || this.tierBenefits[subscription.tier],
-      created_at: subscription.created_at,
-      updated_at: subscription.updated_at,
-    };
-  }
-
-  // Admin methods
-  async getSubscriptionStats() {
+  async getSubscriptionStats(): Promise<any> {
     const [
-      totalSubscribers,
-      subscribersByTier,
-      monthlyRevenue,
-      serviceCreditStats,
+      totalSubscriptions,
+      activeSubscriptions,
+      subscriptionsByTier,
+      totalRevenue,
+      churnRate,
     ] = await Promise.all([
-      this.prisma.subscription.count({
-        where: { status: SubscriptionStatus.ACTIVE },
-      }),
+      this.prisma.subscription.count(),
+      this.prisma.subscription.count({ where: { status: SubscriptionStatus.ACTIVE } }),
       this.prisma.subscription.groupBy({
         by: ['tier'],
         where: { status: SubscriptionStatus.ACTIVE },
         _count: { id: true },
       }),
-      this.prisma.subscription.aggregate({
-        where: { 
-          status: SubscriptionStatus.ACTIVE,
-          tier: { not: SubscriptionTier.FREE },
-        },
-        _sum: { monthly_fee: true },
-      }),
-      this.prisma.serviceCredit.aggregate({
+      this.calculateMonthlyRevenue(),
+      this.calculateChurnRate(),
+    ]);
+
+    return {
+      total_subscriptions: totalSubscriptions,
+      active_subscriptions: activeSubscriptions,
+      subscriptions_by_tier: subscriptionsByTier.reduce((acc, item) => {
+        acc[item.tier] = item._count.id;
+        return acc;
+      }, {}),
+      monthly_revenue: totalRevenue,
+      churn_rate: churnRate,
+    };
+  }
+
+  private async calculateMonthlyRevenue(): Promise<number> {
+    const activeSubscriptions = await this.prisma.subscription.findMany({
+      where: { status: SubscriptionStatus.ACTIVE },
+      select: { tier: true },
+    });
+
+    return activeSubscriptions.reduce((total, sub) => {
+      const tierConfig = this.tierConfigs[sub.tier as SubscriptionTier];
+      return total + tierConfig.price_monthly;
+    }, 0);
+  }
+
+  private async calculateChurnRate(): Promise<number> {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [cancelledCount, totalAtStart] = await Promise.all([
+      this.prisma.subscription.count({
         where: {
-          created_at: {
-            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-          },
+          status: SubscriptionStatus.CANCELLED,
+          cancelled_at: { gte: thirtyDaysAgo },
         },
-        _sum: { amount: true },
-        _count: { id: true },
+      }),
+      this.prisma.subscription.count({
+        where: {
+          created_at: { lte: thirtyDaysAgo },
+          status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELLED] },
+        },
       }),
     ]);
 
-    const tierCounts = subscribersByTier.reduce((acc, item) => {
-      acc[item.tier] = item._count.id;
-      return acc;
-    }, {} as Record<SubscriptionTier, number>);
+    return totalAtStart > 0 ? (cancelledCount / totalAtStart) * 100 : 0;
+  }
 
+  private formatSubscriptionResponse(subscription: any, tierConfig: SubscriptionTierConfig): SubscriptionResponseDto {
     return {
-      total_subscribers: totalSubscribers,
-      subscribers_by_tier: tierCounts,
-      monthly_revenue: monthlyRevenue._sum.monthly_fee || 0,
-      service_credits_issued: serviceCreditStats._sum.amount || 0,
-      service_credits_count: serviceCreditStats._count.id || 0,
+      id: subscription.id,
+      user_id: subscription.user_id,
+      tier: subscription.tier,
+      status: subscription.status,
+      current_period_start: subscription.current_period_start,
+      current_period_end: subscription.current_period_end,
+      preferred_time_slots: subscription.preferred_time_slots,
+      default_priority: subscription.default_priority,
+      preferred_store_types: subscription.preferred_store_types,
+      max_delivery_distance: subscription.max_delivery_distance,
+      auto_accept_orders: subscription.auto_accept_orders,
+      orders_this_period: subscription.orders_this_period || 0,
+      orders_limit: subscription.orders_limit,
+      priority_orders_used: subscription.priority_orders_used || 0,
+      priority_orders_limit: subscription.priority_orders_limit,
+      service_credits: subscription.service_credits || 0,
+      created_at: subscription.created_at,
+      updated_at: subscription.updated_at,
     };
+  }
+
+  // Subscription renewal and billing
+  async processSubscriptionRenewals(): Promise<void> {
+    const expiredSubscriptions = await this.prisma.subscription.findMany({
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+        current_period_end: { lte: new Date() },
+      },
+    });
+
+    for (const subscription of expiredSubscriptions) {
+      await this.renewSubscription(subscription.id);
+    }
+  }
+
+  private async renewSubscription(subscriptionId: string): Promise<void> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+    });
+
+    if (!subscription) return;
+
+    const now = new Date();
+    const nextPeriodEnd = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+    await this.prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        current_period_start: now,
+        current_period_end: nextPeriodEnd,
+        orders_this_period: 0,
+        priority_orders_used: 0,
+        updated_at: now,
+      },
+    });
+
+    // Create audit log
+    await this.prisma.subscriptionAuditLog.create({
+      data: {
+        subscription_id: subscriptionId,
+        user_id: subscription.user_id,
+        action: 'subscription_renewed',
+        old_tier: subscription.tier,
+        new_tier: subscription.tier,
+        payload: {
+          previous_period_start: subscription.current_period_start,
+          previous_period_end: subscription.current_period_end,
+          new_period_start: now,
+          new_period_end: nextPeriodEnd,
+        },
+      },
+    });
   }
 }

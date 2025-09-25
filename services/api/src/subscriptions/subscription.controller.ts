@@ -17,8 +17,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import {
   CreateSubscriptionDto,
   UpdateSubscriptionDto,
+  UpgradeSubscriptionDto,
+  CancelSubscriptionDto,
   ServiceCreditDto,
-  UseServiceCreditDto,
 } from './dto/subscription.dto';
 
 @Controller('subscriptions')
@@ -26,154 +27,85 @@ import {
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
-  // User subscription management
+  // Subscription management
   @Post()
   @UseGuards(RolesGuard)
   @Roles('user')
   async createSubscription(
     @CurrentUser() user: any,
-    @Body() createDto: CreateSubscriptionDto,
+    @Body() createSubscriptionDto: CreateSubscriptionDto,
   ) {
-    return this.subscriptionService.createSubscription(user.id, createDto);
+    return this.subscriptionService.createSubscription(user.id, createSubscriptionDto);
   }
 
   @Get('my-subscription')
   async getMySubscription(@CurrentUser() user: any) {
-    return this.subscriptionService.getUserSubscription(user.id);
+    return this.subscriptionService.getSubscription(user.id);
   }
 
   @Put('my-subscription')
   async updateMySubscription(
     @CurrentUser() user: any,
-    @Body() updateDto: UpdateSubscriptionDto,
+    @Body() updateSubscriptionDto: UpdateSubscriptionDto,
   ) {
-    return this.subscriptionService.updateSubscription(user.id, updateDto);
+    return this.subscriptionService.updateSubscription(user.id, updateSubscriptionDto);
   }
 
-  @Delete('my-subscription')
-  async cancelMySubscription(
+  @Post('upgrade')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async upgradeSubscription(
     @CurrentUser() user: any,
-    @Body() body: { reason?: string },
+    @Body() upgradeDto: UpgradeSubscriptionDto,
   ) {
-    return this.subscriptionService.cancelSubscription(user.id, body.reason);
+    return this.subscriptionService.upgradeSubscription(user.id, upgradeDto);
   }
 
-  // Service credits management
+  @Post('cancel')
+  async cancelSubscription(
+    @CurrentUser() user: any,
+    @Body() cancelDto: CancelSubscriptionDto,
+  ) {
+    await this.subscriptionService.cancelSubscription(user.id, cancelDto);
+    return { success: true, message: 'Subscription cancelled successfully' };
+  }
+
+  // Usage and billing
+  @Get('usage')
+  async getSubscriptionUsage(@CurrentUser() user: any) {
+    return this.subscriptionService.getSubscriptionUsage(user.id);
+  }
+
   @Get('service-credits')
-  async getMyServiceCredits(@CurrentUser() user: any) {
-    return this.subscriptionService.getUserServiceCredits(user.id);
+  async getServiceCredits(@CurrentUser() user: any) {
+    // Get available service credits
+    const credits = await this.subscriptionService.getServiceCredits(user.id);
+    return credits;
   }
 
-  @Post('service-credits/use')
-  async useServiceCredits(
-    @CurrentUser() user: any,
-    @Body() useDto: UseServiceCreditDto,
-  ) {
-    return this.subscriptionService.useServiceCredit(user.id, useDto);
-  }
-
-  // Subscription benefits validation
-  @Get('benefits/check/:feature')
-  async checkFeatureAccess(
-    @CurrentUser() user: any,
-    @Param('feature') feature: string,
-  ) {
-    const hasAccess = await this.subscriptionService.canUserAccessFeature(
-      user.id,
-      feature as any,
-    );
-    
-    return { feature, has_access: hasAccess };
-  }
-
-  @Get('benefits/limit/:benefit')
-  async getBenefitLimit(
-    @CurrentUser() user: any,
-    @Param('benefit') benefit: string,
-  ) {
-    const limit = await this.subscriptionService.getUserBenefitLimit(
-      user.id,
-      benefit as any,
-    );
-    
-    return { benefit, limit };
-  }
-
-  @Get('concurrent-orders/check')
-  async checkConcurrentOrderLimit(@CurrentUser() user: any) {
-    return this.subscriptionService.checkConcurrentOrderLimit(user.id);
-  }
-
-  // Subscription tiers information
+  // Tier information
   @Get('tiers')
   async getSubscriptionTiers() {
-    return {
-      tiers: [
-        {
-          tier: 'free',
-          name: 'Free',
-          price: 0,
-          benefits: {
-            priority_matching: false,
-            guaranteed_time_slots: 0,
-            free_deliveries: 0,
-            premium_shoppers: false,
-            dedicated_support: false,
-            service_credits_multiplier: 1.0,
-            max_concurrent_orders: 1,
-            early_access_features: false,
-          },
-        },
-        {
-          tier: 'basic',
-          name: 'Basic',
-          price: 980,
-          benefits: {
-            priority_matching: true,
-            guaranteed_time_slots: 4,
-            free_deliveries: 2,
-            premium_shoppers: false,
-            dedicated_support: false,
-            service_credits_multiplier: 1.2,
-            max_concurrent_orders: 2,
-            early_access_features: false,
-          },
-        },
-        {
-          tier: 'premium',
-          name: 'Premium',
-          price: 1980,
-          benefits: {
-            priority_matching: true,
-            guaranteed_time_slots: 12,
-            free_deliveries: 5,
-            premium_shoppers: true,
-            dedicated_support: true,
-            service_credits_multiplier: 1.5,
-            max_concurrent_orders: 3,
-            early_access_features: true,
-          },
-        },
-        {
-          tier: 'vip',
-          name: 'VIP',
-          price: 3980,
-          benefits: {
-            priority_matching: true,
-            guaranteed_time_slots: 24,
-            free_deliveries: 10,
-            premium_shoppers: true,
-            dedicated_support: true,
-            service_credits_multiplier: 2.0,
-            max_concurrent_orders: 5,
-            early_access_features: true,
-          },
-        },
-      ],
-    };
+    return this.subscriptionService.getTierConfigs();
+  }
+
+  @Get('tiers/:tier')
+  async getSubscriptionTier(@Param('tier') tier: string) {
+    const configs = await this.subscriptionService.getTierConfigs();
+    return configs[tier] || null;
   }
 
   // Admin endpoints
+  @Post('admin/service-credits/:userId')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async addServiceCredit(
+    @Param('userId') userId: string,
+    @Body() creditDto: ServiceCreditDto,
+  ) {
+    return this.subscriptionService.addServiceCredit(userId, creditDto);
+  }
+
   @Get('admin/stats')
   @UseGuards(RolesGuard)
   @Roles('admin')
@@ -181,89 +113,144 @@ export class SubscriptionController {
     return this.subscriptionService.getSubscriptionStats();
   }
 
-  @Post('admin/service-credits/:userId')
+  @Get('admin/subscriptions')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async addServiceCreditToUser(
-    @Param('userId') userId: string,
-    @Body() creditDto: ServiceCreditDto,
+  async getAllSubscriptions(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('tier') tier?: string,
+    @Query('status') status?: string,
   ) {
-    return this.subscriptionService.addServiceCredit(userId, creditDto);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    
+    return this.subscriptionService.getAllSubscriptions({
+      page: pageNum,
+      limit: limitNum,
+      tier,
+      status,
+    });
   }
 
-  @Get('admin/users/:userId/subscription')
+  @Get('admin/subscriptions/:id')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async getUserSubscriptionAdmin(@Param('userId') userId: string) {
-    return this.subscriptionService.getUserSubscription(userId);
+  async getSubscriptionById(@Param('id') id: string) {
+    return this.subscriptionService.getSubscriptionById(id);
   }
 
-  @Put('admin/users/:userId/subscription')
+  @Post('admin/process-renewals')
   @UseGuards(RolesGuard)
   @Roles('admin')
-  async updateUserSubscriptionAdmin(
-    @Param('userId') userId: string,
-    @Body() updateDto: UpdateSubscriptionDto,
+  async processRenewals() {
+    await this.subscriptionService.processSubscriptionRenewals();
+    return { success: true, message: 'Subscription renewals processed' };
+  }
+
+  // Subscription benefits validation
+  @Get('validate-benefits/:orderId')
+  async validateSubscriptionBenefits(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
   ) {
-    return this.subscriptionService.updateSubscription(userId, updateDto);
+    return this.subscriptionService.validateSubscriptionBenefits(user.id, orderId);
   }
 
-  @Get('admin/users/:userId/service-credits')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  async getUserServiceCreditsAdmin(@Param('userId') userId: string) {
-    return this.subscriptionService.getUserServiceCredits(userId);
-  }
-
-  // SLA violation handling
-  @Post('admin/sla-violation')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  async handleSLAViolation(
-    @Body() body: {
-      order_id: string;
-      violation_type: string;
-      compensation_amount: number;
-    },
+  @Post('apply-benefits/:orderId')
+  async applySubscriptionBenefits(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+    @Body() body: { use_service_credits?: number },
   ) {
-    return this.subscriptionService.handleSLAViolation(
-      body.order_id,
-      body.violation_type,
-      body.compensation_amount,
+    return this.subscriptionService.applySubscriptionBenefits(
+      user.id,
+      orderId,
+      body.use_service_credits,
     );
   }
 
-  // Subscription history and analytics
-  @Get('admin/analytics/revenue')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  async getRevenueAnalytics(
-    @Query('start_date') startDate?: string,
-    @Query('end_date') endDate?: string,
+  // Subscription analytics for users
+  @Get('analytics/usage-history')
+  async getUsageHistory(
+    @CurrentUser() user: any,
+    @Query('months') months?: string,
   ) {
-    // TODO: Implement revenue analytics
-    return {
-      message: 'Revenue analytics endpoint - to be implemented',
-      start_date: startDate,
-      end_date: endDate,
-    };
+    const monthsNum = months ? parseInt(months, 10) : 6;
+    return this.subscriptionService.getUsageHistory(user.id, monthsNum);
   }
 
-  @Get('admin/analytics/churn')
+  @Get('analytics/savings')
+  async getSavingsAnalytics(@CurrentUser() user: any) {
+    return this.subscriptionService.getSavingsAnalytics(user.id);
+  }
+
+  // Subscription recommendations
+  @Get('recommendations')
+  async getSubscriptionRecommendations(@CurrentUser() user: any) {
+    return this.subscriptionService.getSubscriptionRecommendations(user.id);
+  }
+
+  // Subscription pause/resume (for premium features)
+  @Post('pause')
   @UseGuards(RolesGuard)
-  @Roles('admin')
-  async getChurnAnalytics() {
-    // TODO: Implement churn analytics
-    return {
-      message: 'Churn analytics endpoint - to be implemented',
-    };
+  @Roles('user')
+  async pauseSubscription(
+    @CurrentUser() user: any,
+    @Body() body: { reason?: string; resume_date?: string },
+  ) {
+    return this.subscriptionService.pauseSubscription(
+      user.id,
+      body.reason,
+      body.resume_date ? new Date(body.resume_date) : undefined,
+    );
   }
 
-  // Subscription lifecycle webhooks (for payment processing)
-  @Post('webhooks/billing')
-  async handleBillingWebhook(@Body() payload: any) {
-    // TODO: Implement billing webhook handling
-    // This would handle subscription renewals, payment failures, etc.
-    return { received: true };
+  @Post('resume')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async resumeSubscription(@CurrentUser() user: any) {
+    return this.subscriptionService.resumeSubscription(user.id);
+  }
+
+  // Gift subscriptions
+  @Post('gift')
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  async giftSubscription(
+    @CurrentUser() user: any,
+    @Body() body: {
+      recipient_email: string;
+      tier: string;
+      duration_months: number;
+      message?: string;
+    },
+  ) {
+    return this.subscriptionService.giftSubscription(
+      user.id,
+      body.recipient_email,
+      body.tier,
+      body.duration_months,
+      body.message,
+    );
+  }
+
+  // Subscription referrals
+  @Get('referral-code')
+  async getReferralCode(@CurrentUser() user: any) {
+    return this.subscriptionService.getReferralCode(user.id);
+  }
+
+  @Post('apply-referral')
+  async applyReferralCode(
+    @CurrentUser() user: any,
+    @Body() body: { referral_code: string },
+  ) {
+    return this.subscriptionService.applyReferralCode(user.id, body.referral_code);
+  }
+
+  @Get('referral-stats')
+  async getReferralStats(@CurrentUser() user: any) {
+    return this.subscriptionService.getReferralStats(user.id);
   }
 }

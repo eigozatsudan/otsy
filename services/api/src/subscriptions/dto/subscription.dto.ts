@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsEnum, IsNumber, IsBoolean, IsDateString, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNumber, IsBoolean, IsArray, ValidateNested, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum SubscriptionTier {
   FREE = 'free',
@@ -14,13 +15,18 @@ export enum SubscriptionStatus {
   SUSPENDED = 'suspended',
 }
 
-export enum ServiceCreditReason {
-  DELIVERY_DELAY = 'delivery_delay',
-  QUALITY_ISSUE = 'quality_issue',
-  SHOPPER_CANCELLATION = 'shopper_cancellation',
-  SYSTEM_ERROR = 'system_error',
-  SLA_VIOLATION = 'sla_violation',
-  COMPENSATION = 'compensation',
+export enum TimeSlotPreference {
+  MORNING = 'morning',     // 6:00-12:00
+  AFTERNOON = 'afternoon', // 12:00-18:00
+  EVENING = 'evening',     // 18:00-24:00
+  ANYTIME = 'anytime',
+}
+
+export enum DeliveryPriority {
+  STANDARD = 'standard',   // 24-48 hours
+  EXPRESS = 'express',     // 12-24 hours
+  URGENT = 'urgent',       // 2-12 hours
+  IMMEDIATE = 'immediate', // Within 2 hours
 }
 
 export class CreateSubscriptionDto {
@@ -28,16 +34,35 @@ export class CreateSubscriptionDto {
   tier: SubscriptionTier;
 
   @IsOptional()
-  @IsDateString()
-  start_date?: string;
-
-  @IsOptional()
   @IsString()
   payment_method_id?: string;
 
   @IsOptional()
-  @IsString()
-  promo_code?: string;
+  @IsArray()
+  @IsEnum(TimeSlotPreference, { each: true })
+  preferred_time_slots?: TimeSlotPreference[];
+
+  @IsOptional()
+  @IsEnum(DeliveryPriority)
+  default_priority?: DeliveryPriority;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferred_store_types?: string[]; // 'supermarket', 'convenience', 'pharmacy', etc.
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(50)
+  max_delivery_distance?: number; // km
+
+  @IsOptional()
+  @IsBoolean()
+  auto_accept_orders?: boolean;
+
+  @IsOptional()
+  metadata?: Record<string, any>;
 }
 
 export class UpdateSubscriptionDto {
@@ -46,12 +71,35 @@ export class UpdateSubscriptionDto {
   tier?: SubscriptionTier;
 
   @IsOptional()
-  @IsEnum(SubscriptionStatus)
-  status?: SubscriptionStatus;
+  @IsString()
+  payment_method_id?: string;
 
   @IsOptional()
-  @IsString()
-  cancellation_reason?: string;
+  @IsArray()
+  @IsEnum(TimeSlotPreference, { each: true })
+  preferred_time_slots?: TimeSlotPreference[];
+
+  @IsOptional()
+  @IsEnum(DeliveryPriority)
+  default_priority?: DeliveryPriority;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferred_store_types?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(50)
+  max_delivery_distance?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  auto_accept_orders?: boolean;
+
+  @IsOptional()
+  metadata?: Record<string, any>;
 }
 
 export class SubscriptionResponseDto {
@@ -59,61 +107,39 @@ export class SubscriptionResponseDto {
   user_id: string;
   tier: SubscriptionTier;
   status: SubscriptionStatus;
-  start_date: Date;
-  end_date?: Date;
-  next_billing_date?: Date;
-  monthly_fee: number;
-  benefits: SubscriptionBenefits;
+  current_period_start: Date;
+  current_period_end: Date;
+  preferred_time_slots: TimeSlotPreference[];
+  default_priority: DeliveryPriority;
+  preferred_store_types: string[];
+  max_delivery_distance: number;
+  auto_accept_orders: boolean;
+  orders_this_period: number;
+  orders_limit: number;
+  priority_orders_used: number;
+  priority_orders_limit: number;
+  service_credits: number;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface SubscriptionBenefits {
-  priority_matching: boolean;
-  guaranteed_time_slots: number; // hours per month
-  free_deliveries: number; // per month
-  premium_shoppers: boolean;
-  dedicated_support: boolean;
-  service_credits_multiplier: number;
-  max_concurrent_orders: number;
-  early_access_features: boolean;
-}
-
-export class ServiceCreditDto {
-  @IsNumber()
-  @Min(1)
-  amount: number;
-
-  @IsEnum(ServiceCreditReason)
-  reason: ServiceCreditReason;
-
-  @IsString()
-  description: string;
-
-  @IsOptional()
-  @IsString()
-  order_id?: string;
-
-  @IsOptional()
-  @IsDateString()
-  expires_at?: string;
-}
-
-export class UseServiceCreditDto {
-  @IsString()
-  order_id: string;
-
-  @IsNumber()
-  @Min(1)
-  amount: number;
-}
-
+// Shopper preference DTOs
 export class ShopperPreferenceDto {
+  @IsOptional()
+  @IsArray()
+  @IsEnum(TimeSlotPreference, { each: true })
+  available_time_slots?: TimeSlotPreference[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  preferred_store_types?: string[];
+
   @IsOptional()
   @IsNumber()
   @Min(0)
-  @Max(50)
-  max_distance_km?: number;
+  @Max(100)
+  max_delivery_distance?: number;
 
   @IsOptional()
   @IsNumber()
@@ -122,68 +148,79 @@ export class ShopperPreferenceDto {
   max_concurrent_orders?: number;
 
   @IsOptional()
-  @IsString({ each: true })
-  preferred_store_chains?: string[];
+  @IsBoolean()
+  accepts_urgent_orders?: boolean;
 
   @IsOptional()
-  @IsString({ each: true })
-  excluded_categories?: string[];
+  @IsBoolean()
+  accepts_large_orders?: boolean; // Orders > 20 items
 
   @IsOptional()
   @IsNumber()
-  @Min(500)
-  min_order_value?: number;
+  @Min(0)
+  @Max(100000)
+  min_order_value?: number; // Minimum order value in JPY
 
   @IsOptional()
-  @IsBoolean()
-  accepts_premium_orders?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  accepts_bulk_orders?: boolean;
-
-  @IsOptional()
-  working_hours?: {
-    monday?: { start: string; end: string };
-    tuesday?: { start: string; end: string };
-    wednesday?: { start: string; end: string };
-    thursday?: { start: string; end: string };
-    friday?: { start: string; end: string };
-    saturday?: { start: string; end: string };
-    sunday?: { start: string; end: string };
-  };
+  @IsNumber()
+  @Min(0)
+  @Max(100000)
+  max_order_value?: number; // Maximum order value in JPY
 }
 
 export class ShopperRatingDto {
-  @IsString()
-  order_id: string;
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  overall_rating: number;
 
   @IsNumber()
   @Min(1)
   @Max(5)
-  rating: number;
+  communication_rating: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  accuracy_rating: number;
+
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  timeliness_rating: number;
 
   @IsOptional()
   @IsString()
   comment?: string;
 
   @IsOptional()
-  @IsBoolean()
-  would_recommend?: boolean;
-
-  @IsOptional()
-  rating_categories?: {
-    communication: number;
-    item_quality: number;
-    timeliness: number;
-    professionalism: number;
-  };
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[]; // 'friendly', 'fast', 'accurate', 'communicative', etc.
 }
 
-export class MatchingPreferencesDto {
+// Matching algorithm DTOs
+export class MatchingCriteriaDto {
+  @IsString()
+  order_id: string;
+
   @IsOptional()
-  @IsBoolean()
-  prefer_rated_shoppers?: boolean;
+  @IsEnum(DeliveryPriority)
+  priority?: DeliveryPriority;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  max_distance?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  required_store_types?: string[];
+
+  @IsOptional()
+  @IsEnum(TimeSlotPreference)
+  preferred_time_slot?: TimeSlotPreference;
 
   @IsOptional()
   @IsNumber()
@@ -192,42 +229,102 @@ export class MatchingPreferencesDto {
   min_shopper_rating?: number;
 
   @IsOptional()
-  @IsString({ each: true })
-  preferred_shopper_ids?: string[];
+  @IsBoolean()
+  subscriber_only?: boolean;
+}
+
+export class MatchingResultDto {
+  shopper_id: string;
+  shopper_name: string;
+  shopper_rating: number;
+  distance: number;
+  estimated_delivery_time: number; // minutes
+  compatibility_score: number; // 0-100
+  is_preferred_shopper: boolean;
+  subscription_tier: SubscriptionTier | null;
+  reasons: string[]; // Why this shopper was matched
+}
+
+export class ServiceCreditDto {
+  @IsString()
+  reason: string;
+
+  @IsNumber()
+  @Min(1)
+  amount: number;
 
   @IsOptional()
-  @IsString({ each: true })
-  blocked_shopper_ids?: string[];
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  order_id?: string;
+
+  @IsOptional()
+  metadata?: Record<string, any>;
+}
+
+export class ServiceCreditResponseDto {
+  id: string;
+  user_id: string;
+  amount: number;
+  reason: string;
+  description?: string;
+  order_id?: string;
+  created_at: Date;
+  expires_at?: Date;
+  used_at?: Date;
+}
+
+// Subscription tier configuration
+export interface SubscriptionTierConfig {
+  name: string;
+  price_monthly: number;
+  price_yearly: number;
+  orders_per_month: number;
+  priority_orders_per_month: number;
+  delivery_fee_discount: number; // percentage
+  priority_matching: boolean;
+  guaranteed_time_slots: boolean;
+  dedicated_support: boolean;
+  service_credits_on_delay: number;
+  max_concurrent_orders: number;
+  features: string[];
+}
+
+export class SubscriptionUsageDto {
+  orders_this_period: number;
+  orders_limit: number;
+  priority_orders_used: number;
+  priority_orders_limit: number;
+  service_credits_balance: number;
+  next_billing_date: Date;
+  days_until_renewal: number;
+}
+
+export class UpgradeSubscriptionDto {
+  @IsEnum(SubscriptionTier)
+  new_tier: SubscriptionTier;
+
+  @IsOptional()
+  @IsString()
+  payment_method_id?: string;
 
   @IsOptional()
   @IsBoolean()
-  allow_new_shoppers?: boolean;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(60)
-  max_matching_time_minutes?: number;
+  prorate?: boolean;
 }
 
-export class TimeSlotGuaranteeDto {
-  @IsDateString()
-  requested_date: string;
-
+export class CancelSubscriptionDto {
   @IsString()
-  time_slot: string; // e.g., "09:00-11:00"
+  reason: string;
 
   @IsOptional()
   @IsString()
-  special_instructions?: string;
-}
+  feedback?: string;
 
-export class SubscriptionStatsDto {
-  total_subscribers: number;
-  subscribers_by_tier: Record<SubscriptionTier, number>;
-  monthly_revenue: number;
-  churn_rate: number;
-  average_subscription_duration: number;
-  service_credits_issued: number;
-  service_credits_used: number;
+  @IsOptional()
+  @IsBoolean()
+  cancel_immediately?: boolean; // If false, cancel at period end
 }

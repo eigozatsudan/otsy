@@ -1,53 +1,55 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { SubscriptionService } from '../subscriptions/subscription.service';
 import { 
-  SubscriptionTier, 
-  ShopperPreferenceDto, 
-  ShopperRatingDto, 
-  MatchingPreferencesDto,
-  TimeSlotGuaranteeDto 
+  MatchingCriteriaDto, 
+  MatchingResultDto, 
+  SubscriptionTier,
+  DeliveryPriority,
+  TimeSlotPreference,
+  ShopperPreferenceDto,
+  ShopperRatingDto
 } from '../subscriptions/dto/subscription.dto';
-import { OrderStatus } from '../orders/dto/order.dto';
 
-interface MatchingScore {
-  shopperId: string;
-  score: number;
-  factors: {
-    distance: number;
-    rating: number;
-    availability: number;
-    preference: number;
-    subscription: number;
-    experience: number;
-  };
-}
-
-interface ShopperAvailability {
-  shopperId: string;
-  isAvailable: boolean;
-  currentOrders: number;
-  maxOrders: number;
-  workingHours: boolean;
+interface ShopperProfile {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  location: { lat: number; lng: number };
+  preferences: any;
+  rating: number;
+  total_orders: number;
+  success_rate: number;
+  avg_delivery_time: number;
+  is_online: boolean;
+  current_orders: number;
+  subscription_tier: SubscriptionTier | null;
+  last_active: Date;
 }
 
 @Injectable()
 export class MatchingService {
   private readonly logger = new Logger(MatchingService.name);
 
-  constructor(
-    private prisma: PrismaService,
-    private subscriptionService: SubscriptionService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async findBestShopper(orderId: string): Promise<string | null> {
+  async findBestShoppers(
+    orderId: string,
+    criteria: MatchingCriteriaDto,
+    limit = 10
+  ): Promise<MatchingResultDto[]> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
         user: {
           include: {
-            subscription: true,
-            matching_preferences: true,
+            subscription: {
+              where: { status: 'active' },
+              orderBy: { created_at: 'desc' },
+              take: 1,
+            },
           },
         },
         items: true,
@@ -58,427 +60,521 @@ export class MatchingService {
       throw new Error('Order not found');
     }
 
-    // Get user's subscription benefits
-    const subscription = await this.subscriptionService.getUserSubscription(order.user_id);
-    const hasPriorityMatching = subscription.benefits.priority_matching;
-
     // Get available shoppers
-    const availableShoppers = await this.getAvailableShoppers(order);
+    const availableShoppers = await this.getAvailableShoppers(criteria);
     
-    if (availableShoppers.length === 0) {
-      this.logger.warn(`No available shoppers found for order ${orderId}`);
-      return null;
-    }
-
-    // Calculate matching scores
-    const matchingScores = await Promise.all(
-      availableShoppers.map(shopper => this.calculateMatchingScore(order, shopper, hasPriorityMatching))
+    // Calculate compatibility scores
+    const scoredShoppers = await Promise.all(
+      availableShoppers.map(async (shopper) => {
+        const score = await this.calculateCompatibilityScore(order, shopper, criteria);
+        return {
+          shopper,
+          score,
+        };
+      })
     );
 
-    // Sort by score (highest first)
-    matchingScores.sort((a, b) => b.score - a.score);
+    // Sort by score and apply subscription-based prioritization
+    const prioritizedShoppers = this.applySubscriptionPriority(
+      scoredShoppers,
+      order.user.subscription[0]?.tier as SubscriptionTier
+    );
 
-    // Log matching results
-    this.logger.log(`Matching results for order ${orderId}:`, {
-      topShoppers: matchingScores.slice(0, 3).map(s => ({
-        shopperId: s.shopperId,
-        score: s.score,
-        factors: s.factors,
-      })),
-    });
-
-    // Return best match
-    const bestMatch = matchingScores[0];
-    
-    // Create matching record
-    await this.prisma.orderMatching.create({
-      data: {
-        order_id: orderId,
-        shopper_id: bestMatch.shopperId,
-        matching_score: bestMatch.score,
-        matching_factors: bestMatch.factors,
-        matched_at: new Date(),
-      },
-    });
-
-    return bestMatch.shopperId;
+    // Format results
+    return prioritizedShoppers
+      .slice(0, limit)
+      .map(({ shopper, score }) => this.formatMatchingResult(shopper, score, order));
   }
 
-  private async getAvailableShoppers(order: any): Promise<any[]> {
-    const currentTime = new Date();
-    const dayOfWeek = currentTime.toLocaleLowerCase().slice(0, 3); // mon, tue, etc.
-
-    // Base query for active shoppers
-    const shoppers = await this.prisma.user.findMany({
+  private async getAvailableShoppers(criteria: MatchingCriteriaDto): Promise<ShopperProfile[]> {
+    const baseQuery = {
       where: {
         role: 'shopper',
-        status: 'active',
         shopper_profile: {
           is_not: null,
+          status: 'approved',
         },
       },
       include: {
-        shopper_profile: true,
-        shopper_preferences: true,
-        shopper_ratings: {
-          orderBy: { created_at: 'desc' },
-          take: 50, // Recent ratings for average calculation
-        },
-        orders_as_shopper: {
-          where: {
-            status: { in: ['ACCEPTED', 'SHOPPING', 'RECEIPT_PENDING'] },
+        shopper_profile: {
+          include: {
+            preferences: true,
+            ratings: {
+              orderBy: { created_at: 'desc' },
+              take: 50, // Last 50 ratings for average calculation
+            },
           },
         },
+        subscription: {
+          where: { status: 'active' },
+          orderBy: { created_at: 'desc' },
+          take: 1,
+        },
       },
-    });
+    };
 
-    // Filter by availability
-    const availableShoppers = [];
+    // Add filters based on criteria
+    if (criteria.min_shopper_rating) {
+      // This would need to be calculated in application logic since it's an aggregate
+    }
+
+    if (criteria.max_distance) {
+      // Geographic filtering would be done in application logic with coordinates
+    }
+
+    const shoppers = await this.prisma.user.findMany(baseQuery);
+
+    // Filter and transform to ShopperProfile
+    const profiles: ShopperProfile[] = [];
 
     for (const shopper of shoppers) {
-      const availability = await this.checkShopperAvailability(shopper, order, currentTime);
-      
-      if (availability.isAvailable) {
-        availableShoppers.push({
-          ...shopper,
-          availability,
-        });
+      if (!shopper.shopper_profile) continue;
+
+      // Calculate average rating
+      const ratings = shopper.shopper_profile.ratings;
+      const avgRating = ratings.length > 0 
+        ? ratings.reduce((sum, r) => sum + r.overall_rating, 0) / ratings.length 
+        : 0;
+
+      // Apply minimum rating filter
+      if (criteria.min_shopper_rating && avgRating < criteria.min_shopper_rating) {
+        continue;
       }
+
+      // Check if shopper is available (not at max concurrent orders)
+      const currentOrders = await this.prisma.order.count({
+        where: {
+          shopper_id: shopper.id,
+          status: { in: ['accepted', 'shopping', 'enroute'] },
+        },
+      });
+
+      const maxConcurrentOrders = shopper.shopper_profile.preferences?.max_concurrent_orders || 3;
+      if (currentOrders >= maxConcurrentOrders) {
+        continue;
+      }
+
+      // Calculate success rate
+      const totalOrders = await this.prisma.order.count({
+        where: { shopper_id: shopper.id, status: 'delivered' },
+      });
+
+      const successfulOrders = await this.prisma.order.count({
+        where: { 
+          shopper_id: shopper.id, 
+          status: 'delivered',
+          // Add criteria for successful delivery (no complaints, on time, etc.)
+        },
+      });
+
+      const successRate = totalOrders > 0 ? (successfulOrders / totalOrders) * 100 : 0;
+
+      // Calculate average delivery time
+      const avgDeliveryTime = await this.calculateAverageDeliveryTime(shopper.id);
+
+      profiles.push({
+        id: shopper.shopper_profile.id,
+        user_id: shopper.id,
+        first_name: shopper.first_name,
+        last_name: shopper.last_name,
+        email: shopper.email,
+        phone: shopper.phone,
+        location: {
+          lat: shopper.shopper_profile.location_lat || 0,
+          lng: shopper.shopper_profile.location_lng || 0,
+        },
+        preferences: shopper.shopper_profile.preferences,
+        rating: avgRating,
+        total_orders: totalOrders,
+        success_rate: successRate,
+        avg_delivery_time: avgDeliveryTime,
+        is_online: this.isShopperOnline(shopper.last_active_at),
+        current_orders: currentOrders,
+        subscription_tier: shopper.subscription[0]?.tier as SubscriptionTier || null,
+        last_active: shopper.last_active_at,
+      });
     }
 
-    return availableShoppers;
+    return profiles;
   }
 
-  private async checkShopperAvailability(
-    shopper: any, 
-    order: any, 
-    currentTime: Date
-  ): Promise<ShopperAvailability> {
-    const preferences = shopper.shopper_preferences;
-    const currentOrders = shopper.orders_as_shopper.length;
-    const maxOrders = preferences?.max_concurrent_orders || 3;
+  private async calculateCompatibilityScore(
+    order: any,
+    shopper: ShopperProfile,
+    criteria: MatchingCriteriaDto
+  ): Promise<number> {
+    let score = 0;
+    const factors = [];
 
-    // Check concurrent order limit
-    if (currentOrders >= maxOrders) {
-      return {
-        shopperId: shopper.id,
-        isAvailable: false,
-        currentOrders,
-        maxOrders,
-        workingHours: false,
-      };
-    }
+    // Base score from shopper rating (0-25 points)
+    const ratingScore = (shopper.rating / 5) * 25;
+    score += ratingScore;
+    factors.push(`Rating: ${ratingScore.toFixed(1)}`);
 
-    // Check working hours
-    const dayOfWeek = currentTime.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-    const workingHours = preferences?.working_hours?.[dayOfWeek];
+    // Success rate (0-20 points)
+    const successScore = (shopper.success_rate / 100) * 20;
+    score += successScore;
+    factors.push(`Success rate: ${successScore.toFixed(1)}`);
+
+    // Distance factor (0-20 points, closer is better)
+    const distance = this.calculateDistance(
+      order.delivery_lat || 35.6762, // Default to Tokyo
+      order.delivery_lng || 139.6503,
+      shopper.location.lat,
+      shopper.location.lng
+    );
+
+    const maxDistance = criteria.max_distance || 20;
+    const distanceScore = Math.max(0, 20 - (distance / maxDistance) * 20);
+    score += distanceScore;
+    factors.push(`Distance: ${distanceScore.toFixed(1)}`);
+
+    // Time slot compatibility (0-15 points)
+    const timeSlotScore = this.calculateTimeSlotCompatibility(order, shopper, criteria);
+    score += timeSlotScore;
+    factors.push(`Time slot: ${timeSlotScore.toFixed(1)}`);
+
+    // Store type preference (0-10 points)
+    const storeTypeScore = this.calculateStoreTypeCompatibility(order, shopper);
+    score += storeTypeScore;
+    factors.push(`Store type: ${storeTypeScore.toFixed(1)}`);
+
+    // Order value compatibility (0-10 points)
+    const orderValueScore = this.calculateOrderValueCompatibility(order, shopper);
+    score += orderValueScore;
+    factors.push(`Order value: ${orderValueScore.toFixed(1)}`);
+
+    // Online status bonus (0-5 points)
+    const onlineBonus = shopper.is_online ? 5 : 0;
+    score += onlineBonus;
+    if (onlineBonus > 0) factors.push(`Online bonus: ${onlineBonus}`);
+
+    // Low current orders bonus (0-5 points)
+    const availabilityBonus = Math.max(0, 5 - shopper.current_orders);
+    score += availabilityBonus;
+    factors.push(`Availability: ${availabilityBonus}`);
+
+    // Store the factors for debugging
+    (shopper as any).scoringFactors = factors;
+
+    return Math.min(100, score); // Cap at 100
+  }
+
+  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLng = this.toRadians(lng2 - lng1);
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+  }
+
+  private calculateTimeSlotCompatibility(order: any, shopper: ShopperProfile, criteria: MatchingCriteriaDto): number {
+    const orderTimeSlot = this.getTimeSlotFromDate(order.delivery_date);
+    const preferredTimeSlot = criteria.preferred_time_slot || orderTimeSlot;
     
-    let isInWorkingHours = true;
-    if (workingHours) {
-      const currentHour = currentTime.getHours();
-      const currentMinute = currentTime.getMinutes();
-      const currentTimeMinutes = currentHour * 60 + currentMinute;
+    const shopperTimeSlots = shopper.preferences?.available_time_slots || [TimeSlotPreference.ANYTIME];
+    
+    if (shopperTimeSlots.includes(TimeSlotPreference.ANYTIME) || 
+        shopperTimeSlots.includes(preferredTimeSlot)) {
+      return 15;
+    }
+    
+    return 0;
+  }
 
-      const [startHour, startMinute] = workingHours.start.split(':').map(Number);
-      const [endHour, endMinute] = workingHours.end.split(':').map(Number);
+  private getTimeSlotFromDate(date: Date): TimeSlotPreference {
+    const hour = date.getHours();
+    if (hour >= 6 && hour < 12) return TimeSlotPreference.MORNING;
+    if (hour >= 12 && hour < 18) return TimeSlotPreference.AFTERNOON;
+    if (hour >= 18 && hour < 24) return TimeSlotPreference.EVENING;
+    return TimeSlotPreference.ANYTIME;
+  }
+
+  private calculateStoreTypeCompatibility(order: any, shopper: ShopperProfile): number {
+    const orderStoreTypes = this.inferStoreTypesFromItems(order.items);
+    const shopperStoreTypes = shopper.preferences?.preferred_store_types || [];
+    
+    if (shopperStoreTypes.length === 0) return 5; // No preference = neutral
+    
+    const matchingTypes = orderStoreTypes.filter(type => shopperStoreTypes.includes(type));
+    return (matchingTypes.length / orderStoreTypes.length) * 10;
+  }
+
+  private inferStoreTypesFromItems(items: any[]): string[] {
+    const storeTypes = new Set<string>();
+    
+    for (const item of items) {
+      const itemName = item.name.toLowerCase();
       
-      const startTimeMinutes = startHour * 60 + startMinute;
-      const endTimeMinutes = endHour * 60 + endMinute;
-
-      isInWorkingHours = currentTimeMinutes >= startTimeMinutes && currentTimeMinutes <= endTimeMinutes;
+      if (itemName.includes('薬') || itemName.includes('medicine')) {
+        storeTypes.add('pharmacy');
+      } else if (itemName.includes('パン') || itemName.includes('bread')) {
+        storeTypes.add('bakery');
+      } else if (itemName.includes('肉') || itemName.includes('魚') || itemName.includes('野菜')) {
+        storeTypes.add('supermarket');
+      } else {
+        storeTypes.add('convenience');
+      }
     }
-
-    // Check distance (if location data available)
-    const maxDistance = preferences?.max_distance_km || 50;
-    // TODO: Implement actual distance calculation based on order delivery address
-
-    // Check order value preference
-    const minOrderValue = preferences?.min_order_value || 0;
-    const orderValue = order.estimate_amount;
     
-    if (orderValue < minOrderValue) {
-      return {
-        shopperId: shopper.id,
-        isAvailable: false,
-        currentOrders,
-        maxOrders,
-        workingHours: isInWorkingHours,
-      };
+    return Array.from(storeTypes);
+  }
+
+  private calculateOrderValueCompatibility(order: any, shopper: ShopperProfile): number {
+    const orderValue = order.estimate_amount;
+    const minValue = shopper.preferences?.min_order_value || 0;
+    const maxValue = shopper.preferences?.max_order_value || 100000;
+    
+    if (orderValue >= minValue && orderValue <= maxValue) {
+      return 10;
     }
+    
+    if (orderValue < minValue) {
+      return Math.max(0, 10 - ((minValue - orderValue) / minValue) * 10);
+    }
+    
+    if (orderValue > maxValue) {
+      return Math.max(0, 10 - ((orderValue - maxValue) / orderValue) * 10);
+    }
+    
+    return 0;
+  }
+
+  private isShopperOnline(lastActive: Date | null): boolean {
+    if (!lastActive) return false;
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return lastActive > fiveMinutesAgo;
+  }
+
+  private async calculateAverageDeliveryTime(shopperId: string): Promise<number> {
+    const deliveredOrders = await this.prisma.order.findMany({
+      where: {
+        shopper_id: shopperId,
+        status: 'delivered',
+        delivered_at: { not: null },
+      },
+      select: {
+        accepted_at: true,
+        delivered_at: true,
+      },
+      take: 20, // Last 20 orders
+    });
+
+    if (deliveredOrders.length === 0) return 0;
+
+    const totalTime = deliveredOrders.reduce((sum, order) => {
+      if (order.accepted_at && order.delivered_at) {
+        return sum + (order.delivered_at.getTime() - order.accepted_at.getTime());
+      }
+      return sum;
+    }, 0);
+
+    return totalTime / deliveredOrders.length / (1000 * 60); // Convert to minutes
+  }
+
+  private applySubscriptionPriority(
+    scoredShoppers: Array<{ shopper: ShopperProfile; score: number }>,
+    userSubscriptionTier?: SubscriptionTier
+  ): Array<{ shopper: ShopperProfile; score: number }> {
+    return scoredShoppers.sort((a, b) => {
+      // VIP and Premium users get priority matching
+      if (userSubscriptionTier === SubscriptionTier.VIP || userSubscriptionTier === SubscriptionTier.PREMIUM) {
+        // Prefer shoppers with subscriptions
+        const aHasSubscription = a.shopper.subscription_tier !== null;
+        const bHasSubscription = b.shopper.subscription_tier !== null;
+        
+        if (aHasSubscription && !bHasSubscription) return -1;
+        if (!aHasSubscription && bHasSubscription) return 1;
+      }
+      
+      // Then sort by compatibility score
+      return b.score - a.score;
+    });
+  }
+
+  private formatMatchingResult(shopper: ShopperProfile, score: number, order: any): MatchingResultDto {
+    const distance = this.calculateDistance(
+      order.delivery_lat || 35.6762,
+      order.delivery_lng || 139.6503,
+      shopper.location.lat,
+      shopper.location.lng
+    );
+
+    const estimatedDeliveryTime = this.estimateDeliveryTime(distance, shopper.avg_delivery_time);
 
     return {
-      shopperId: shopper.id,
-      isAvailable: isInWorkingHours,
-      currentOrders,
-      maxOrders,
-      workingHours: isInWorkingHours,
+      shopper_id: shopper.user_id,
+      shopper_name: `${shopper.first_name} ${shopper.last_name}`,
+      shopper_rating: shopper.rating,
+      distance: Math.round(distance * 10) / 10, // Round to 1 decimal
+      estimated_delivery_time: estimatedDeliveryTime,
+      compatibility_score: Math.round(score),
+      is_preferred_shopper: shopper.subscription_tier !== null,
+      subscription_tier: shopper.subscription_tier,
+      reasons: (shopper as any).scoringFactors || [],
     };
   }
 
-  private async calculateMatchingScore(
-    order: any, 
-    shopper: any, 
-    hasPriorityMatching: boolean
-  ): Promise<MatchingScore> {
-    const factors = {
-      distance: 0,
-      rating: 0,
-      availability: 0,
-      preference: 0,
-      subscription: 0,
-      experience: 0,
-    };
-
-    // Distance factor (0-25 points)
-    // TODO: Implement actual distance calculation
-    factors.distance = 20; // Placeholder
-
-    // Rating factor (0-25 points)
-    const ratings = shopper.shopper_ratings;
-    if (ratings.length > 0) {
-      const avgRating = ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length;
-      factors.rating = (avgRating / 5) * 25;
-    } else {
-      factors.rating = 15; // Default for new shoppers
+  private estimateDeliveryTime(distance: number, avgDeliveryTime: number): number {
+    // Base time calculation: shopping time + travel time
+    const shoppingTime = 30; // Base shopping time in minutes
+    const travelTime = distance * 3; // 3 minutes per km (rough estimate)
+    const baseEstimate = shoppingTime + travelTime;
+    
+    // Adjust based on shopper's historical performance
+    if (avgDeliveryTime > 0) {
+      return Math.round((baseEstimate + avgDeliveryTime) / 2);
     }
+    
+    return Math.round(baseEstimate);
+  }
 
-    // Availability factor (0-20 points)
-    const availability = shopper.availability;
-    const availabilityRatio = 1 - (availability.currentOrders / availability.maxOrders);
-    factors.availability = availabilityRatio * 20;
-
-    // Preference factor (0-15 points)
-    factors.preference = await this.calculatePreferenceScore(order, shopper);
-
-    // Subscription factor (0-10 points)
-    if (hasPriorityMatching) {
-      const shopperSubscription = await this.subscriptionService.getUserSubscription(shopper.id);
-      if (shopperSubscription.benefits.premium_shoppers) {
-        factors.subscription = 10;
-      } else {
-        factors.subscription = 5;
-      }
-    }
-
-    // Experience factor (0-5 points)
-    const completedOrders = await this.prisma.order.count({
-      where: {
-        shopper_id: shopper.id,
-        status: OrderStatus.DELIVERED,
+  // Shopper preference management
+  async updateShopperPreferences(shopperId: string, preferences: ShopperPreferenceDto): Promise<void> {
+    await this.prisma.shopperPreferences.upsert({
+      where: { shopper_id: shopperId },
+      update: {
+        available_time_slots: preferences.available_time_slots,
+        preferred_store_types: preferences.preferred_store_types,
+        max_delivery_distance: preferences.max_delivery_distance,
+        max_concurrent_orders: preferences.max_concurrent_orders,
+        accepts_urgent_orders: preferences.accepts_urgent_orders,
+        accepts_large_orders: preferences.accepts_large_orders,
+        min_order_value: preferences.min_order_value,
+        max_order_value: preferences.max_order_value,
+        updated_at: new Date(),
+      },
+      create: {
+        shopper_id: shopperId,
+        available_time_slots: preferences.available_time_slots || [TimeSlotPreference.ANYTIME],
+        preferred_store_types: preferences.preferred_store_types || [],
+        max_delivery_distance: preferences.max_delivery_distance || 20,
+        max_concurrent_orders: preferences.max_concurrent_orders || 3,
+        accepts_urgent_orders: preferences.accepts_urgent_orders || false,
+        accepts_large_orders: preferences.accepts_large_orders || true,
+        min_order_value: preferences.min_order_value || 0,
+        max_order_value: preferences.max_order_value || 50000,
       },
     });
-    factors.experience = Math.min(completedOrders / 10, 1) * 5;
-
-    const totalScore = Object.values(factors).reduce((sum, score) => sum + score, 0);
-
-    return {
-      shopperId: shopper.id,
-      score: totalScore,
-      factors,
-    };
   }
 
-  private async calculatePreferenceScore(order: any, shopper: any): Promise<number> {
-    const preferences = shopper.shopper_preferences;
-    let score = 10; // Base score
-
-    if (!preferences) return score;
-
-    // Check excluded categories
-    if (preferences.excluded_categories?.length > 0) {
-      const orderCategories = order.items.map((item: any) => item.category).filter(Boolean);
-      const hasExcludedCategory = orderCategories.some((cat: string) => 
-        preferences.excluded_categories.includes(cat)
-      );
-      
-      if (hasExcludedCategory) {
-        score -= 5;
-      }
-    }
-
-    // Check preferred store chains
-    if (preferences.preferred_store_chains?.length > 0) {
-      // TODO: Implement store chain matching based on order items
-      score += 2;
-    }
-
-    // Check premium order acceptance
-    if (order.estimate_amount > 5000 && !preferences.accepts_premium_orders) {
-      score -= 3;
-    }
-
-    // Check bulk order acceptance
-    const itemCount = order.items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
-    if (itemCount > 10 && !preferences.accepts_bulk_orders) {
-      score -= 3;
-    }
-
-    return Math.max(score, 0);
-  }
-
-  // Shopper Preference Management
-  async updateShopperPreferences(shopperId: string, preferences: ShopperPreferenceDto) {
-    const existingPreferences = await this.prisma.shopperPreferences.findUnique({
-      where: { shopper_id: shopperId },
-    });
-
-    if (existingPreferences) {
-      return this.prisma.shopperPreferences.update({
-        where: { shopper_id: shopperId },
-        data: {
-          ...preferences,
-          updated_at: new Date(),
-        },
-      });
-    } else {
-      return this.prisma.shopperPreferences.create({
-        data: {
-          shopper_id: shopperId,
-          ...preferences,
-        },
-      });
-    }
-  }
-
-  async getShopperPreferences(shopperId: string) {
-    return this.prisma.shopperPreferences.findUnique({
-      where: { shopper_id: shopperId },
-    });
-  }
-
-  // Rating System
-  async rateShopperPerformance(userId: string, ratingDto: ShopperRatingDto) {
-    // Verify user can rate this order
+  async addShopperRating(orderId: string, userId: string, rating: ShopperRatingDto): Promise<void> {
     const order = await this.prisma.order.findUnique({
-      where: { id: ratingDto.order_id },
+      where: { id: orderId },
+      select: { user_id: true, shopper_id: true, status: true },
     });
 
     if (!order || order.user_id !== userId) {
-      throw new Error('Not authorized to rate this order');
+      throw new Error('Order not found or access denied');
     }
 
-    if (order.status !== OrderStatus.DELIVERED) {
+    if (order.status !== 'delivered') {
       throw new Error('Can only rate completed orders');
     }
 
-    // Check if already rated
-    const existingRating = await this.prisma.shopperRating.findFirst({
-      where: {
-        order_id: ratingDto.order_id,
-        user_id: userId,
-      },
-    });
-
-    if (existingRating) {
-      throw new Error('Order already rated');
+    if (!order.shopper_id) {
+      throw new Error('No shopper assigned to this order');
     }
 
-    const rating = await this.prisma.shopperRating.create({
+    await this.prisma.shopperRating.create({
       data: {
-        order_id: ratingDto.order_id,
+        order_id: orderId,
+        shopper_id: order.shopper_id,
         user_id: userId,
-        shopper_id: order.shopper_id!,
-        rating: ratingDto.rating,
-        comment: ratingDto.comment,
-        would_recommend: ratingDto.would_recommend,
-        rating_categories: ratingDto.rating_categories,
-      },
-    });
-
-    // Update shopper's average rating
-    await this.updateShopperAverageRating(order.shopper_id!);
-
-    return rating;
-  }
-
-  private async updateShopperAverageRating(shopperId: string) {
-    const ratings = await this.prisma.shopperRating.findMany({
-      where: { shopper_id: shopperId },
-    });
-
-    if (ratings.length === 0) return;
-
-    const avgRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
-    const totalRatings = ratings.length;
-
-    await this.prisma.shopperProfile.update({
-      where: { user_id: shopperId },
-      data: {
-        average_rating: avgRating,
-        total_ratings: totalRatings,
+        overall_rating: rating.overall_rating,
+        communication_rating: rating.communication_rating,
+        accuracy_rating: rating.accuracy_rating,
+        timeliness_rating: rating.timeliness_rating,
+        comment: rating.comment,
+        tags: rating.tags || [],
       },
     });
   }
 
-  // Time Slot Guarantees
-  async requestTimeSlotGuarantee(userId: string, guaranteeDto: TimeSlotGuaranteeDto) {
-    const subscription = await this.subscriptionService.getUserSubscription(userId);
-    
-    if (!subscription.benefits.guaranteed_time_slots) {
-      throw new Error('Time slot guarantees not available for your subscription tier');
-    }
-
-    // Check monthly usage
-    const currentMonth = new Date();
-    currentMonth.setDate(1);
-    currentMonth.setHours(0, 0, 0, 0);
-
-    const usedSlots = await this.prisma.timeSlotGuarantee.count({
-      where: {
-        user_id: userId,
-        created_at: { gte: currentMonth },
-        status: { in: ['ACTIVE', 'FULFILLED'] },
-      },
-    });
-
-    if (usedSlots >= subscription.benefits.guaranteed_time_slots) {
-      throw new Error('Monthly time slot guarantee limit exceeded');
-    }
-
-    const guarantee = await this.prisma.timeSlotGuarantee.create({
-      data: {
-        user_id: userId,
-        requested_date: new Date(guaranteeDto.requested_date),
-        time_slot: guaranteeDto.time_slot,
-        special_instructions: guaranteeDto.special_instructions,
-        status: 'ACTIVE',
-      },
-    });
-
-    return guarantee;
-  }
-
-  async getMatchingStats() {
+  // Analytics and reporting
+  async getMatchingStats(): Promise<any> {
     const [
       totalMatches,
       successfulMatches,
       avgMatchingTime,
       topShoppers,
     ] = await Promise.all([
-      this.prisma.orderMatching.count(),
-      this.prisma.orderMatching.count({
-        where: {
-          order: { status: OrderStatus.DELIVERED },
-        },
-      }),
-      this.prisma.orderMatching.aggregate({
-        _avg: { matching_score: true },
-      }),
-      this.prisma.shopperRating.groupBy({
-        by: ['shopper_id'],
-        _avg: { rating: true },
-        _count: { id: true },
-        orderBy: { _avg: { rating: 'desc' } },
-        take: 10,
-      }),
+      this.prisma.order.count({ where: { shopper_id: { not: null } } }),
+      this.prisma.order.count({ where: { status: 'delivered' } }),
+      this.calculateAverageMatchingTime(),
+      this.getTopShoppers(),
     ]);
 
     return {
       total_matches: totalMatches,
       successful_matches: successfulMatches,
       success_rate: totalMatches > 0 ? (successfulMatches / totalMatches) * 100 : 0,
-      avg_matching_score: avgMatchingTime._avg.matching_score || 0,
+      avg_matching_time: avgMatchingTime,
       top_shoppers: topShoppers,
     };
+  }
+
+  private async calculateAverageMatchingTime(): Promise<number> {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        created_at: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, // Last 30 days
+        accepted_at: { not: null },
+      },
+      select: { created_at: true, accepted_at: true },
+      take: 100,
+    });
+
+    if (orders.length === 0) return 0;
+
+    const totalTime = orders.reduce((sum, order) => {
+      return sum + (order.accepted_at!.getTime() - order.created_at.getTime());
+    }, 0);
+
+    return totalTime / orders.length / (1000 * 60); // Convert to minutes
+  }
+
+  private async getTopShoppers(): Promise<any[]> {
+    const shoppers = await this.prisma.user.findMany({
+      where: { role: 'shopper' },
+      include: {
+        _count: {
+          select: {
+            shopper_orders: {
+              where: { status: 'delivered' },
+            },
+          },
+        },
+        shopper_ratings: {
+          select: { overall_rating: true },
+        },
+      },
+      orderBy: {
+        shopper_orders: {
+          _count: 'desc',
+        },
+      },
+      take: 10,
+    });
+
+    return shoppers.map(shopper => {
+      const avgRating = shopper.shopper_ratings.length > 0
+        ? shopper.shopper_ratings.reduce((sum, r) => sum + r.overall_rating, 0) / shopper.shopper_ratings.length
+        : 0;
+
+      return {
+        id: shopper.id,
+        name: `${shopper.first_name} ${shopper.last_name}`,
+        total_orders: shopper._count.shopper_orders,
+        avg_rating: Math.round(avgRating * 10) / 10,
+      };
+    });
   }
 }
