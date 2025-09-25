@@ -10,6 +10,7 @@ import { KycModule } from './kyc/kyc.module';
 import { StorageModule } from './storage/storage.module';
 import { LlmModule } from './llm/llm.module';
 import { ReceiptsModule } from './receipts/receipts.module';
+import { PaymentsModule } from './payments/payments.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -29,6 +30,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     StorageModule,
     LlmModule,
     ReceiptsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [

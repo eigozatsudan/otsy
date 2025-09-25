@@ -1,17 +1,25 @@
 import { NestFactory } from '@nestjs/core';
-// import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { json } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Required for Stripe webhooks
+  });
+
+  // Configure raw body for Stripe webhooks
+  app.use('/v1/payments/webhook', json({ verify: (req: any, res, buf) => {
+    req.rawBody = buf;
+  }}));
   
-  // Global validation pipe (disabled until class-validator is installed)
-  // app.useGlobalPipes(new ValidationPipe({
-  //   whitelist: true,
-  //   forbidNonWhitelisted: true,
-  //   transform: true,
-  // }));
+  // Global validation pipe
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
 
   // CORS configuration
   app.enableCors({
@@ -29,6 +37,7 @@ async function bootstrap() {
 
   await app.listen(port);
   console.log(`🚀 API server running on http://localhost:${port}/v1`);
+  console.log(`💳 Stripe webhooks: http://localhost:${port}/v1/payments/webhooks/stripe`);
 }
 
 bootstrap();

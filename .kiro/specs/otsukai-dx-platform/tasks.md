@@ -59,7 +59,7 @@
   - Write tests for receipt workflow and image handling
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-- [ ] 8. Implement Stripe payment integration
+- [x] 8. Implement Stripe payment integration
   - Set up Stripe Payment Intents with manual capture
   - Create payment authorization for 120% of estimated amount
   - Implement payment capture after receipt approval

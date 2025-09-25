@@ -122,6 +122,23 @@ export class OrdersController {
     return this.ordersService.cancelOrder(user.id, id, body.reason);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  @Post(':id/authorize-payment')
+  async authorizeOrderPayment(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() body: { payment_method_id?: string }
+  ) {
+    // This would integrate with PaymentsService
+    // For now, return a placeholder
+    return { 
+      message: 'Payment authorization endpoint - integrate with PaymentsService',
+      order_id: id,
+      payment_method_id: body.payment_method_id 
+    };
+  }
+
   // Shopper endpoints
   @UseGuards(RolesGuard)
   @Roles('shopper')
