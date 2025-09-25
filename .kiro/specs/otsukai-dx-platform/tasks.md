@@ -68,7 +68,7 @@
   - Write tests for payment flows and error scenarios
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 9. Create real-time communication system
+- [x] 9. Create real-time communication system
   - Implement WebSocket connections for real-time updates
   - Build chat system between users and shoppers
   - Create push notification system using Web Push API
@@ -77,7 +77,7 @@
   - Write tests for real-time communication features
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 10. Build subscription and priority matching system
+- [-] 10. Build subscription and priority matching system
   - Implement subscription tier management
   - Create priority matching algorithm for subscribers
   - Build shopper preference and rating system

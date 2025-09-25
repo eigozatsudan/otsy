@@ -11,6 +11,10 @@ import { StorageModule } from './storage/storage.module';
 import { LlmModule } from './llm/llm.module';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ChatModule } from './chat/chat.module';
+import { NotificationModule } from './notifications/notification.module';
+import { SubscriptionModule } from './subscriptions/subscription.module';
+import { MatchingModule } from './matching/matching.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -31,6 +35,10 @@ import { RolesGuard } from './auth/guards/roles.guard';
     LlmModule,
     ReceiptsModule,
     PaymentsModule,
+    ChatModule,
+    NotificationModule,
+    SubscriptionModule,
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [
