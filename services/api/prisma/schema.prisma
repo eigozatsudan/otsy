@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  password_hash     String
+  phone             String?
+  subscription_tier String?  @default("basic") // basic, premium
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  // Relations
+  orders            Order[]
+  chat_messages     ChatMessage[]
+  push_subscriptions PushSubscription[]
+
+  @@map("users")
+}
+
+model Shopper {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password_hash String
+  phone       String
+  kyc_status  String   @default("pending") // pending, approved, needs_review, rejected
+  risk_tier   String?  // L0, L1, L2, L-1
+  rating_avg  Float?
+  rating_count Int     @default(0)
+  status      String   @default("active") // active, suspended
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  orders        Order[]
+  receipts      Receipt[]
+  chat_messages ChatMessage[]
+  kyc_documents KycDocument[]
+  push_subscriptions PushSubscription[]
+
+  @@map("shoppers")
+}
+
+model Admin {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password_hash String
+  role       String   @default("support") // support, manager, ops
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  audit_logs OrderAuditLog[]
+
+  @@map("admins")
+}
+
+// Order Management
+model Order {
+  id              String   @id @default(uuid())
+  user_id         String
+  shopper_id      String?
+  status          String   @default("new") // new, accepted, shopping, await_receipt_ok, enroute, delivered, cancelled
+  mode            String   // approve, delegate
+  receipt_check   String   // required, auto
+  estimate_amount Int      // JPY
+  auth_amount     Int?     // JPY
+  deadline_ts     DateTime?
+  priority        Float?
+  address_json    Json
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  user          User           @relation(fields: [user_id], references: [id])
+  shopper       Shopper?       @relation(fields: [shopper_id], references: [id])
+  items         OrderItem[]
+  receipts      Receipt[]
+  payments      Payment[]
+  chat_messages ChatMessage[]
+  audit_logs    OrderAuditLog[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  order_id   String
+  name       String
+  qty        String
+  price_min  Int?    // JPY
+  price_max  Int?    // JPY
+  allow_subs Boolean @default(true)
+  note       String?
+
+  // Relations
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// Communication
+model ChatMessage {
+  id             String   @id @default(uuid())
+  order_id       String
+  sender         String   // user, shopper, system
+  sender_id      String?  // user_id or shopper_id
+  text           String
+  attachment_url String?
+  created_at     DateTime @default(now())
+
+  // Relations
+  order    Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [sender_id], references: [id])
+  shopper  Shopper? @relation(fields: [sender_id], references: [id])
+
+  @@map("chat_messages")
+}
+
+// Financial
+model Payment {
+  id        String   @id @default(uuid())
+  order_id  String
+  stripe_pi String   @unique
+  status    String   // authorized, captured, refunded, failed
+  amount    Int      // JPY
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  order Order @relation(fields: [order_id], references: [id])
+
+  @@map("payments")
+}
+
+model Receipt {
+  id           String   @id @default(uuid())
+  order_id     String
+  shopper_id   String
+  image_url    String
+  submitted_at DateTime @default(now())
+
+  // Relations
+  order   Order   @relation(fields: [order_id], references: [id])
+  shopper Shopper @relation(fields: [shopper_id], references: [id])
+
+  @@map("receipts")
+}
+
+// KYC and Verification
+model KycDocument {
+  id          String   @id @default(uuid())
+  shopper_id  String
+  kind        String   // id_front, id_back, selfie
+  image_url   String
+  status      String   @default("pending") // pending, approved, rejected
+  uploaded_at DateTime @default(now())
+
+  // Relations
+  shopper Shopper @relation(fields: [shopper_id], references: [id])
+
+  @@map("kyc_documents")
+}
+
+// Push Notifications
+model PushSubscription {
+  id         String   @id @default(uuid())
+  user_id    String?
+  shopper_id String?
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  created_at DateTime @default(now())
+
+  // Relations
+  user    User?    @relation(fields: [user_id], references: [id])
+  shopper Shopper? @relation(fields: [shopper_id], references: [id])
+
+  @@map("push_subscriptions")
+}
+
+// Audit and Logging
+model OrderAuditLog {
+  id         String   @id @default(uuid())
+  order_id   String
+  actor_id   String
+  actor_role String   // user, shopper, admin, system
+  action     String   // created, accepted, status_updated, payment_authorized, etc.
+  payload    Json?
+  created_at DateTime @default(now())
+
+  // Relations
+  order Order @relation(fields: [order_id], references: [id])
+  admin Admin? @relation(fields: [actor_id], references: [id])
+
+  @@map("order_audit_logs")
+}

@@ -1,0 +1,35 @@
+{
+  "name": "otsukai-dx",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Otsukai DX - Voice-enabled shopping service platform",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "codegen:types": "pnpm -F @otsukai/types codegen",
+    "install:clean": "rm -rf node_modules */node_modules */*/node_modules && pnpm install",
+    "setup": "pnpm install && pnpm -F @otsukai/api db:generate"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^1.10.12",
+    "turbo": "^1.10.12",
+    "typescript": "^5.2.2",
+    "prettier": "^3.0.3",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

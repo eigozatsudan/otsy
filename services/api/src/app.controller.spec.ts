@@ -1,0 +1,31 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return API info', () => {
+      expect(appController.getHello()).toBe('Otsukai DX API v1.0.0');
+    });
+  });
+
+  describe('health', () => {
+    it('should return health status', () => {
+      const health = appController.getHealth();
+      expect(health.status).toBe('ok');
+      expect(health.service).toBe('otsukai-dx-api');
+      expect(health.timestamp).toBeDefined();
+    });
+  });
+});
