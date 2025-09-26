@@ -97,7 +97,7 @@
   - Write component tests and integration tests
   - _Requirements: 1.1, 1.4, 2.1, 2.2, 3.3, 3.5, 4.1, 4.3, 9.1, 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 12. Build shopper web application
+- [x] 12. Build shopper web application
   - Set up Next.js project with shared UI components
   - Implement shopper onboarding with KYC flow
   - Create order browsing and acceptance interface
