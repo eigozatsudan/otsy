@@ -16,12 +16,15 @@ export default function DashboardLayout({
   const { isAuthenticated, isLoading, user } = useAuthStore();
 
   useEffect(() => {
+    // Only redirect if we're sure the user is not authenticated
+    // and we're not currently loading
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.replace('/auth/login');
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading) {
+  // Show loading while checking auth or if no user data
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -29,7 +32,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />

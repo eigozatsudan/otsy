@@ -28,6 +28,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading, isAuthenticated } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const {
     register,
@@ -39,15 +40,16 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && !hasRedirected) {
+      setHasRedirected(true);
+      router.replace('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, hasRedirected, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
-      router.push('/dashboard');
+      // Redirect will be handled by useEffect when isAuthenticated becomes true
     } catch (error: any) {
       // Error is already handled by the store and toast
       console.error('Login error:', error);

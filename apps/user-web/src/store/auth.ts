@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthStore>()(
           // Ignore errors
         }
 
-        // Clear token from API client
+        // Clear token from API client first
         apiClient.clearToken();
 
         set({
@@ -172,6 +172,12 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const { token } = get();
           if (!token) {
+            // No token, ensure we're logged out
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              isLoading: false 
+            });
             return;
           }
 
@@ -186,6 +192,8 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error) {
           // If check fails, clear auth state
+          console.error('Auth check failed:', error);
+          set({ isLoading: false });
           get().logout();
         }
       },
@@ -206,6 +214,14 @@ export const useAuthStore = create<AuthStore>()(
         // Set token in API client when rehydrating
         if (state?.token) {
           apiClient.setToken(state.token);
+          // Ensure isAuthenticated is true if we have a token
+          if (state.isAuthenticated !== true) {
+            state.isAuthenticated = true;
+          }
+        } else {
+          // No token, ensure we're logged out
+          state.isAuthenticated = false;
+          state.user = null;
         }
       },
     }

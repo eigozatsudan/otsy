@@ -66,10 +66,8 @@ class ApiClient {
         // Handle specific error cases
         if (error.response?.status === 401) {
           this.clearToken();
-          // Redirect to login if not already there
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {
-            window.location.href = '/auth/login';
-          }
+          // Don't automatically redirect - let the auth store handle it
+          // This prevents conflicts with login flow
         } else if (error.response?.status >= 500) {
           toast.error('サーバーエラーが発生しました。しばらく後でお試しください。');
         } else if (error.response?.status >= 400) {

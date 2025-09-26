@@ -20,19 +20,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const { checkAuth, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Check authentication on app start
+    // Check authentication on app start only once
     checkAuth();
+  }, [checkAuth]); // Remove isAuthenticated from dependencies
 
-    // Start token refresh if authenticated
+  useEffect(() => {
+    // Start/stop token refresh based on auth status
     if (isAuthenticated) {
       startTokenRefresh();
+    } else {
+      stopTokenRefresh();
     }
 
     // Cleanup on unmount
     return () => {
       stopTokenRefresh();
     };
-  }, [checkAuth, isAuthenticated]);
+  }, [isAuthenticated]);
 
   return (
     <QueryClientProvider client={queryClient}>
