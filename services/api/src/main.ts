@@ -35,10 +35,11 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get('PORT', 4000);
+  const host = configService.get('HOST', '0.0.0.0');
 
-  await app.listen(port);
-  console.log(`🚀 API server running on http://localhost:${port}/v1`);
-  console.log(`💳 Stripe webhooks: http://localhost:${port}/v1/payments/webhooks/stripe`);
+  await app.listen(port, host);
+  console.log(`🚀 API server running on http://${host}:${port}/v1`);
+  console.log(`💳 Stripe webhooks: http://${host}:${port}/v1/payments/webhooks/stripe`);
 }
 
 bootstrap();
