@@ -17,6 +17,11 @@ model User {
   password_hash     String
   phone             String?
   subscription_tier String?  @default("basic") // basic, premium
+  first_name        String?
+  last_name         String?
+  referral_code     String?  @unique
+  referred_by       String?
+  last_active_at    DateTime?
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
@@ -24,12 +29,18 @@ model User {
   orders            Order[]
   chat_messages     ChatMessage[]
   push_subscriptions PushSubscription[]
+  subscriptions     Subscription[]
+  service_credits   ServiceCredit[]
+  shopper_ratings   ShopperRating[]
+  notification_logs NotificationLog[]
+  notification_preferences NotificationPreferences[]
 
   @@map("users")
 }
 
 model Shopper {
   id          String   @id @default(uuid())
+  user_id     String   @unique
   email       String   @unique
   password_hash String
   phone       String
@@ -38,6 +49,10 @@ model Shopper {
   rating_avg  Float?
   rating_count Int     @default(0)
   status      String   @default("active") // active, suspended
+  is_online   Boolean  @default(false)
+  unavailable_until DateTime?
+  unavailability_reason String?
+  current_orders Int    @default(0)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -47,6 +62,11 @@ model Shopper {
   chat_messages ChatMessage[]
   kyc_documents KycDocument[]
   push_subscriptions PushSubscription[]
+  preferences   ShopperPreferences?
+  ratings       ShopperRating[]
+  order_runs    OrderRun[]
+  notification_logs NotificationLog[]
+  notification_preferences NotificationPreferences[]
 
   @@map("shoppers")
 }
@@ -78,6 +98,9 @@ model Order {
   deadline_ts     DateTime?
   priority        Float?
   address_json    Json
+  notes           String?
+  accepted_at     DateTime?
+  delivered_at    DateTime?
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
@@ -87,8 +110,11 @@ model Order {
   items         OrderItem[]
   receipts      Receipt[]
   payments      Payment[]
+  chats         Chat[]
   chat_messages ChatMessage[]
   audit_logs    OrderAuditLog[]
+  ratings       ShopperRating[]
+  order_runs    OrderRun[]
 
   @@map("orders")
 }
@@ -99,6 +125,9 @@ model OrderItem {
   name       String
   qty        String
   price      Int?    // JPY
+  price_min  Int?    // JPY
+  price_max  Int?    // JPY
+  allow_subs Boolean @default(true)
   notes      String?
   created_at DateTime @default(now())
 
@@ -107,29 +136,38 @@ model OrderItem {
 
   @@map("order_items")
 }
-  price_min  Int?    // JPY
-  price_max  Int?    // JPY
-  allow_subs Boolean @default(true)
-  note       String?
-
-  // Relations
-  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
-
-  @@map("order_items")
-}
 
 // Communication
+model Chat {
+  id         String   @id @default(uuid())
+  order_id   String   @unique
+  status     String   @default("active") // active, closed
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  order    Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@map("chats")
+}
+
 model ChatMessage {
   id             String   @id @default(uuid())
   order_id       String
+  chat_id        String
   sender         String   // user, shopper, system
   sender_id      String?  // user_id or shopper_id
   text           String
   attachment_url String?
+  type           String   @default("text") // text, image, system
+  content        String?
+  read_at        DateTime?
   created_at     DateTime @default(now())
 
   // Relations
   order    Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  chat     Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
   user     User?    @relation(fields: [sender_id], references: [id], map: "chat_messages_user_fkey")
   shopper  Shopper? @relation(fields: [sender_id], references: [id], map: "chat_messages_shopper_fkey")
 
@@ -137,66 +175,11 @@ model ChatMessage {
 }
 
 // Financial
-model Payment {
-  id        String   @id @default(uuid())
-  order_id  String
-  stripe_pi String   @unique
-  status    String   // authorized, captured, refunded, failed
-  amount    Int      // JPY
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
 
-  // Relations
-  order Order @relation(fields: [order_id], references: [id])
-
-  @@map("payments")
-}
-
-model Receipt {
-  id           String   @id @default(uuid())
-  order_id     String
-  shopper_id   String
-  image_url    String
-  submitted_at DateTime @default(now())
-
-  // Relations
-  order   Order   @relation(fields: [order_id], references: [id])
-  shopper Shopper @relation(fields: [shopper_id], references: [id])
-
-  @@map("receipts")
-}
 
 // KYC and Verification
-model KycDocument {
-  id          String   @id @default(uuid())
-  shopper_id  String
-  kind        String   // id_front, id_back, selfie
-  image_url   String
-  status      String   @default("pending") // pending, approved, rejected
-  uploaded_at DateTime @default(now())
-
-  // Relations
-  shopper Shopper @relation(fields: [shopper_id], references: [id])
-
-  @@map("kyc_documents")
-}
 
 // Push Notifications
-model PushSubscription {
-  id         String   @id @default(uuid())
-  user_id    String?
-  shopper_id String?
-  endpoint   String   @unique
-  p256dh     String
-  auth       String
-  created_at DateTime @default(now())
-
-  // Relations
-  user    User?    @relation(fields: [user_id], references: [id])
-  shopper Shopper? @relation(fields: [shopper_id], references: [id])
-
-  @@map("push_subscriptions")
-}
 
 // Audit and Logging
 model OrderAuditLog {
@@ -214,14 +197,35 @@ model OrderAuditLog {
 
   @@map("order_audit_logs")
 }
-// Rec
-eipt Management
+
+// Service Credits
+model ServiceCredit {
+  id         String    @id @default(uuid())
+  user_id    String
+  amount     Int       // JPY
+  reason     String    // referral, promotion, refund, etc.
+  description String?
+  order_id   String?
+  metadata   Json?
+  used_at    DateTime?
+  used_for_order_id String?
+  expires_at DateTime?
+  created_at DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  audit_logs ServiceCreditAuditLog[]
+
+  @@map("service_credits")
+}
+// Receipt Management
 model Receipt {
   id         String   @id @default(uuid())
   order_id   String
   shopper_id String
   image_url  String
   status     String   @default("pending") // pending, approved, rejected
+  submitted_at DateTime @default(now())
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -237,6 +241,7 @@ model Payment {
   id                    String   @id @default(uuid())
   order_id              String
   stripe_payment_intent_id String @unique
+  stripe_pi             String   @unique
   amount                Int      // JPY
   status                String   @default("pending") // pending, authorized, captured, refunded, failed
   created_at            DateTime @default(now())
@@ -249,30 +254,17 @@ model Payment {
 }
 
 // Chat System
-model ChatMessage {
-  id         String   @id @default(uuid())
-  order_id   String
-  user_id    String?
-  shopper_id String?
-  message    String
-  type       String   @default("text") // text, image, location
-  created_at DateTime @default(now())
-
-  // Relations
-  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  user       User?    @relation(fields: [user_id], references: [id])
-  shopper    Shopper? @relation(fields: [shopper_id], references: [id])
-
-  @@map("chat_messages")
-}
 
 // KYC Management
 model KycDocument {
   id          String   @id @default(uuid())
   shopper_id  String
   type        String   // identity, address, bank
+  kind        String   // id_front, id_back, selfie
   file_url    String
+  image_url   String?
   status      String   @default("pending") // pending, approved, rejected
+  uploaded_at DateTime @default(now())
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -290,7 +282,9 @@ model PushSubscription {
   endpoint   String
   p256dh     String
   auth       String
+  device_info Json?
   created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // Relations
   user       User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -300,17 +294,180 @@ model PushSubscription {
 }
 
 // Audit Logging
-model OrderAuditLog {
+
+// Subscription Management
+model Subscription {
+  id              String    @id @default(uuid())
+  user_id         String
+  tier            String    // basic, premium, enterprise
+  status          String    // active, paused, cancelled
+  start_date      DateTime
+  end_date        DateTime?
+  pause_reason    String?
+  resume_date     DateTime?
+  current_period_start DateTime
+  current_period_end   DateTime
+  orders_limit         Int      @default(10)
+  priority_orders_limit Int     @default(1)
+  orders_this_period   Int      @default(0)
+  priority_orders_used Int      @default(0)
+  preferred_time_slots Json?
+  cancellation_reason  String?
+  cancelled_at         DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  audit_logs SubscriptionAuditLog[]
+  usages     SubscriptionUsage[]
+
+  @@map("subscriptions")
+}
+
+// Shopper Preferences
+model ShopperPreferences {
+  id         String   @id @default(uuid())
+  shopper_id String   @unique
+  preferences Json?
+  available_time_slots Json?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  shopper Shopper @relation(fields: [shopper_id], references: [user_id])
+
+  @@map("shopper_preferences")
+}
+
+// Shopper Ratings
+model ShopperRating {
+  id            String   @id @default(uuid())
+  shopper_id    String
+  order_id      String   @unique
+  user_id       String
+  overall_rating Float
+  quality_rating Float?
+  timeliness_rating Float?
+  communication_rating Float?
+  accuracy_rating Float?
+  comment       String?
+  created_at    DateTime @default(now())
+
+  // Relations
+  shopper Shopper @relation(fields: [shopper_id], references: [user_id])
+  order   Order   @relation(fields: [order_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@map("shopper_ratings")
+}
+
+// Order Run (for matching service)
+model OrderRun {
   id         String   @id @default(uuid())
   order_id   String
-  admin_id   String?
-  action     String
-  details    Json?
+  shopper_id String
+  status     String   // active, completed, cancelled
+  rating     Float?
+  payment_amount Int?
+  started_at DateTime @default(now())
+  ended_at   DateTime?
   created_at DateTime @default(now())
 
   // Relations
-  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  admin      Admin?   @relation(fields: [admin_id], references: [id])
+  order   Order   @relation(fields: [order_id], references: [id])
+  shopper Shopper @relation(fields: [shopper_id], references: [user_id])
 
-  @@map("order_audit_logs")
+  @@map("order_runs")
+}
+
+// Notification Log
+model NotificationLog {
+  id         String   @id @default(uuid())
+  user_id    String?
+  shopper_id String?
+  type       String   // push, email, sms
+  title      String
+  body       String
+  payload    Json?
+  sent_at    DateTime @default(now())
+  read_at    DateTime?
+  created_at DateTime @default(now())
+
+  // Relations
+  user    User?    @relation(fields: [user_id], references: [id])
+  shopper Shopper? @relation(fields: [shopper_id], references: [user_id])
+
+  @@map("notification_logs")
+}
+
+// Notification Preferences
+model NotificationPreferences {
+  id         String   @id @default(uuid())
+  user_id    String?  @unique
+  shopper_id String?
+  preferences Json?
+  order_updates Boolean @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user    User?    @relation(fields: [user_id], references: [id])
+  shopper Shopper? @relation(fields: [shopper_id], references: [user_id])
+
+  @@map("notification_preferences")
+}
+
+// Subscription Audit Log
+model SubscriptionAuditLog {
+  id              String   @id @default(uuid())
+  subscription_id String
+  user_id         String?
+  action          String
+  actor_id        String?
+  old_tier        String?
+  new_tier        String?
+  details         Json?
+  payload         Json?
+  created_at      DateTime @default(now())
+
+  // Relations
+  subscription Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+
+  @@map("subscription_audit_logs")
+}
+
+// Service Credit Audit Log
+model ServiceCreditAuditLog {
+  id         String   @id @default(uuid())
+  credit_id  String
+  service_credit_id String?
+  user_id    String?
+  action     String
+  actor_id   String?
+  amount     Int?
+  details    Json?
+  payload    Json?
+  created_at DateTime @default(now())
+
+  // Relations
+  credit ServiceCredit @relation(fields: [credit_id], references: [id], onDelete: Cascade)
+
+  @@map("service_credit_audit_logs")
+}
+
+// Subscription Usage
+model SubscriptionUsage {
+  id              String   @id @default(uuid())
+  subscription_id String
+  user_id         String?
+  usage_type      String   // order, priority_order
+  usage_date      DateTime
+  amount          Int?
+  created_at      DateTime @default(now())
+
+  // Relations
+  subscription Subscription @relation(fields: [subscription_id], references: [id])
+
+  @@map("subscription_usages")
 }

@@ -8,12 +8,10 @@ import {
   OrderApprovalDto, 
   OrderFilterDto,
   OrderStatus,
-  OrderMode 
+  OrderMode,
+  ReceiptCheck
 } from './dto/order.dto';
-import { CreateOrderFromLlmDto } from './dto/llm-order.dto';
-import { VoiceToOrderDto } from './dto/llm-order.dto';
-import { CreateOrderFromLlmDto } from './dto/llm-order.dto';
-import { ReceiptCheck } from '@otsukai/types/common';
+import { CreateOrderFromLlmDto, VoiceToOrderDto } from './dto/llm-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -243,7 +241,7 @@ export class OrdersService {
     }
 
     // Validate status transition
-    this.validateStatusTransition(order.status as OrderStatus, updateStatusDto.status, actorRole);
+    this.validateStatusTransition(order.status as OrderStatus, updateStatusDto.status as unknown as OrderStatus, actorRole);
 
     // Update order status
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
@@ -264,7 +262,7 @@ export class OrdersService {
           payload: {
             old_status: order.status,
             new_status: updateStatusDto.status,
-            note: updateStatusDto.note,
+            note: updateStatusDto.notes,
           },
         },
       });
@@ -473,8 +471,8 @@ export class OrdersService {
       qty: item.qty,
       price_min: item.price_min,
       price_max: item.price_max,
-      allow_subs: item.allow_subs,
-      note: item.note,
+      allow_subs: item.allow_subs || false,
+      note: item.notes,
     }));
 
     // Calculate estimate amount

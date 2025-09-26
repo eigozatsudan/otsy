@@ -308,6 +308,7 @@ export class ChatService {
       : `${chat.user_id === message.sender_id ? chat.user.first_name : chat.shopper.first_name}`;
 
     await this.notificationService.sendNotification(recipientId, {
+      user_id: recipientId,
       title: `New message from ${senderName}`,
       body: message.type === MessageType.TEXT 
         ? message.content 
@@ -339,6 +340,7 @@ export class ChatService {
 
   async sendOrderUpdateNotification(userId: string, update: any): Promise<void> {
     await this.notificationService.sendNotification(userId, {
+      user_id: userId,
       title: 'Order Update',
       body: `Your order status has been updated to: ${update.status}`,
       icon: '/icons/order-update.png',

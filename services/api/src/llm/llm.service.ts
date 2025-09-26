@@ -9,6 +9,7 @@ export interface ShoppingItem {
   price_max: number;
   alternatives: string[];
   notes?: string;
+  allow_subs?: boolean;
 }
 
 export interface ConversationTurn {
@@ -229,7 +230,7 @@ export class LlmService {
       }
 
       const audioBuffer = await response.arrayBuffer();
-      const audioFile = new File([audioBuffer], 'audio.wav', { type: 'audio/wav' });
+      const audioFile = new File([new Uint8Array(audioBuffer)], 'audio.wav', { type: 'audio/wav' });
 
       const transcription = await this.openai.audio.transcriptions.create({
         file: audioFile,
