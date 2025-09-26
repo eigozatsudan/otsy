@@ -331,7 +331,7 @@ export class SubscriptionService {
     const priorityOrdersUsed = await this.prisma.order.count({
       where: {
         user_id: userId,
-        priority: { in: [DeliveryPriority.EXPRESS, DeliveryPriority.URGENT, DeliveryPriority.IMMEDIATE] },
+        priority: { in: [1, 2, 3] }, // EXPRESS, URGENT, IMMEDIATE
         created_at: {
           gte: subscription.current_period_start,
           lte: subscription.current_period_end,

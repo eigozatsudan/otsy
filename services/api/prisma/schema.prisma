@@ -21,12 +21,14 @@ model User {
   last_name         String?
   referral_code     String?  @unique
   referred_by       String?
+  role              String?  @default("user") // user, shopper, admin
   last_active_at    DateTime?
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
   // Relations
   orders            Order[]
+  chats             Chat[]
   chat_messages     ChatMessage[]
   push_subscriptions PushSubscription[]
   subscriptions     Subscription[]
@@ -53,11 +55,13 @@ model Shopper {
   unavailable_until DateTime?
   unavailability_reason String?
   current_orders Int    @default(0)
+  subscription_tier String? @default("basic")
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relations
   orders        Order[]
+  chats         Chat[]
   receipts      Receipt[]
   chat_messages ChatMessage[]
   kyc_documents KycDocument[]
@@ -141,12 +145,16 @@ model OrderItem {
 model Chat {
   id         String   @id @default(uuid())
   order_id   String   @unique
+  user_id    String?
+  shopper_id String?
   status     String   @default("active") // active, closed
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   // Relations
   order    Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user     User?         @relation(fields: [user_id], references: [id])
+  shopper  Shopper?      @relation(fields: [shopper_id], references: [user_id])
   messages ChatMessage[]
 
   @@map("chats")
@@ -158,10 +166,13 @@ model ChatMessage {
   chat_id        String
   sender         String   // user, shopper, system
   sender_id      String?  // user_id or shopper_id
+  sender_role    String?  // user, shopper, admin
   text           String
   attachment_url String?
+  attachment_type String?
   type           String   @default("text") // text, image, system
   content        String?
+  metadata       Json?
   read_at        DateTime?
   created_at     DateTime @default(now())
 
@@ -313,6 +324,7 @@ model Subscription {
   priority_orders_used Int      @default(0)
   preferred_time_slots Json?
   cancellation_reason  String?
+  cancellation_feedback String?
   cancelled_at         DateTime?
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
@@ -331,6 +343,7 @@ model ShopperPreferences {
   shopper_id String   @unique
   preferences Json?
   available_time_slots Json?
+  preferred_store_types Json?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -352,6 +365,7 @@ model ShopperRating {
   communication_rating Float?
   accuracy_rating Float?
   comment       String?
+  tags          Json?
   created_at    DateTime @default(now())
 
   // Relations
@@ -370,6 +384,7 @@ model OrderRun {
   status     String   // active, completed, cancelled
   rating     Float?
   payment_amount Int?
+  total_orders Int?
   started_at DateTime @default(now())
   ended_at   DateTime?
   created_at DateTime @default(now())
@@ -440,7 +455,7 @@ model SubscriptionAuditLog {
 // Service Credit Audit Log
 model ServiceCreditAuditLog {
   id         String   @id @default(uuid())
-  credit_id  String
+  credit_id  String?
   service_credit_id String?
   user_id    String?
   action     String
@@ -451,7 +466,7 @@ model ServiceCreditAuditLog {
   created_at DateTime @default(now())
 
   // Relations
-  credit ServiceCredit @relation(fields: [credit_id], references: [id], onDelete: Cascade)
+  credit ServiceCredit? @relation(fields: [credit_id], references: [id], onDelete: Cascade)
 
   @@map("service_credit_audit_logs")
 }
