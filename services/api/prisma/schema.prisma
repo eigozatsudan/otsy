@@ -121,8 +121,8 @@ model ChatMessage {
 
   // Relations
   order    Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  user     User?    @relation(fields: [sender_id], references: [id])
-  shopper  Shopper? @relation(fields: [sender_id], references: [id])
+  user     User?    @relation(fields: [sender_id], references: [id], map: "chat_messages_user_fkey")
+  shopper  Shopper? @relation(fields: [sender_id], references: [id], map: "chat_messages_shopper_fkey")
 
   @@map("chat_messages")
 }
