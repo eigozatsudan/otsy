@@ -108,7 +108,7 @@
   - Write tests for shopper workflows
   - _Requirements: 4.2, 4.4, 5.1, 5.2, 3.2, 3.4, 9.1, 9.2, 9.3_
 
-- [ ] 13. Develop admin web application
+- [x] 13. Develop admin web application
   - Set up Next.js project with admin-specific components
   - Create dashboard with real-time metrics and KPIs
   - Build order monitoring and intervention interface
@@ -119,7 +119,7 @@
   - Write tests for admin functionality
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 5.4, 6.4_
 
-- [ ] 14. Implement shared UI component library
+- [x] 14. Implement shared UI component library
   - Create design system with Tailwind CSS components
   - Build reusable form components with validation
   - Implement common layout components (headers, navigation, modals)

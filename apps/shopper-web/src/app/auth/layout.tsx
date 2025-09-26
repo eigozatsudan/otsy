@@ -20,18 +20,18 @@ export default function AuthLayout({
               </span>
             </Link>
           </div>
-          
+
           <h1 className="text-4xl font-bold mb-6">
             あなたの時間を
             <br />
             収入に変える
           </h1>
-          
+
           <p className="text-xl text-primary-100 mb-8">
             おつかいDXのショッパーとして、お買い物代行で安定した収入を得ませんか？
             好きな時間に、好きな場所で働ける新しい働き方を始めましょう。
           </p>
-          
+
           <div className="space-y-4">
             <div className="flex items-center">
               <div className="w-2 h-2 bg-primary-200 rounded-full mr-3"></div>
@@ -51,12 +51,12 @@ export default function AuthLayout({
             </div>
           </div>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
       </div>
-      
+
       {/* Right side - Auth form */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -70,7 +70,7 @@ export default function AuthLayout({
               </span>
             </Link>
           </div>
-          
+
           {children}
         </div>
       </div>
