@@ -213,7 +213,7 @@ export class ReceiptsService {
             receipt_id: receiptId,
             review_status: reviewReceiptDto.status,
             review_notes: reviewReceiptDto.review_notes,
-            corrected_items: reviewReceiptDto.corrected_items,
+            corrected_items: JSON.parse(JSON.stringify(reviewReceiptDto.corrected_items)),
             corrected_total: reviewReceiptDto.corrected_total,
             old_order_status: receipt.order.status,
             new_order_status: newOrderStatus,
@@ -389,7 +389,7 @@ export class ReceiptsService {
           action: 'receipt_processed',
           payload: {
             receipt_id: receiptId,
-            processed_data: processedData,
+            processed_data: JSON.parse(JSON.stringify(processedData)),
             validation_results: validation,
             summary,
           },

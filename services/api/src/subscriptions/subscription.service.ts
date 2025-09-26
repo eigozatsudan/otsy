@@ -109,7 +109,7 @@ export class SubscriptionService {
         orders_limit: tierConfig.orders_per_month,
         priority_orders_limit: tierConfig.priority_orders_per_month,
         metadata: createSubscriptionDto.metadata,
-      },
+      } as any,
     });
 
     // Create audit log
@@ -121,7 +121,7 @@ export class SubscriptionService {
         old_tier: null,
         new_tier: createSubscriptionDto.tier,
         payload: {
-          tier_config: tierConfig,
+          tier_config: JSON.parse(JSON.stringify(tierConfig)),
           preferences: {
             time_slots: createSubscriptionDto.preferred_time_slots,
             priority: createSubscriptionDto.default_priority,
@@ -185,7 +185,7 @@ export class SubscriptionService {
         old_tier: subscription.tier,
         new_tier: subscription.tier,
         payload: {
-          changes: updateSubscriptionDto,
+          changes: JSON.parse(JSON.stringify(updateSubscriptionDto)),
         },
       },
     });
@@ -251,8 +251,8 @@ export class SubscriptionService {
         new_tier: newTier,
         payload: {
           prorated_amount: proratedAmount,
-          old_tier_config: this.tierConfigs[currentTier],
-          new_tier_config: newTierConfig,
+          old_tier_config: JSON.parse(JSON.stringify(this.tierConfigs[currentTier])),
+          new_tier_config: JSON.parse(JSON.stringify(newTierConfig)),
         },
       },
     });

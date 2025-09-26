@@ -99,7 +99,9 @@ export class KycService {
     // Create new KYC documents
     const kycDocuments = submitKycDto.documents.map(doc => ({
       shopper_id: shopperId,
+      type: doc.kind === KycDocumentKind.ID_FRONT || doc.kind === KycDocumentKind.ID_BACK ? 'identity' : 'address',
       kind: doc.kind,
+      file_url: doc.image_url,
       image_url: doc.image_url,
       status: KycStatus.PENDING,
     }));

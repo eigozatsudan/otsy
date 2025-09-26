@@ -124,7 +124,7 @@ export class ChatService {
             orderBy: { created_at: 'desc' },
             take: 1,
             include: {
-              sender: { select: { id: true, first_name: true, last_name: true } },
+              user: { select: { id: true, first_name: true, last_name: true } },
             },
           },
         },
@@ -184,9 +184,9 @@ export class ChatService {
         attachment_url: messageDto.attachment_url,
         attachment_type: messageDto.attachment_type,
         metadata: messageDto.metadata,
-      },
+      } as any,
       include: {
-        sender: { select: { id: true, first_name: true, last_name: true } },
+        user: { select: { id: true, first_name: true, last_name: true } },
       },
     });
 
@@ -212,7 +212,7 @@ export class ChatService {
         content,
         type: MessageType.SYSTEM,
         metadata,
-      },
+      } as any,
     });
 
     return this.formatMessageResponse(message);
@@ -229,7 +229,7 @@ export class ChatService {
       this.prisma.chatMessage.findMany({
         where: { chat_id: chatId },
         include: {
-          sender: { select: { id: true, first_name: true, last_name: true } },
+          user: { select: { id: true, first_name: true, last_name: true } },
         },
         orderBy: { created_at: 'desc' },
         skip: offset,

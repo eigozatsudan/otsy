@@ -180,8 +180,8 @@ export class MatchingService {
         email: shopper.email,
         phone: shopper.phone,
         location: {
-          lat: shopper.shopper_profile.location_lat || 0,
-          lng: shopper.shopper_profile.location_lng || 0,
+          lat: (shopper.shopper_profile.preferences as any)?.location_lat || 0,
+          lng: (shopper.shopper_profile.preferences as any)?.location_lng || 0,
         },
         preferences: shopper.shopper_profile.preferences,
         rating: avgRating,

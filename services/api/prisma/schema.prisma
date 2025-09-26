@@ -48,6 +48,8 @@ model Shopper {
   email       String   @unique
   password_hash String
   phone       String
+  first_name  String?
+  last_name   String?
   kyc_status  String   @default("pending") // pending, approved, needs_review, rejected
   risk_tier   String?  // L0, L1, L2, L-1
   rating_avg  Float?
@@ -440,6 +442,7 @@ model NotificationPreferences {
   order_updates Boolean @default(true)
   chat_messages Boolean @default(true)
   promotional Boolean @default(false)
+  system_alerts Boolean @default(true)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

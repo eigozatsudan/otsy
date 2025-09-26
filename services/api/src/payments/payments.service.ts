@@ -79,7 +79,7 @@ export class PaymentsService {
                     stripe_pi: paymentIntent.id,
                     status: PaymentStatus.PENDING,
                     amount: createPaymentDto.amount,
-                },
+                } as any,
             });
 
             // Create audit log
@@ -440,7 +440,7 @@ export class PaymentsService {
                 payload: {
                     payment_id: payment.id,
                     stripe_pi: paymentIntent.id,
-                    last_payment_error: paymentIntent.last_payment_error,
+                    last_payment_error: paymentIntent.last_payment_error ? JSON.parse(JSON.stringify(paymentIntent.last_payment_error)) : null,
                 },
             },
         });
@@ -459,7 +459,7 @@ export class PaymentsService {
                 action: 'charge_dispute_created',
                 payload: {
                     dispute_id: dispute.id,
-                    charge_id: dispute.charge,
+                    charge_id: typeof dispute.charge === 'string' ? dispute.charge : dispute.charge.id,
                     amount: dispute.amount,
                     reason: dispute.reason,
                     status: dispute.status,
