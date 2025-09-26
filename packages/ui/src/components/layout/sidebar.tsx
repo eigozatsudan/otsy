@@ -87,7 +87,7 @@ function NavigationLink({ item, currentPath, level }: NavigationLinkProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const isActive = currentPath === item.href;
   const hasChildren = item.children && item.children.length > 0;
-  const isParentActive = hasChildren && item.children.some(child => currentPath === child.href);
+  const isParentActive = hasChildren && item.children?.some(child => currentPath === child.href);
 
   React.useEffect(() => {
     if (isParentActive) {

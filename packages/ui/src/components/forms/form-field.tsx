@@ -11,11 +11,11 @@ interface BaseFormFieldProps {
   className?: string;
 }
 
-interface FormFieldInputProps extends BaseFormFieldProps, Omit<InputProps, 'error' | 'label' | 'helperText'> {
+interface FormFieldInputProps extends BaseFormFieldProps, Omit<InputProps, 'error' | 'label' | 'helperText' | 'name'> {
   type?: 'input';
 }
 
-interface FormFieldTextareaProps extends BaseFormFieldProps, Omit<TextareaProps, 'error' | 'label' | 'helperText'> {
+interface FormFieldTextareaProps extends BaseFormFieldProps, Omit<TextareaProps, 'error' | 'label' | 'helperText' | 'name'> {
   type: 'textarea';
 }
 
@@ -48,7 +48,7 @@ export function FormField(props: FormFieldProps) {
     switch (type) {
       case 'textarea':
         const textareaProps = props as FormFieldTextareaProps;
-        const { name: _, label: __, error: ___, required: ____, className: _____, type: ______, ...restTextareaProps } = textareaProps;
+        const { name: textareaName, label: textareaLabel, error: textareaError, required: textareaRequired, className: textareaClassName, type: textareaType, ...restTextareaProps } = textareaProps;
         return (
           <Textarea
             id={fieldId}
@@ -117,7 +117,7 @@ export function FormField(props: FormFieldProps) {
 
       default:
         const inputProps = props as FormFieldInputProps;
-        const { name: _, label: __, error: ___, required: ____, className: _____, type: ______, ...restInputProps } = inputProps;
+        const { name: inputName, label: inputLabel, error: inputError, required: inputRequired, className: inputClassName, type: inputType, ...restInputProps } = inputProps;
         return (
           <Input
             id={fieldId}
