@@ -36,6 +36,8 @@ model User {
   shopper_ratings   ShopperRating[]
   notification_logs NotificationLog[]
   notification_preferences NotificationPreferences[]
+  shopper_profile   Shopper?
+  shopper_orders    Order[] @relation("ShopperOrders")
 
   @@map("users")
 }
@@ -60,6 +62,7 @@ model Shopper {
   updated_at  DateTime @updatedAt
 
   // Relations
+  user          User     @relation(fields: [user_id], references: [id])
   orders        Order[]
   chats         Chat[]
   receipts      Receipt[]
@@ -119,6 +122,7 @@ model Order {
   audit_logs    OrderAuditLog[]
   ratings       ShopperRating[]
   order_runs    OrderRun[]
+  shopper_user  User?          @relation("ShopperOrders", fields: [shopper_id], references: [id], map: "orders_shopper_user_fkey")
 
   @@map("orders")
 }
@@ -323,6 +327,11 @@ model Subscription {
   orders_this_period   Int      @default(0)
   priority_orders_used Int      @default(0)
   preferred_time_slots Json?
+  preferred_store_types Json?
+  max_delivery_distance Int? @default(10)
+  auto_accept_orders Boolean? @default(false)
+  metadata Json?
+  default_priority     String? @default("standard")
   cancellation_reason  String?
   cancellation_feedback String?
   cancelled_at         DateTime?
@@ -344,6 +353,12 @@ model ShopperPreferences {
   preferences Json?
   available_time_slots Json?
   preferred_store_types Json?
+  max_delivery_distance Int? @default(10)
+  max_concurrent_orders Int? @default(3)
+  accepts_urgent_orders Boolean? @default(true)
+  min_order_value Float? @default(0)
+  location_lat Float?
+  location_lng Float?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -423,6 +438,8 @@ model NotificationPreferences {
   shopper_id String?
   preferences Json?
   order_updates Boolean @default(true)
+  chat_messages Boolean @default(true)
+  promotional Boolean @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

@@ -45,9 +45,9 @@ export class MatchingService {
       include: {
         user: {
           include: {
-            subscription: {
+            subscriptions: {
               where: { status: 'active' },
-              orderBy: { created_at: 'desc' },
+              orderBy: { created_at: 'desc' as const },
               take: 1,
             },
           },
@@ -77,7 +77,7 @@ export class MatchingService {
     // Sort by score and apply subscription-based prioritization
     const prioritizedShoppers = this.applySubscriptionPriority(
       scoredShoppers,
-      order.user.subscription[0]?.tier as SubscriptionTier
+      order.user.subscriptions[0]?.tier as SubscriptionTier
     );
 
     // Format results
@@ -100,14 +100,14 @@ export class MatchingService {
           include: {
             preferences: true,
             ratings: {
-              orderBy: { created_at: 'desc' },
+              orderBy: { created_at: 'desc' as const },
               take: 50, // Last 50 ratings for average calculation
             },
           },
         },
-        subscription: {
+        subscriptions: {
           where: { status: 'active' },
-          orderBy: { created_at: 'desc' },
+          orderBy: { created_at: 'desc' as const },
           take: 1,
         },
       },
@@ -190,7 +190,7 @@ export class MatchingService {
         avg_delivery_time: avgDeliveryTime,
         is_online: this.isShopperOnline(shopper.last_active_at),
         current_orders: currentOrders,
-        subscription_tier: shopper.subscription[0]?.tier as SubscriptionTier || null,
+        subscription_tier: shopper.subscriptions[0]?.tier as SubscriptionTier || null,
         last_active: shopper.last_active_at,
       });
     }
@@ -447,9 +447,7 @@ export class MatchingService {
         max_delivery_distance: preferences.max_delivery_distance,
         max_concurrent_orders: preferences.max_concurrent_orders,
         accepts_urgent_orders: preferences.accepts_urgent_orders,
-        accepts_large_orders: preferences.accepts_large_orders,
         min_order_value: preferences.min_order_value,
-        max_order_value: preferences.max_order_value,
         updated_at: new Date(),
       },
       create: {
@@ -458,10 +456,8 @@ export class MatchingService {
         preferred_store_types: preferences.preferred_store_types || [],
         max_delivery_distance: preferences.max_delivery_distance || 20,
         max_concurrent_orders: preferences.max_concurrent_orders || 3,
-        accepts_urgent_orders: preferences.accepts_urgent_orders || false,
-        accepts_large_orders: preferences.accepts_large_orders || true,
+        accepts_urgent_orders: preferences.accepts_urgent_orders || true,
         min_order_value: preferences.min_order_value || 0,
-        max_order_value: preferences.max_order_value || 50000,
       },
     });
   }
@@ -667,7 +663,6 @@ export class MatchingService {
         id: true,
         user_id: true,
         current_orders: true,
-        total_orders: true,
       },
     });
   }
