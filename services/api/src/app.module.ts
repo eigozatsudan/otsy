@@ -4,21 +4,20 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
-// TODO: Add these modules as they are implemented
-// import { AuthModule } from './auth/auth.module';
-// import { UsersModule } from './users/users.module';
-// import { ShoppersModule } from './shoppers/shoppers.module';
-// import { OrdersModule } from './orders/orders.module';
-// import { KycModule } from './kyc/kyc.module';
-// import { StorageModule } from './storage/storage.module';
-// import { LlmModule } from './llm/llm.module';
-// import { ReceiptsModule } from './receipts/receipts.module';
-// import { PaymentsModule } from './payments/payments.module';
-// import { ChatModule } from './chat/chat.module';
-// import { NotificationModule } from './notifications/notification.module';
-// import { SubscriptionModule } from './subscriptions/subscription.module';
-// import { MatchingModule } from './matching/matching.module';
-// import { RolesGuard } from './auth/guards/roles.guard';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { ShoppersModule } from './shoppers/shoppers.module';
+import { OrdersModule } from './orders/orders.module';
+import { KycModule } from './kyc/kyc.module';
+import { StorageModule } from './storage/storage.module';
+import { LlmModule } from './llm/llm.module';
+import { ReceiptsModule } from './receipts/receipts.module';
+import { PaymentsModule } from './payments/payments.module';
+import { ChatModule } from './chat/chat.module';
+import { NotificationModule } from './notifications/notification.module';
+import { SubscriptionModule } from './subscriptions/subscription.module';
+import { MatchingModule } from './matching/matching.module';
+import { RolesGuard } from './auth/guards/roles.guard';
 
 @Module({
   imports: [
@@ -27,7 +26,19 @@ import { AppService } from './app.service';
       envFilePath: ['.env.local', '.env'],
     }),
     PrismaModule,
-    // TODO: Add other modules as they are implemented
+    AuthModule,
+    UsersModule,
+    ShoppersModule,
+    OrdersModule,
+    KycModule,
+    StorageModule,
+    LlmModule,
+    ReceiptsModule,
+    PaymentsModule,
+    ChatModule,
+    NotificationModule,
+    SubscriptionModule,
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
