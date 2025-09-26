@@ -29,8 +29,13 @@ export class NotificationService {
       return;
     }
 
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-    this.logger.log('Web Push initialized with VAPID keys');
+    try {
+      webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+      this.logger.log('Web Push initialized with VAPID keys');
+    } catch (error) {
+      this.logger.error('Failed to initialize Web Push with VAPID keys:', error.message);
+      this.logger.warn('Push notifications will not work due to invalid VAPID keys.');
+    }
   }
 
   async subscribeToPushNotifications(

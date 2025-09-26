@@ -124,6 +124,14 @@ export class TypingIndicatorDto {
 }
 
 // Push notification DTOs
+export class PushKeysDto {
+  @IsString()
+  p256dh: string;
+
+  @IsString()
+  auth: string;
+}
+
 export class PushSubscriptionDto {
   @IsString()
   endpoint: string;
@@ -131,14 +139,6 @@ export class PushSubscriptionDto {
   @ValidateNested()
   @Type(() => PushKeysDto)
   keys: PushKeysDto;
-}
-
-export class PushKeysDto {
-  @IsString()
-  p256dh: string;
-
-  @IsString()
-  auth: string;
 }
 
 export class SendNotificationDto {

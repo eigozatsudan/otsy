@@ -7,6 +7,16 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    // Skip roles guard if marked to skip
+    const skipRolesGuard = this.reflector.getAllAndOverride<boolean>('skipRolesGuard', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    
+    if (skipRolesGuard) {
+      return true;
+    }
+
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),

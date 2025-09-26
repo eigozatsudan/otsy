@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { RolesGuard } from './guards/roles.guard';
 import { UsersModule } from '../users/users.module';
 import { ShoppersModule } from '../shoppers/shoppers.module';
 
@@ -24,7 +25,7 @@ import { ShoppersModule } from '../shoppers/shoppers.module';
     ShoppersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy, LocalStrategy, RolesGuard],
+  exports: [AuthService, RolesGuard],
 })
 export class AuthModule {}

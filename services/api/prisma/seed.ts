@@ -31,14 +31,27 @@ async function main() {
     },
   });
 
-  // Create test shopper
-  const shopperPassword = await bcrypt.hash('shopper123', 10);
-  const shopper = await prisma.shopper.upsert({
+  // Create test shopper user first
+  const shopperUserPassword = await bcrypt.hash('shopper123', 10);
+  const shopperUser = await prisma.user.upsert({
     where: { email: 'shopper@otsukai.local' },
     update: {},
     create: {
       email: 'shopper@otsukai.local',
-      password_hash: shopperPassword,
+      password_hash: shopperUserPassword,
+      phone: '+81-90-8765-4321',
+      role: 'shopper',
+    },
+  });
+
+  // Create test shopper profile
+  const shopper = await prisma.shopper.upsert({
+    where: { email: 'shopper@otsukai.local' },
+    update: {},
+    create: {
+      user_id: shopperUser.id,
+      email: 'shopper@otsukai.local',
+      password_hash: shopperUserPassword,
       phone: '+81-90-8765-4321',
       kyc_status: 'approved',
       risk_tier: 'L1',
