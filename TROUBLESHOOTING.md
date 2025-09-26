@@ -4,15 +4,27 @@
 
 ### 1. TypeScript型エラー
 
-#### 問題: `Cannot find module 'zustand'` などの依存関係エラー
+#### 問題: `Cannot find module 'react'` や `Cannot find module 'zustand'` などの依存関係エラー
 **解決方法:**
 ```bash
 # ルートディレクトリで依存関係を再インストール
+yarn install
+
+# または pnpm を使用している場合
 pnpm install
 
 # 特定のワークスペースで依存関係を確認
-pnpm -F @otsukai/admin-web install
+yarn workspace @otsukai/admin-web install
 ```
+
+#### 問題: Peer dependency警告
+**解決方法:**
+- `package.json`の`resolutions`フィールドでバージョンを統一
+- 不足している peer dependencies を追加:
+  - `styled-components` (react-camera-pro用)
+  - `prop-types` (react-speech-kit用)
+  - `vite` (Storybook用)
+  - `webpack` (ts-loader用)
 
 #### 問題: `Parameter implicitly has 'any' type`
 **解決方法:**

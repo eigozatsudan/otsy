@@ -11,10 +11,9 @@
     "watch": "npm run codegen && chokidar \"../**/*.yaml\" -c 'npm run codegen'",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {},
   "devDependencies": {
-    "openapi-typescript": "^6.7.0",
     "chokidar-cli": "^3.0.0",
+    "openapi-typescript": "^6.7.0",
     "typescript": "^5.2.2"
   }
 }
