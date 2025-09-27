@@ -23,6 +23,7 @@ interface AuthState {
   refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isCheckingAuth: boolean;
 }
 
 interface AuthActions {
@@ -52,6 +53,7 @@ export const useAuthStore = create<AuthStore>()(
       refreshToken: null,
       isLoading: false,
       isAuthenticated: false,
+      isCheckingAuth: false,
 
       // Actions
       login: async (email: string, password: string): Promise<boolean> => {
@@ -148,6 +150,7 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
+          isCheckingAuth: false,
         });
 
         toast.success('ログアウトしました');
@@ -196,32 +199,70 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
+        const { isCheckingAuth, token, isAuthenticated } = get();
+        
+        // Prevent duplicate auth checks
+        if (isCheckingAuth) {
+          console.log('Auth check already in progress, skipping...');
+          return;
+        }
+        
+        // If already authenticated and have user data, skip check
+        if (isAuthenticated && get().user) {
+          console.log('Already authenticated, skipping auth check');
+          return;
+        }
+        
         try {
-          const { token } = get();
+          console.log('Starting auth check...');
+          
           if (!token) {
             // No token, ensure we're logged out
             set({ 
               user: null, 
               isAuthenticated: false, 
-              isLoading: false 
+              isLoading: false,
+              isCheckingAuth: false
             });
             return;
           }
 
-          set({ isLoading: true });
+          set({ isLoading: true, isCheckingAuth: true });
           
+          // Verify token by getting user profile
           const user = await authApi.getProfile();
           
+          console.log('Auth check successful, setting user data');
           set({
             user,
             isAuthenticated: true,
             isLoading: false,
+            isCheckingAuth: false,
           });
-        } catch (error) {
+        } catch (error: any) {
           // If check fails, clear auth state
-          console.error('Auth check failed:', error);
-          set({ isLoading: false });
-          get().logout();
+          console.error('Auth check failed:', error?.message || 'Unknown error');
+          
+          // Only clear auth state if it's a 401 (unauthorized) error
+          // For network errors, keep the token but mark as not authenticated
+          if (error?.statusCode === 401) {
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              isLoading: false,
+              isCheckingAuth: false
+            });
+            // Clear token from API client
+            apiClient.clearToken();
+          } else {
+            // For other errors (network, server), just mark as not authenticated
+            // but keep the token for retry
+            set({ 
+              isAuthenticated: false, 
+              isLoading: false,
+              isCheckingAuth: false
+            });
+          }
         }
       },
 
@@ -236,15 +277,14 @@ export const useAuthStore = create<AuthStore>()(
         token: state.token,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+        // Don't persist loading states
       }),
       onRehydrateStorage: () => (state) => {
         // Set token in API client when rehydrating
         if (state?.token) {
           apiClient.setToken(state.token);
-          // Ensure isAuthenticated is true if we have a token
-          if (state.isAuthenticated !== true) {
-            state.isAuthenticated = true;
-          }
+          // Don't automatically set isAuthenticated to true here
+          // Let checkAuth() verify the token validity
         } else if (state) {
           // No token, ensure we're logged out
           state.isAuthenticated = false;

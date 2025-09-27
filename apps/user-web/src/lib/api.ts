@@ -76,11 +76,14 @@ class ApiClient {
           toast.error(message);
         }
 
-        return Promise.reject({
+        const apiError = {
           message,
           statusCode: error.response?.status || 500,
           error: error.response?.data?.error,
-        } as ApiError);
+          originalError: error
+        } as ApiError;
+
+        return Promise.reject(apiError);
       }
     );
   }

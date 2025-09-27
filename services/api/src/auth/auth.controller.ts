@@ -56,16 +56,22 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('me')
+  @Get('profile')
   async getProfile(@CurrentUser() user: any) {
-    return { user };
+    // Check user role and return appropriate profile
+    if (user.role === 'shopper') {
+      const shopper = await this.authService.getShopperProfile(user.id);
+      return { user: shopper };
+    } else {
+      // For regular users, get full user profile
+      const userProfile = await this.authService.getUserProfile(user.id);
+      return { user: userProfile };
+    }
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  async getShopperProfile(@CurrentUser() user: any) {
-    // Get full shopper details
-    const shopper = await this.authService.getShopperProfile(user.id);
-    return { shopper };
+  @Get('me')
+  async getCurrentUser(@CurrentUser() user: any) {
+    return { user };
   }
 }

@@ -40,11 +40,11 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && !hasRedirected) {
+    if (isAuthenticated && !hasRedirected && !isLoading) {
       setHasRedirected(true);
       router.replace('/dashboard');
     }
-  }, [isAuthenticated, hasRedirected, router]);
+  }, [isAuthenticated, hasRedirected, isLoading, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -62,7 +62,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !isLoading) {
     return (
       <div className="flex items-center justify-center">
         <LoadingSpinner size="lg" />

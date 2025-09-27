@@ -255,6 +255,42 @@ export class AuthService {
     }
   }
 
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone: true,
+        subscription_tier: true,
+        role: true,
+        last_active_at: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name || '',
+      lastName: user.last_name || '',
+      phone: user.phone,
+      role: user.role,
+      subscriptionTier: user.subscription_tier,
+      isVerified: true, // Users are considered verified by default
+      lastActiveAt: user.last_active_at,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    };
+  }
+
   async getShopperProfile(shopperId: string) {
     const shopper = await this.prisma.shopper.findUnique({
       where: { id: shopperId },
