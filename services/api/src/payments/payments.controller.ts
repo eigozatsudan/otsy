@@ -4,6 +4,7 @@ import {
   Post, 
   Body, 
   Param, 
+  Query,
   UseGuards,
   Headers,
   RawBody,
@@ -57,6 +58,17 @@ export class PaymentsController {
     return this.paymentsService.capturePayment(user.id, 'user', capturePaymentDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user')
+  @Post(':id/confirm')
+  async confirmPayment(
+    @CurrentUser() user: any,
+    @Param('id') paymentId: string,
+    @Body() body: { payment_method_id: string }
+  ) {
+    return this.paymentsService.confirmPayment(user.id, paymentId, body.payment_method_id);
+  }
+
   // Shared endpoints (with permission checks)
   @UseGuards(JwtAuthGuard)
   @Get(':id')
@@ -77,6 +89,21 @@ export class PaymentsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('my-payments')
+  async getMyPayments(@CurrentUser() user: any) {
+    return this.paymentsService.getMyPayments(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('orders/:orderId/summary')
+  async getOrderPaymentSummary(
+    @CurrentUser() user: any, 
+    @Param('orderId') orderId: string
+  ) {
+    return this.paymentsService.getOrderPaymentSummary(user.id, orderId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('order/:orderId')
   async getPaymentsByOrder(
     @CurrentUser() user: any, 
@@ -87,6 +114,16 @@ export class PaymentsController {
   }
 
   // Admin endpoints
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin')
+  async getAllPayments(
+    @CurrentUser() user: any,
+    @Query() params: { page?: number; limit?: number; status?: string }
+  ) {
+    return this.paymentsService.getAllPayments(params);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Post('admin/capture')

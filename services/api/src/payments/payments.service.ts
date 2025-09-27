@@ -468,11 +468,110 @@ export class PaymentsService {
         });
     }
 
+    async getMyPayments(userId: string) {
+        return this.prisma.payment.findMany({
+            where: {
+                order: {
+                    user_id: userId,
+                },
+            },
+            include: {
+                order: {
+                    include: {
+                        user: { select: { id: true, email: true, first_name: true, last_name: true } },
+                        shopper: { select: { id: true, email: true, first_name: true, last_name: true } },
+                    },
+                },
+            },
+            orderBy: { created_at: 'desc' },
+        });
+    }
+
+    async getOrderPaymentSummary(userId: string, orderId: string) {
+        // First verify the order belongs to the user
+        const order = await this.prisma.order.findFirst({
+            where: {
+                id: orderId,
+                user_id: userId,
+            },
+        });
+
+        if (!order) {
+            throw new NotFoundException('Order not found');
+        }
+
+        const payments = await this.prisma.payment.findMany({
+            where: { order_id: orderId },
+            orderBy: { created_at: 'desc' },
+        });
+
+        const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+        const capturedAmount = payments
+            .filter(p => p.status === PaymentStatus.CAPTURED)
+            .reduce((sum, payment) => sum + payment.amount, 0);
+        const refundedAmount = payments
+            .filter(p => p.status === PaymentStatus.REFUNDED)
+            .reduce((sum, payment) => sum + payment.amount, 0);
+
+        return {
+            orderId,
+            totalAmount,
+            capturedAmount,
+            refundedAmount,
+            pendingAmount: totalAmount - capturedAmount - refundedAmount,
+            payments,
+        };
+    }
+
     async getPaymentsByOrder(orderId: string) {
         return this.prisma.payment.findMany({
             where: { order_id: orderId },
             orderBy: { created_at: 'desc' },
         });
+    }
+
+    async confirmPayment(userId: string, paymentId: string, paymentMethodId: string) {
+        const payment = await this.prisma.payment.findUnique({
+            where: { id: paymentId },
+            include: {
+                order: {
+                    include: {
+                        user: { select: { id: true, email: true } },
+                    },
+                },
+            },
+        });
+
+        if (!payment) {
+            throw new NotFoundException('Payment not found');
+        }
+
+        // Verify the payment belongs to the user
+        if (payment.order.user_id !== userId) {
+            throw new ForbiddenException('Access denied');
+        }
+
+        if (payment.status !== PaymentStatus.PENDING) {
+            throw new BadRequestException('Payment is not in pending status');
+        }
+
+        try {
+            const paymentIntent = await this.stripe.paymentIntents.confirm(payment.stripe_pi, {
+                payment_method: paymentMethodId,
+            });
+
+            const updatedPayment = await this.prisma.payment.update({
+                where: { id: paymentId },
+                data: {
+                    status: paymentIntent.status === 'succeeded' ? PaymentStatus.CAPTURED : PaymentStatus.AUTHORIZED,
+                },
+            });
+
+            return updatedPayment;
+        } catch (error) {
+            console.error('Stripe confirmation error:', error);
+            throw new BadRequestException('Payment confirmation failed');
+        }
     }
 
     async getPaymentById(paymentId: string) {
@@ -493,6 +592,42 @@ export class PaymentsService {
         }
 
         return payment;
+    }
+
+    async getAllPayments(params?: { page?: number; limit?: number; status?: string }) {
+        const { page = 1, limit = 20, status } = params || {};
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        if (status) where.status = status;
+
+        const [payments, total] = await Promise.all([
+            this.prisma.payment.findMany({
+                where,
+                include: {
+                    order: {
+                        include: {
+                            user: { select: { id: true, email: true, first_name: true, last_name: true } },
+                            shopper: { select: { id: true, email: true, first_name: true, last_name: true } },
+                        },
+                    },
+                },
+                orderBy: { created_at: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.payment.count({ where }),
+        ]);
+
+        return {
+            payments,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit),
+            },
+        };
     }
 
     async getPaymentStats() {

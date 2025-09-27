@@ -249,14 +249,14 @@ export const paymentsApi = {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
-  }) => apiClient.get<PaginatedResponse<any>>('/admin/payments', { params }),
+  }) => apiClient.get<PaginatedResponse<any>>('/payments/admin', { params }),
 
-  getPayment: (paymentId: string) => apiClient.get<any>(`/admin/payments/${paymentId}`),
+  getPayment: (paymentId: string) => apiClient.get<any>(`/payments/${paymentId}`),
 
   processRefund: (paymentId: string, amount?: number, reason?: string) =>
-    apiClient.post<any>(`/admin/payments/${paymentId}/refund`, { amount, reason }),
+    apiClient.post<any>(`/payments/admin/refund`, { payment_id: paymentId, amount, reason }),
 
-  getPaymentStats: () => apiClient.get<any>('/admin/payments/stats'),
+  getPaymentStats: () => apiClient.get<any>('/payments/stats/overview'),
 };
 
 // KYC API methods

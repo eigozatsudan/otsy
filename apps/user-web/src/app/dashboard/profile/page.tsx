@@ -153,7 +153,7 @@ export default function ProfilePage() {
                   />
                 ) : (
                   <span className="text-2xl font-bold text-primary-700">
-                    {user.firstName[0]}{user.lastName[0]}
+                    {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
                   </span>
                 )}
               </div>
@@ -172,9 +172,9 @@ export default function ProfilePage() {
             </div>
             
             <h2 className="text-xl font-semibold text-gray-900">
-              {user.lastName} {user.firstName}
+              {user?.lastName || ''} {user?.firstName || ''}
             </h2>
-            <p className="text-gray-600 mt-1">{user.email}</p>
+            <p className="text-gray-600 mt-1">{user?.email || ''}</p>
             
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex justify-between text-sm">
@@ -184,7 +184,7 @@ export default function ProfilePage() {
               <div className="flex justify-between text-sm mt-2">
                 <span className="text-gray-500">登録日</span>
                 <span className="text-gray-900">
-                  {new Date(user.createdAt).toLocaleDateString('ja-JP')}
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ja-JP') : ''}
                 </span>
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function ProfilePage() {
                       className={`input ${errors.lastName ? 'border-error-500' : ''}`}
                     />
                   ) : (
-                    <p className="py-2 text-gray-900">{user.lastName}</p>
+                    <p className="py-2 text-gray-900">{user?.lastName || ''}</p>
                   )}
                   {errors.lastName && (
                     <p className="mt-1 text-sm text-error-600">{errors.lastName.message}</p>
@@ -258,7 +258,7 @@ export default function ProfilePage() {
                       className={`input ${errors.firstName ? 'border-error-500' : ''}`}
                     />
                   ) : (
-                    <p className="py-2 text-gray-900">{user.firstName}</p>
+                    <p className="py-2 text-gray-900">{user?.firstName || ''}</p>
                   )}
                   {errors.firstName && (
                     <p className="mt-1 text-sm text-error-600">{errors.firstName.message}</p>
@@ -277,7 +277,7 @@ export default function ProfilePage() {
                     className={`input ${errors.email ? 'border-error-500' : ''}`}
                   />
                 ) : (
-                  <p className="py-2 text-gray-900">{user.email}</p>
+                  <p className="py-2 text-gray-900">{user?.email || ''}</p>
                 )}
                 {errors.email && (
                   <p className="mt-1 text-sm text-error-600">{errors.email.message}</p>
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                     className={`input ${errors.phone ? 'border-error-500' : ''}`}
                   />
                 ) : (
-                  <p className="py-2 text-gray-900">{formatPhoneNumber(user.phone)}</p>
+                  <p className="py-2 text-gray-900">{user?.phone ? formatPhoneNumber(user.phone) : ''}</p>
                 )}
                 {errors.phone && (
                   <p className="mt-1 text-sm text-error-600">{errors.phone.message}</p>

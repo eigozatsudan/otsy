@@ -34,8 +34,8 @@ export default function PaymentsPage() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const response = await apiClient.get('/payments');
-        setPayments(response.data);
+        const response = await apiClient.get('/payments/admin');
+        setPayments(response.data.payments || []);
       } catch (error) {
         console.error('支払いデータの取得に失敗しました:', error);
       } finally {
@@ -49,7 +49,7 @@ export default function PaymentsPage() {
   const capturePayment = async (paymentId: string) => {
     setIsProcessing(true);
     try {
-      await apiClient.post(`/payments/${paymentId}/capture`);
+      await apiClient.post('/payments/admin/capture', { payment_id: paymentId });
       setPayments(payments.map(payment => 
         payment.id === paymentId 
           ? { ...payment, status: 'captured' as const }
@@ -73,7 +73,7 @@ export default function PaymentsPage() {
 
     setIsProcessing(true);
     try {
-      await apiClient.post(`/payments/${paymentId}/refund`, { amount: refundAmount });
+      await apiClient.post('/payments/admin/refund', { payment_id: paymentId, amount: refundAmount });
       setPayments(payments.map(payment => 
         payment.id === paymentId 
           ? { ...payment, status: 'refunded' as const, refundAmount }
