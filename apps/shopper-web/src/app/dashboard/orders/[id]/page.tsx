@@ -19,9 +19,9 @@ import {
   TruckIcon,
   PlayIcon
 } from '@heroicons/react/24/outline';
-import { useOrdersStore, canStartShopping, canSubmitReceipt, canCompleteDelivery } from '@/store/orders';
+import { useOrdersStore, canStartShopping, canSubmitReceipt, canCompleteDelivery, getOrderStatusColor, getOrderStatusText } from '@/store/orders';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { formatCurrency, formatDateTime, formatRelativeTime, getStatusText, getStatusColor } from '@/lib/utils';
+import { formatCurrency, formatDateTime, formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export default function OrderDetailPage() {
@@ -106,8 +106,8 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <span className={cn('badge', getStatusColor(order.status))}>
-            {getStatusText(order.status)}
+          <span className={cn('badge', getOrderStatusColor(order.status))}>
+            {getOrderStatusText(order.status)}
           </span>
           
           <Link

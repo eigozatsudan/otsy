@@ -12,9 +12,9 @@ import {
   EyeIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
-import { useOrdersStore, canSubmitReceipt, canCompleteDelivery } from '@/store/orders';
+import { useOrdersStore, canSubmitReceipt, canCompleteDelivery, getOrderStatusColor, getOrderStatusText } from '@/store/orders';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { formatCurrency, formatRelativeTime, getStatusText, getStatusColor } from '@/lib/utils';
+import { formatCurrency, formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export default function ActiveOrdersPage() {
@@ -78,8 +78,8 @@ export default function ActiveOrdersPage() {
                       <h3 className="text-lg font-medium text-gray-900">
                         注文 #{order.id.slice(-8)}
                       </h3>
-                      <span className={cn('badge', getStatusColor(order.status))}>
-                        {getStatusText(order.status)}
+                      <span className={cn('badge', getOrderStatusColor(order.status))}>
+                        {getOrderStatusText(order.status)}
                       </span>
                     </div>
 
