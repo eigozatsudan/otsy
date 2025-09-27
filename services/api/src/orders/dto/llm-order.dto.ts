@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsOptional, IsArray, IsInt, IsDateString, Min, Max } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { OrderMode, ReceiptCheck } from './order.dto';
 
 export class CreateOrderFromLlmDto {
@@ -16,6 +17,7 @@ export class CreateOrderFromLlmDto {
   deadline_ts?: string;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   @Max(10)
@@ -51,6 +53,7 @@ export class VoiceToOrderDto {
   deadline_ts?: string;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   @Max(10)
@@ -76,6 +79,7 @@ export class VoiceToOrderDto {
   dietary_restrictions?: string[];
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   @Max(5)

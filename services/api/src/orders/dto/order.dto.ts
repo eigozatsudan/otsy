@@ -1,5 +1,5 @@
 import { IsString, IsEnum, IsOptional, IsArray, ValidateNested, IsInt, IsBoolean, IsDateString, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export enum OrderStatus {
   NEW = 'new',
@@ -150,11 +150,13 @@ export class OrderFilterDto {
   shopper_id?: string;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   page?: number = 1;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   @Max(100)

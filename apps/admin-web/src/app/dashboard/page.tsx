@@ -45,16 +45,16 @@ export default function DashboardPage() {
         const shoppers = shoppersRes.data;
 
         const totalRevenue = orders.reduce((sum: number, order: any) => sum + order.total, 0);
-        const activeOrders = orders.filter((order: any) => 
+        const activeOrders = orders?.filter((order: any) => 
           ['pending', 'accepted', 'shopping', 'purchased'].includes(order.status)
-        ).length;
+        ).length || 0;
 
         setStats({
-          totalOrders: orders.length,
+          totalOrders: orders?.length || 0,
           activeOrders,
           totalShoppers: shoppers.length,
           totalRevenue,
-          recentOrders: orders.slice(0, 5).map((order: any) => ({
+          recentOrders: orders?.slice(0, 5).map((order: any) => ({
             id: order.id,
             customerName: order.customer?.name || '不明',
             status: order.status,

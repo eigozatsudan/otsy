@@ -23,10 +23,10 @@ export default function DashboardPage() {
     fetchOrders({ limit: 5 });
   }, [fetchOrders]);
 
-  const recentOrders = orders.slice(0, 3);
-  const activeOrders = orders.filter(order => 
+  const recentOrders = orders?.slice(0, 3) || [];
+  const activeOrders = orders?.filter(order => 
     ['accepted', 'shopping', 'enroute'].includes(order.status.toLowerCase())
-  );
+  ) || [];
 
   const stats = [
     {

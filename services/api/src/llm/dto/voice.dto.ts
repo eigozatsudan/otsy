@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsArray, IsInt, Min, Max } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class ProcessVoiceInputDto {
   @IsString()
@@ -19,6 +20,7 @@ export class ProcessVoiceInputDto {
   dietary_restrictions?: string[];
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   @Max(5)

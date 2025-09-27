@@ -1,4 +1,5 @@
 import { IsString, IsInt, Min, IsOptional, IsEnum } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum PaymentStatus {
   PENDING = 'pending',
@@ -13,6 +14,7 @@ export class CreatePaymentIntentDto {
   @IsString()
   order_id: string;
 
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(100) // Minimum 100 JPY
   amount: number;
@@ -40,6 +42,7 @@ export class CapturePaymentDto {
   payment_id: string;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   amount?: number; // If different from authorized amount
@@ -54,6 +57,7 @@ export class RefundPaymentDto {
   payment_id: string;
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(1)
   amount?: number; // If null, full refund

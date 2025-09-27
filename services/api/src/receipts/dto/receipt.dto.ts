@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsArray, ValidateNested, IsInt, Min, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export enum ReceiptStatus {
   PENDING = 'pending',
@@ -15,6 +15,7 @@ export class ReceiptItemDto {
   @IsString()
   qty: string;
 
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(0)
   price: number;
@@ -38,6 +39,7 @@ export class SubmitReceiptDto {
   items?: ReceiptItemDto[];
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(0)
   total_amount?: number;
@@ -66,6 +68,7 @@ export class ReviewReceiptDto {
   corrected_items?: ReceiptItemDto[];
 
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   @Min(0)
   corrected_total?: number;

@@ -64,10 +64,10 @@ export default function ChatPage() {
 
   // Create chat rooms from orders
   useEffect(() => {
-    const activeOrders = orders.filter(order => 
+    const activeOrders = orders?.filter(order => 
       ['accepted', 'shopping', 'enroute'].includes(order.status.toLowerCase()) &&
       order.shopper
-    );
+    ) || [];
 
     const rooms: ChatRoom[] = activeOrders.map(order => ({
       orderId: order.id,

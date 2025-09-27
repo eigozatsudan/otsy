@@ -77,11 +77,11 @@ export default function OrdersPage() {
     }).format(amount);
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders?.filter(order => {
     if (filter === 'all') return true;
     if (filter === 'active') return ['pending', 'accepted', 'shopping', 'purchased'].includes(order.status);
     return order.status === filter;
-  });
+  }) || [];
 
   if (isLoading) {
     return (
@@ -124,7 +124,7 @@ export default function OrdersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              進行中 ({orders.filter(o => ['pending', 'accepted', 'shopping', 'purchased'].includes(o.status)).length})
+              進行中 ({orders?.filter(o => ['pending', 'accepted', 'shopping', 'purchased'].includes(o.status)).length || 0})
             </button>
             <button
               onClick={() => setFilter('pending')}
@@ -134,7 +134,7 @@ export default function OrdersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              待機中 ({orders.filter(o => o.status === 'pending').length})
+              待機中 ({orders?.filter(o => o.status === 'pending').length || 0})
             </button>
             <button
               onClick={() => setFilter('delivered')}
@@ -144,7 +144,7 @@ export default function OrdersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              完了 ({orders.filter(o => o.status === 'delivered').length})
+              完了 ({orders?.filter(o => o.status === 'delivered').length || 0})
             </button>
           </div>
         </div>
