@@ -104,7 +104,7 @@ export default function RegisterPage() {
           アカウント作成
         </h2>
         <p className="mt-2 text-gray-600">
-          おつかいDXを始めましょう
+          Otsyを始めましょう
         </p>
       </div>
 

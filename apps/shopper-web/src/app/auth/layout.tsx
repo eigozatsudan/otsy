@@ -14,7 +14,7 @@ export default function AuthLayout({
           <div className="mb-8">
             <Link href="/" className="flex items-center">
               <ShoppingBagIcon className="h-10 w-10 text-white" />
-              <span className="ml-3 text-2xl font-bold">おつかいDX</span>
+              <span className="ml-3 text-2xl font-bold">Otsy</span>
               <span className="ml-2 text-sm bg-white/20 px-2 py-1 rounded-full">
                 ショッパー
               </span>
@@ -28,7 +28,7 @@ export default function AuthLayout({
           </h1>
 
           <p className="text-xl text-primary-100 mb-8">
-            おつかいDXのショッパーとして、お買い物代行で安定した収入を得ませんか？
+            Otsyのショッパーとして、お買い物代行で安定した収入を得ませんか？
             好きな時間に、好きな場所で働ける新しい働き方を始めましょう。
           </p>
 
@@ -64,7 +64,7 @@ export default function AuthLayout({
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center">
               <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">おつかいDX</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Otsy</span>
               <span className="ml-2 text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
                 ショッパー
               </span>

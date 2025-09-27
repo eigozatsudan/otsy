@@ -8,8 +8,8 @@ async function generateOpenApiSpec() {
   const app = await NestFactory.create(AppModule);
   
   const config = new DocumentBuilder()
-    .setTitle('Otsukai DX API')
-    .setDescription('おつかいDXプラットフォームのAPI仕様書')
+    .setTitle('Otsy API')
+    .setDescription('OtsyプラットフォームのAPI仕様書')
     .setVersion('1.0.0')
     .addBearerAuth(
       {

@@ -103,7 +103,7 @@ export function ShopperLandingPage() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">おつかいDX</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Otsy</span>
               <span className="ml-2 text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
                 ショッパー
               </span>
@@ -136,7 +136,7 @@ export function ShopperLandingPage() {
               <span className="text-primary-200">収入に変える</span>
             </h1>
             <p className="text-xl text-primary-100 mb-8 max-w-3xl mx-auto">
-              おつかいDXのショッパーとして、お買い物代行で安定した収入を得ませんか？
+              Otsyのショッパーとして、お買い物代行で安定した収入を得ませんか？
               好きな時間に、好きな場所で働ける新しい働き方を始めましょう。
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -177,7 +177,7 @@ export function ShopperLandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              なぜおつかいDXショッパーが選ばれるのか
+              なぜOtsyショッパーが選ばれるのか
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               従来の働き方にとらわれない、新しいスタイルの収入源
@@ -432,7 +432,7 @@ export function ShopperLandingPage() {
             <div>
               <div className="flex items-center mb-4">
                 <ShoppingBagIcon className="h-8 w-8 text-primary-400" />
-                <span className="ml-2 text-xl font-bold">おつかいDX</span>
+                <span className="ml-2 text-xl font-bold">Otsy</span>
               </div>
               <p className="text-gray-400">
                 お買い物代行で新しい働き方を提供するプラットフォーム
@@ -478,7 +478,7 @@ export function ShopperLandingPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 おつかいDX. All rights reserved.</p>
+            <p>&copy; 2024 Otsy. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -105,7 +105,7 @@ export default function RegisterPage() {
           ショッパー登録
         </h2>
         <p className="mt-2 text-gray-600">
-          おつかいDXで新しい働き方を始めましょう
+          Otsyで新しい働き方を始めましょう
         </p>
       </div>
 

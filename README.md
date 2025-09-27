@@ -1,4 +1,4 @@
-# Otsukai DX
+# Otsy
 
 Voice-enabled shopping service platform that connects users who need items purchased with shoppers who can fulfill those requests.
 
@@ -119,7 +119,7 @@ npm run db:reset       # Reset database (development only)
 ## Project Structure
 
 ```
-otsukai-dx/
+otsy/
 ├── apps/
 │   ├── user-web/          # User application
 │   ├── shopper-web/       # Shopper application

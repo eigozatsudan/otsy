@@ -1,8 +1,8 @@
 {
-  "name": "otsukai-dx",
+  "name": "otsy",
   "version": "1.0.0",
   "private": true,
-  "description": "Otsukai DX - Voice-enabled shopping service platform",
+  "description": "Otsy - Voice-enabled shopping service platform",
   "workspaces": [
     "apps/*",
     "services/*",

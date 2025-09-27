@@ -50,7 +50,7 @@ export function ShopperHeader() {
             
             <div className="flex items-center ml-4 lg:ml-0">
               <div className="flex-shrink-0">
-                <h1 className="text-xl font-bold text-gray-900">おつかいDX</h1>
+                <h1 className="text-xl font-bold text-gray-900">Otsy</h1>
               </div>
               <span className="ml-2 text-sm bg-primary-100 text-primary-800 px-2 py-1 rounded-full">
                 ショッパー

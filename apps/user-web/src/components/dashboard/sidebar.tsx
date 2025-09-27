@@ -44,7 +44,7 @@ export function DashboardSidebar() {
             <div className="flex h-16 items-center justify-between px-4">
               <Link href="/dashboard" className="flex items-center">
                 <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
-                <span className="ml-2 text-xl font-bold text-gray-900">おつかいDX</span>
+                <span className="ml-2 text-xl font-bold text-gray-900">Otsy</span>
               </Link>
               <button
                 type="button"
@@ -65,7 +65,7 @@ export function DashboardSidebar() {
           <div className="flex h-16 shrink-0 items-center">
             <Link href="/dashboard" className="flex items-center">
               <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">おつかいDX</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Otsy</span>
             </Link>
           </div>
           <SidebarContent pathname={pathname} user={user} logout={logout} />
@@ -82,7 +82,7 @@ export function DashboardSidebar() {
           <Bars3Icon className="h-6 w-6" />
         </button>
         <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
-          おつかいDX
+          Otsy
         </div>
       </div>
     </>

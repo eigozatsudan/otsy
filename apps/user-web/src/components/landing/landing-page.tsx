@@ -39,7 +39,7 @@ const testimonials = [
   {
     name: '田中 美咲',
     role: '会社員',
-    content: '仕事が忙しくて買い物に行く時間がなかったのですが、おつかいDXのおかげで本当に助かっています。音声で注文できるのが特に便利です。',
+    content: '仕事が忙しくて買い物に行く時間がなかったのですが、Otsyのおかげで本当に助かっています。音声で注文できるのが特に便利です。',
     rating: 5,
   },
   {
@@ -51,7 +51,7 @@ const testimonials = [
   {
     name: '山田 花子',
     role: '高齢者',
-    content: '重い荷物を持つのが大変でしたが、おつかいDXを使い始めてから生活が楽になりました。操作も簡単で助かります。',
+    content: '重い荷物を持つのが大変でしたが、Otsyを使い始めてから生活が楽になりました。操作も簡単で助かります。',
     rating: 5,
   },
 ];
@@ -72,7 +72,7 @@ export function LandingPage() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">おつかいDX</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Otsy</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link
@@ -125,7 +125,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              なぜおつかいDXが選ばれるのか
+              なぜOtsyが選ばれるのか
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               革新的な技術とプロのサービスで、あなたの買い物体験を変革します
@@ -288,7 +288,7 @@ export function LandingPage() {
             <div>
               <div className="flex items-center mb-4">
                 <ShoppingBagIcon className="h-8 w-8 text-primary-400" />
-                <span className="ml-2 text-xl font-bold">おつかいDX</span>
+                <span className="ml-2 text-xl font-bold">Otsy</span>
               </div>
               <p className="text-gray-400">
                 音声で簡単に買い物を依頼できる、次世代の買い物代行サービス
@@ -334,7 +334,7 @@ export function LandingPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 おつかいDX. All rights reserved.</p>
+            <p>&copy; 2024 Otsy. All rights reserved.</p>
           </div>
         </div>
       </footer>

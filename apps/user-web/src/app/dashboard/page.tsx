@@ -62,7 +62,7 @@ export default function DashboardPage() {
               おかえりなさい、{user?.firstName}さん
             </h1>
             <p className="text-primary-100 mt-1">
-              今日も便利なおつかいサービスをご利用ください
+              今日も便利なOtsyサービスをご利用ください
             </p>
           </div>
           <div className="hidden sm:block">

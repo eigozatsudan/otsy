@@ -36,8 +36,8 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Otsukai DX API')
-    .setDescription('おつかいDXプラットフォームのAPI仕様書')
+    .setTitle('Otsy API')
+    .setDescription('OtsyプラットフォームのAPI仕様書')
     .setVersion('1.0.0')
     .addBearerAuth(
       {

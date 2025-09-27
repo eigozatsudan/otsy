@@ -7,12 +7,12 @@ import '@/styles/globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'おつかいDX ショッパー - プロのお買い物代行',
-  description: 'おつかいDXのショッパー向けアプリ。お買い物代行で収入を得ましょう。',
+  title: 'Otsy ショッパー - プロのお買い物代行',
+  description: 'Otsyのショッパー向けアプリ。お買い物代行で収入を得ましょう。',
   keywords: ['買い物代行', 'ショッパー', '副業', '収入', '日本'],
-  authors: [{ name: 'おつかいDX' }],
-  creator: 'おつかいDX',
-  publisher: 'おつかいDX',
+  authors: [{ name: 'Otsy' }],
+  creator: 'Otsy',
+  publisher: 'Otsy',
   formatDetection: {
     email: false,
     address: false,
@@ -20,10 +20,10 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'),
   openGraph: {
-    title: 'おつかいDX ショッパー - プロのお買い物代行',
-    description: 'おつかいDXのショッパー向けアプリ。お買い物代行で収入を得ましょう。',
+    title: 'Otsy ショッパー - プロのお買い物代行',
+    description: 'Otsyのショッパー向けアプリ。お買い物代行で収入を得ましょう。',
     url: '/',
-    siteName: 'おつかいDX ショッパー',
+    siteName: 'Otsy ショッパー',
     locale: 'ja_JP',
     type: 'website',
     images: [
@@ -31,14 +31,14 @@ export const metadata: Metadata = {
         url: '/og-image-shopper.png',
         width: 1200,
         height: 630,
-        alt: 'おつかいDX ショッパー',
+        alt: 'Otsy ショッパー',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'おつかいDX ショッパー - プロのお買い物代行',
-    description: 'おつかいDXのショッパー向けアプリ。お買い物代行で収入を得ましょう。',
+    title: 'Otsy ショッパー - プロのお買い物代行',
+    description: 'Otsyのショッパー向けアプリ。お買い物代行で収入を得ましょう。',
     images: ['/og-image-shopper.png'],
   },
   robots: {

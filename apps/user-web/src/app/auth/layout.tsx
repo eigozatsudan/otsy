@@ -14,7 +14,7 @@ export default function AuthLayout({
           <div className="mb-8">
             <Link href="/" className="flex items-center">
               <ShoppingBagIcon className="h-10 w-10 text-white" />
-              <span className="ml-3 text-2xl font-bold">おつかいDX</span>
+              <span className="ml-3 text-2xl font-bold">Otsy</span>
             </Link>
           </div>
           
@@ -60,7 +60,7 @@ export default function AuthLayout({
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center">
               <ShoppingBagIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">おつかいDX</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Otsy</span>
             </Link>
           </div>
           

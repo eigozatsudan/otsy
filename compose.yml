@@ -16,7 +16,7 @@ services:
       - NODE_ENV=development
       - HOST=0.0.0.0
       - PORT=4000
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/otsukai
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/otsy
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123
@@ -34,11 +34,11 @@ services:
       - AWS_ACCESS_KEY_ID=your-aws-access-key
       - AWS_SECRET_ACCESS_KEY=your-aws-secret-key
       - AWS_REGION=ap-northeast-1
-      - AWS_S3_BUCKET=otsukai-dx-storage
+      - AWS_S3_BUCKET=otsy-storage
       # Web Push (for notifications)
       - VAPID_PUBLIC_KEY=your-vapid-public-key
       - VAPID_PRIVATE_KEY=your-vapid-private-key
-      - VAPID_SUBJECT=mailto:admin@otsukai.app
+      - VAPID_SUBJECT=mailto:admin@otsy.app
     depends_on:
       db:
         condition: service_healthy
@@ -53,7 +53,7 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
-      POSTGRES_DB: otsukai
+      POSTGRES_DB: otsy
     ports:
       - '5432:5432'
     volumes:
