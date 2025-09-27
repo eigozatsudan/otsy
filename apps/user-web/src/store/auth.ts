@@ -218,7 +218,7 @@ export const useAuthStore = create<AuthStore>()(
           if (state.isAuthenticated !== true) {
             state.isAuthenticated = true;
           }
-        } else {
+        } else if (state) {
           // No token, ensure we're logged out
           state.isAuthenticated = false;
           state.user = null;
