@@ -63,6 +63,14 @@ class ApiClient {
         return response;
       },
       (error) => {
+        console.error('API Error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: error.config,
+          fullError: error
+        });
+        
         const message = error.response?.data?.message || error.message || 'An error occurred';
         
         // Handle specific error cases
@@ -78,11 +86,13 @@ class ApiClient {
           toast.error(message);
         }
 
-        return Promise.reject({
+        const apiError: ApiError = {
           message,
           statusCode: error.response?.status || 500,
           error: error.response?.data?.error,
-        } as ApiError);
+        };
+
+        return Promise.reject(apiError);
       }
     );
   }
@@ -190,7 +200,7 @@ export const authApi = {
 
   logout: () => apiClient.post('/auth/logout'),
 
-  getProfile: () => apiClient.get<any>('/auth/profile'),
+  getProfile: () => apiClient.get<{ shopper: any }>('/auth/profile'),
 
   updateProfile: (data: any) => apiClient.patch<any>('/auth/profile', data),
 };

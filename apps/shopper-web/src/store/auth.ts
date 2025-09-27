@@ -80,6 +80,29 @@ export const useAuthStore = create<AuthStore>()(
           toast.success('ログインしました');
         } catch (error: any) {
           set({ isLoading: false });
+          
+          // Log detailed error information
+          console.error('Auth store login error:', {
+            message: error?.message,
+            statusCode: error?.statusCode,
+            error: error?.error,
+            fullError: error,
+            stack: error?.stack
+          });
+          
+          // Show user-friendly error message
+          let errorMessage = 'ログインに失敗しました。メールアドレスとパスワードを確認してください。';
+          
+          if (error?.statusCode === 401) {
+            errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
+          } else if (error?.statusCode >= 500) {
+            errorMessage = 'サーバーエラーが発生しました。しばらく後でお試しください。';
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          toast.error(errorMessage);
+          
           throw error;
         }
       },
@@ -161,7 +184,8 @@ export const useAuthStore = create<AuthStore>()(
         try {
           set({ isLoading: true });
           
-          const updatedShopper = await authApi.updateProfile(data);
+          const response = await authApi.updateProfile(data);
+          const { shopper: updatedShopper } = response;
           
           set({
             shopper: updatedShopper,
@@ -184,7 +208,8 @@ export const useAuthStore = create<AuthStore>()(
 
           set({ isLoading: true });
           
-          const shopper = await authApi.getProfile();
+          const response = await authApi.getProfile();
+          const { shopper } = response;
           
           set({
             shopper,

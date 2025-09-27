@@ -51,7 +51,12 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       // Error is already handled by the store and toast
-      console.error('Login error:', error);
+      console.error('Login page error:', {
+        error,
+        message: error?.message,
+        statusCode: error?.statusCode,
+        stack: error?.stack
+      });
     }
   };
 
@@ -202,8 +207,8 @@ export default function LoginPage() {
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-sm font-medium text-gray-700 mb-2">デモ用アカウント</h3>
           <div className="text-xs text-gray-600 space-y-1">
-            <p>メール: shopper@example.com</p>
-            <p>パスワード: password123</p>
+            <p>メール: shopper@otsy.local</p>
+            <p>パスワード: shopper123</p>
           </div>
           <button
             type="button"
@@ -211,8 +216,8 @@ export default function LoginPage() {
               const form = document.querySelector('form') as HTMLFormElement;
               const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement;
               const passwordInput = form.querySelector('input[name="password"]') as HTMLInputElement;
-              emailInput.value = 'shopper@example.com';
-              passwordInput.value = 'password123';
+              emailInput.value = 'shopper@otsy.local';
+              passwordInput.value = 'shopper123';
             }}
             className="mt-2 text-xs text-primary-600 hover:text-primary-500"
           >

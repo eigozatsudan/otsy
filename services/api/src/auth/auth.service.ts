@@ -37,6 +37,15 @@ export class AuthService {
     return null;
   }
 
+  async validateShopper(email: string, password: string) {
+    const shopper = await this.prisma.shopper.findUnique({ where: { email } });
+    if (shopper && await bcrypt.compare(password, shopper.password_hash)) {
+      const { password_hash, ...result } = shopper;
+      return result;
+    }
+    return null;
+  }
+
   async login(user: any) {
     const payload: JwtPayload = {
       sub: user.id,
@@ -61,6 +70,43 @@ export class AuthService {
         email: user.email,
         role: user.role,
       },
+    };
+  }
+
+  async loginShopper(shopper: any) {
+    const payload: JwtPayload = {
+      sub: shopper.id,
+      email: shopper.email,
+      role: 'shopper',
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '15m',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '7d',
+    });
+
+    return {
+      shopper: {
+        id: shopper.id,
+        email: shopper.email,
+        firstName: shopper.first_name || '',
+        lastName: shopper.last_name || '',
+        phone: shopper.phone,
+        status: shopper.is_online ? 'available' : 'offline',
+        rating: shopper.rating_avg || 0,
+        totalOrders: shopper.rating_count || 0,
+        kycStatus: shopper.kyc_status || 'pending',
+        riskTier: shopper.risk_tier || 'L0',
+        isVerified: shopper.kyc_status === 'approved',
+        createdAt: shopper.created_at,
+        updatedAt: shopper.updated_at,
+      },
+      token: accessToken,
+      refreshToken: refreshToken,
     };
   }
 
@@ -207,5 +253,47 @@ export class AuthService {
       default:
         return null;
     }
+  }
+
+  async getShopperProfile(shopperId: string) {
+    const shopper = await this.prisma.shopper.findUnique({
+      where: { id: shopperId },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone: true,
+        status: true,
+        rating_avg: true,
+        rating_count: true,
+        current_orders: true,
+        kyc_status: true,
+        risk_tier: true,
+        is_online: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    if (!shopper) {
+      throw new UnauthorizedException('Shopper not found');
+    }
+
+    return {
+      id: shopper.id,
+      email: shopper.email,
+      firstName: shopper.first_name || '',
+      lastName: shopper.last_name || '',
+      phone: shopper.phone,
+      status: shopper.is_online ? 'available' : 'offline',
+      rating: shopper.rating_avg || 0,
+      totalOrders: shopper.rating_count || 0,
+      kycStatus: shopper.kyc_status || 'pending',
+      riskTier: shopper.risk_tier || 'L0',
+      isVerified: shopper.kyc_status === 'approved',
+      createdAt: shopper.created_at,
+      updatedAt: shopper.updated_at,
+    };
   }
 }

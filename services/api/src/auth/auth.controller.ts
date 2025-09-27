@@ -46,9 +46,26 @@ export class AuthController {
     return { user: admin };
   }
 
+  @Post('shopper/login')
+  async loginShopper(@Body() loginDto: LoginDto) {
+    const shopper = await this.authService.validateShopper(loginDto.email, loginDto.password);
+    if (!shopper) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.authService.loginShopper(shopper);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@CurrentUser() user: any) {
     return { user };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  async getShopperProfile(@CurrentUser() user: any) {
+    // Get full shopper details
+    const shopper = await this.authService.getShopperProfile(user.id);
+    return { shopper };
   }
 }
