@@ -48,11 +48,17 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password);
-      // Redirect will be handled by useEffect when isAuthenticated becomes true
+      const success = await login(data.email, data.password);
+      if (success) {
+        // Redirect will be handled by useEffect when isAuthenticated becomes true
+        // No need to do anything here as useEffect will handle the redirect
+      }
+      // If login fails, the error message is already shown by the store
+      // and the form remains on the login page
     } catch (error: any) {
-      // Error is already handled by the store and toast
-      console.error('Login error:', error);
+      // This should not happen since login function now returns boolean
+      // but if it does, show a generic error message
+      toast.error('ログイン中にエラーが発生しました。もう一度お試しください。');
     }
   };
 
@@ -186,8 +192,8 @@ export default function LoginPage() {
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-sm font-medium text-gray-700 mb-2">デモ用アカウント</h3>
           <div className="text-xs text-gray-600 space-y-1">
-            <p>メール: demo@example.com</p>
-            <p>パスワード: password123</p>
+            <p>メール: user@otsy.local</p>
+            <p>パスワード: user123</p>
           </div>
           <button
             type="button"
@@ -195,8 +201,8 @@ export default function LoginPage() {
               const form = document.querySelector('form') as HTMLFormElement;
               const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement;
               const passwordInput = form.querySelector('input[name="password"]') as HTMLInputElement;
-              emailInput.value = 'demo@example.com';
-              passwordInput.value = 'password123';
+              emailInput.value = 'user@otsy.local';
+              passwordInput.value = 'user123';
             }}
             className="mt-2 text-xs text-primary-600 hover:text-primary-500"
           >

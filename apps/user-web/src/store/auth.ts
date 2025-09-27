@@ -26,7 +26,7 @@ interface AuthState {
 }
 
 interface AuthActions {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (userData: {
     email: string;
     password: string;
@@ -54,28 +54,53 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
 
       // Actions
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string): Promise<boolean> => {
         try {
           set({ isLoading: true });
           
           const response = await authApi.login(email, password);
-          const { user, token, refreshToken } = response;
+          const { user, access_token, refresh_token } = response;
 
           // Set token in API client
-          apiClient.setToken(token);
+          apiClient.setToken(access_token);
 
           set({
             user,
-            token,
-            refreshToken,
+            token: access_token,
+            refreshToken: refresh_token,
             isAuthenticated: true,
             isLoading: false,
           });
 
           toast.success('ログインしました');
+          return true;
         } catch (error: any) {
           set({ isLoading: false });
-          throw error;
+          
+          // Log detailed error information
+          console.error('Auth store login error:', {
+            message: error?.message,
+            statusCode: error?.statusCode,
+            error: error?.error,
+            fullError: error,
+            stack: error?.stack
+          });
+          
+          // Show user-friendly error message
+          let errorMessage = 'ログインに失敗しました。メールアドレスとパスワードを確認してください。';
+          
+          if (error?.statusCode === 401) {
+            errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
+          } else if (error?.statusCode >= 500) {
+            errorMessage = 'サーバーエラーが発生しました。しばらく後でお試しください。';
+          } else if (error?.message) {
+            errorMessage = error.message;
+          }
+          
+          toast.error(errorMessage);
+          
+          // Return false to indicate login failure
+          return false;
         }
       },
 

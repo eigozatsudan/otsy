@@ -46,12 +46,18 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   const onSubmit = async (data: LoginFormData) => {
-    const success = await login(data.email, data.password);
-    if (success) {
-      router.push('/dashboard');
+    try {
+      const success = await login(data.email, data.password);
+      if (success) {
+        router.push('/dashboard');
+      }
+      // If login fails, the error message is already shown by the store
+      // and the form remains on the login page
+    } catch (error) {
+      // This should not happen since login function now returns boolean
+      // but if it does, show a generic error message
+      toast.error('ログイン中にエラーが発生しました。もう一度お試しください。');
     }
-    // If login fails, the error message is already shown by the store
-    // and the form remains on the login page
   };
 
   if (isAuthenticated) {
