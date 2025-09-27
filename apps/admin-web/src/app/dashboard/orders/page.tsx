@@ -79,7 +79,7 @@ export default function OrdersPage() {
 
   const filteredOrders = orders?.filter(order => {
     if (filter === 'all') return true;
-    if (filter === 'active') return ['pending', 'accepted', 'shopping', 'purchased'].includes(order.status);
+    if (filter === 'active') return ['new', 'accepted', 'shopping', 'await_receipt_ok', 'enroute'].includes(order.status);
     return order.status === filter;
   }) || [];
 
@@ -114,7 +114,7 @@ export default function OrdersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              すべて ({orders.length})
+              すべて ({orders?.length || 0})
             </button>
             <button
               onClick={() => setFilter('active')}
@@ -134,7 +134,7 @@ export default function OrdersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              待機中 ({orders?.filter(o => o.status === 'pending').length || 0})
+              待機中 ({orders?.filter(o => o.status === 'new').length || 0})
             </button>
             <button
               onClick={() => setFilter('delivered')}
@@ -234,7 +234,7 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {filteredOrders.length === 0 && (
+        {(!filteredOrders || filteredOrders.length === 0) && (
           <div className="text-center py-12">
             <div className="text-gray-500">
               {filter === 'all' ? '注文がありません' : `${getStatusText(filter)}の注文がありません`}

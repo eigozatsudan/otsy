@@ -28,7 +28,7 @@ export default function ActiveOrdersPage() {
   } = useOrdersStore();
 
   useEffect(() => {
-    fetchMyOrders({ status: 'accepted,shopping,enroute' });
+    fetchMyOrders({});
   }, [fetchMyOrders]);
 
   const activeOrders = myOrders.filter(order => 

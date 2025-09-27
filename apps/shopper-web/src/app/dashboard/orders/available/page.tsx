@@ -59,7 +59,7 @@ export default function AvailableOrdersPage() {
   };
 
   const loadMore = () => {
-    if (pagination.page < pagination.totalPages) {
+    if (pagination?.page && pagination?.totalPages && pagination.page < pagination.totalPages) {
       fetchAvailableOrders({ 
         page: pagination.page + 1, 
         limit: pagination.limit 
@@ -74,7 +74,7 @@ export default function AvailableOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">利用可能な注文</h1>
           <p className="text-gray-600 mt-1">
-            {pagination.total}件の注文が利用可能です
+            {pagination?.total || 0}件の注文が利用可能です
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-3">
@@ -148,11 +148,11 @@ export default function AvailableOrdersPage() {
       )}
 
       {/* Orders list */}
-      {isLoading && availableOrders.length === 0 ? (
+      {isLoading && (!availableOrders || availableOrders.length === 0) ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="lg" />
         </div>
-      ) : availableOrders.length > 0 ? (
+      ) : availableOrders && availableOrders.length > 0 ? (
         <div className="space-y-4">
           {availableOrders.map((order) => (
             <div key={order.id} className="card hover:shadow-md transition-shadow">
@@ -272,7 +272,7 @@ export default function AvailableOrdersPage() {
           ))}
 
           {/* Load more button */}
-          {pagination.page < pagination.totalPages && (
+          {pagination?.page && pagination?.totalPages && pagination.page < pagination.totalPages && (
             <div className="text-center py-6">
               <button
                 onClick={loadMore}

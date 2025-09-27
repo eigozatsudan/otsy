@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
         const totalRevenue = orders.reduce((sum: number, order: any) => sum + order.total, 0);
         const activeOrders = orders?.filter((order: any) => 
-          ['pending', 'accepted', 'shopping', 'purchased'].includes(order.status)
+          ['new', 'accepted', 'shopping', 'await_receipt_ok', 'enroute'].includes(order.status)
         ).length || 0;
 
         setStats({

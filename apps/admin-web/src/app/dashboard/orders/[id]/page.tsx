@@ -85,10 +85,11 @@ export default function OrderDetailPage() {
 
   const getStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
-      pending: '待機中',
+      new: '新規',
       accepted: '受付済み',
       shopping: '買い物中',
-      purchased: '購入済み',
+      await_receipt_ok: 'レシート確認待ち',
+      enroute: '配送中',
       delivered: '配達完了',
       cancelled: 'キャンセル'
     };
@@ -97,10 +98,11 @@ export default function OrderDetailPage() {
 
   const getStatusColor = (status: string) => {
     const colorMap: { [key: string]: string } = {
-      pending: 'bg-yellow-100 text-yellow-800',
+      new: 'bg-yellow-100 text-yellow-800',
       accepted: 'bg-blue-100 text-blue-800',
       shopping: 'bg-purple-100 text-purple-800',
-      purchased: 'bg-green-100 text-green-800',
+      await_receipt_ok: 'bg-orange-100 text-orange-800',
+      enroute: 'bg-indigo-100 text-indigo-800',
       delivered: 'bg-gray-100 text-gray-800',
       cancelled: 'bg-red-100 text-red-800'
     };

@@ -46,7 +46,8 @@ export default function OrdersPage() {
   useEffect(() => {
     const status = searchParams.get('status');
     if (status) {
-      setFilters({ status: status === 'active' ? 'accepted,shopping,enroute' : status });
+      // For 'active' status, we'll filter on the frontend instead of sending multiple statuses
+      setFilters({ status: status === 'active' ? '' : status });
     }
   }, [searchParams, setFilters]);
 
@@ -66,7 +67,7 @@ export default function OrdersPage() {
   };
 
   const loadMore = () => {
-    if (pagination.page < pagination.totalPages) {
+    if (pagination?.page && pagination?.totalPages && pagination.page < pagination.totalPages) {
       fetchOrders({ 
         page: pagination.page + 1, 
         limit: pagination.limit,
@@ -96,7 +97,7 @@ export default function OrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">注文履歴</h1>
           <p className="text-gray-600 mt-1">
-            {pagination.total}件の注文履歴
+            {pagination?.total || 0}件の注文履歴
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
@@ -161,11 +162,11 @@ export default function OrdersPage() {
       </div>
 
       {/* Orders list */}
-      {isLoading && orders.length === 0 ? (
+      {isLoading && (!orders || orders.length === 0) ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="lg" />
         </div>
-      ) : orders.length > 0 ? (
+      ) : orders && orders.length > 0 ? (
         <div className="space-y-4">
           {orders.map((order) => (
             <div key={order.id} className="card hover:shadow-md transition-shadow">
@@ -327,7 +328,7 @@ export default function OrdersPage() {
           ))}
 
           {/* Load more button */}
-          {pagination.page < pagination.totalPages && (
+          {pagination?.page && pagination?.totalPages && pagination.page < pagination.totalPages && (
             <div className="text-center py-6">
               <button
                 onClick={loadMore}

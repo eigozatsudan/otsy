@@ -57,7 +57,6 @@ export default function ChatPage() {
   // Fetch orders with active chats
   useEffect(() => {
     fetchOrders({ 
-      status: 'accepted,shopping,enroute',
       limit: 50 
     });
   }, [fetchOrders]);

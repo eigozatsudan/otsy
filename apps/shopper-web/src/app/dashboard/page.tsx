@@ -36,7 +36,7 @@ export default function ShopperDashboardPage() {
   useEffect(() => {
     // Fetch available orders and active orders
     fetchAvailableOrders({ limit: 5 });
-    fetchMyOrders({ limit: 5, status: 'accepted,shopping,enroute' });
+    fetchMyOrders({ limit: 5 });
   }, [fetchAvailableOrders, fetchMyOrders]);
 
   const activeOrders = myOrders.filter(order => 
