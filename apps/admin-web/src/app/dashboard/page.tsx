@@ -20,11 +20,14 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuthStore();
+  const { admin } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check if we're on the client side
+    if (typeof window === 'undefined') return;
+    
     const fetchStats = async () => {
       try {
         const [ordersRes, shoppersRes] = await Promise.all([
@@ -97,7 +100,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-          <p className="text-gray-600">Otsukai DX 管理画面へようこそ、{user?.name}さん</p>
+          <p className="text-gray-600">Otsukai DX 管理画面へようこそ、{admin?.firstName}さん</p>
         </div>
 
         {/* 統計カード */}

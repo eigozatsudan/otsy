@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
@@ -11,9 +11,14 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { admin, logout } = useAuthStore();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const navigation = [
     { name: 'ダッシュボード', href: '/dashboard', icon: '📊' },
@@ -62,28 +67,30 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* ユーザー情報 */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user?.name?.charAt(0) || 'A'}
-                </span>
+        {isClient && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {admin?.firstName?.charAt(0) || 'A'}
+                  </span>
+                </div>
               </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-900">{admin?.firstName} {admin?.lastName}</p>
+                <p className="text-xs text-gray-500">{admin?.email}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="ml-2 text-gray-400 hover:text-gray-600"
+                title="ログアウト"
+              >
+                🚪
+              </button>
             </div>
-            <div className="ml-3 flex-1">
-              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="ml-2 text-gray-400 hover:text-gray-600"
-              title="ログアウト"
-            >
-              🚪
-            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* メインコンテンツ */}

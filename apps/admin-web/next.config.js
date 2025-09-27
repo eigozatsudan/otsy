@@ -2,13 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  transpilePackages: ['@otsukai/ui', '@otsukai/types'],
+  transpilePackages: ['@otsy/ui', '@otsy/types'],
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1',
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000',
   },
   images: {
-    domains: ['localhost', 'otsukai.app'],
+    domains: ['localhost', 'otsy.app'],
     formats: ['image/webp', 'image/avif'],
   },
   experimental: {

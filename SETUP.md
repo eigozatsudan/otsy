@@ -54,9 +54,9 @@
 
 After running `pnpm db:seed`, you'll have these test accounts:
 
-- **Admin**: admin@otsukai.local / admin123
-- **User**: user@otsukai.local / user123
-- **Shopper**: shopper@otsukai.local / shopper123
+- **Admin**: admin@otsy.local / admin123
+- **User**: user@otsy.local / user123
+- **Shopper**: shopper@otsy.local / shopper123
 
 ## Development Commands
 

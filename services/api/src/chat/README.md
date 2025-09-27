@@ -375,7 +375,7 @@ async function subscribeToNotifications() {
 # VAPID設定（Web Push用）
 VAPID_PUBLIC_KEY=your-vapid-public-key
 VAPID_PRIVATE_KEY=your-vapid-private-key
-VAPID_SUBJECT=mailto:support@otsukai.app
+VAPID_SUBJECT=mailto:support@otsy.app
 
 # JWT設定（WebSocket認証用）
 JWT_SECRET=your-jwt-secret

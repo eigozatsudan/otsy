@@ -9,10 +9,10 @@ async function main() {
   // Create admin user
   const adminPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.admin.upsert({
-    where: { email: 'admin@otsukai.local' },
+    where: { email: 'admin@otsy.local' },
     update: {},
     create: {
-      email: 'admin@otsukai.local',
+      email: 'admin@otsy.local',
       password_hash: adminPassword,
       role: 'manager',
     },
@@ -21,10 +21,10 @@ async function main() {
   // Create test user
   const userPassword = await bcrypt.hash('user123', 10);
   const user = await prisma.user.upsert({
-    where: { email: 'user@otsukai.local' },
+    where: { email: 'user@otsy.local' },
     update: {},
     create: {
-      email: 'user@otsukai.local',
+      email: 'user@otsy.local',
       password_hash: userPassword,
       phone: '+81-90-1234-5678',
       subscription_tier: 'basic',
@@ -34,10 +34,10 @@ async function main() {
   // Create test shopper user first
   const shopperUserPassword = await bcrypt.hash('shopper123', 10);
   const shopperUser = await prisma.user.upsert({
-    where: { email: 'shopper@otsukai.local' },
+    where: { email: 'shopper@otsy.local' },
     update: {},
     create: {
-      email: 'shopper@otsukai.local',
+      email: 'shopper@otsy.local',
       password_hash: shopperUserPassword,
       phone: '+81-90-8765-4321',
       role: 'shopper',
@@ -46,11 +46,11 @@ async function main() {
 
   // Create test shopper profile
   const shopper = await prisma.shopper.upsert({
-    where: { email: 'shopper@otsukai.local' },
+    where: { email: 'shopper@otsy.local' },
     update: {},
     create: {
       user_id: shopperUser.id,
-      email: 'shopper@otsukai.local',
+      email: 'shopper@otsy.local',
       password_hash: shopperUserPassword,
       phone: '+81-90-8765-4321',
       kyc_status: 'approved',

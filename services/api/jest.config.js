@@ -11,7 +11,7 @@ module.exports = {
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
   moduleNameMapping: {
-    '^@otsukai/types$': '<rootDir>/../../packages/types/src',
+    '^@otsy/types$': '<rootDir>/../../packages/types/src',
   },
   setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],
 };

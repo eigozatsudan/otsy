@@ -21,10 +21,10 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@otsukai/ui": ["./packages/ui/src"],
-      "@otsukai/ui/*": ["./packages/ui/src/*"],
-      "@otsukai/types": ["./packages/types/src"],
-      "@otsukai/types/*": ["./packages/types/src/*"]
+      "@otsy/ui": ["./packages/ui/src"],
+      "@otsy/ui/*": ["./packages/ui/src/*"],
+      "@otsy/types": ["./packages/types/src"],
+      "@otsy/types/*": ["./packages/types/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

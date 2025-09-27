@@ -6,17 +6,20 @@ import { useAuthStore } from '@/store/auth';
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, isLoading } = useAuthStore();
+  const { admin, isLoading } = useAuthStore();
 
   useEffect(() => {
+    // Check if we're on the client side
+    if (typeof window === 'undefined') return;
+    
     if (!isLoading) {
-      if (user) {
+      if (admin) {
         router.push('/dashboard');
       } else {
         router.push('/login');
       }
     }
-  }, [user, isLoading, router]);
+  }, [admin, isLoading, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

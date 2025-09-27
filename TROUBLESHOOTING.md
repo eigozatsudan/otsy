@@ -14,7 +14,7 @@ yarn install
 pnpm install
 
 # 特定のワークスペースで依存関係を確認
-yarn workspace @otsukai/admin-web install
+yarn workspace @otsy/admin-web install
 ```
 
 #### 問題: Peer dependency警告
@@ -37,8 +37,8 @@ yarn workspace @otsukai/admin-web install
 **解決方法:**
 ```bash
 # UIパッケージをクリーンビルド
-pnpm -F @otsukai/ui clean
-pnpm -F @otsukai/ui build
+pnpm -F @otsy/ui clean
+pnpm -F @otsy/ui build
 ```
 
 #### 問題: Tailwind CSSクラスが適用されない
@@ -78,8 +78,8 @@ pnpm dev
 **解決方法:**
 ```bash
 # Storybookの依存関係を再インストール
-pnpm -F @otsukai/ui install
-pnpm -F @otsukai/ui storybook
+pnpm -F @otsy/ui install
+pnpm -F @otsy/ui storybook
 ```
 
 ## 推奨される開発フロー
@@ -96,10 +96,10 @@ pnpm build
 pnpm dev
 
 # または個別に起動
-pnpm -F @otsukai/api dev
-pnpm -F @otsukai/user-web dev
-pnpm -F @otsukai/shopper-web dev
-pnpm -F @otsukai/admin-web dev
+pnpm -F @otsy/api dev
+pnpm -F @otsy/user-web dev
+pnpm -F @otsy/shopper-web dev
+pnpm -F @otsy/admin-web dev
 ```
 
 3. **型チェック:**

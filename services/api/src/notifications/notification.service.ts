@@ -22,7 +22,7 @@ export class NotificationService {
   private initializeWebPush() {
     const vapidPublicKey = this.configService.get<string>('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = this.configService.get<string>('VAPID_PRIVATE_KEY');
-    const vapidSubject = this.configService.get<string>('VAPID_SUBJECT') || 'mailto:support@otsukai.app';
+    const vapidSubject = this.configService.get<string>('VAPID_SUBJECT') || 'mailto:support@otsy.app';
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       this.logger.warn('VAPID keys not configured. Push notifications will not work.');

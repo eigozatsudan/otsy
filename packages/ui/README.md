@@ -1,4 +1,4 @@
-# @otsukai/ui
+# @otsy/ui
 
 Otsukai DXプラットフォーム用の共有UIコンポーネントライブラリです。
 
@@ -25,7 +25,7 @@ pnpm install
 ## 使用方法
 
 ```tsx
-import { Button, Card, OrderCard } from '@otsukai/ui';
+import { Button, Card, OrderCard } from '@otsy/ui';
 
 function MyComponent() {
   return (
@@ -82,7 +82,7 @@ function MyComponent() {
 ### フォーマット関数
 
 ```tsx
-import { formatCurrency, formatDate, formatRelativeTime } from '@otsukai/ui';
+import { formatCurrency, formatDate, formatRelativeTime } from '@otsy/ui';
 
 formatCurrency(1200); // "¥1,200"
 formatDate(new Date()); // "2024年1月15日"
@@ -92,7 +92,7 @@ formatRelativeTime(new Date(Date.now() - 60000)); // "1分前"
 ### スタイリングユーティリティ
 
 ```tsx
-import { cn } from '@otsukai/ui';
+import { cn } from '@otsy/ui';
 
 // Tailwindクラスの結合と競合解決
 const className = cn('bg-blue-500', 'bg-red-500'); // "bg-red-500"
