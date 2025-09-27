@@ -1,15 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import dynamicImport from 'next/dynamic';
+import { Providers } from '@/components/providers';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
-
-// Providersを動的インポートでラップ
-const Providers = dynamicImport(() => import('@/components/providers').then(mod => ({ default: mod.Providers })), {
-  ssr: false,
-  loading: () => <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div></div>
-});
 
 export const metadata: Metadata = {
   title: 'Otsukai DX 管理画面',
