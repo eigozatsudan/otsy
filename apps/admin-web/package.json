@@ -1,5 +1,5 @@
 {
-  "name": "@otsukai/admin-web",
+  "name": "@otsy/admin-web",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -13,8 +13,8 @@
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@hookform/resolvers": "^3.3.2",
-    "@otsukai/types": "workspace:*",
-    "@otsukai/ui": "workspace:*",
+    "@otsy/types": "workspace:*",
+    "@otsy/ui": "workspace:*",
     "@tanstack/react-table": "^8.10.7",
     "axios": "^1.6.0",
     "clsx": "^2.0.0",

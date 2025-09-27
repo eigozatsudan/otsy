@@ -1,5 +1,5 @@
 {
-  "name": "@otsukai/types",
+  "name": "@otsy/types",
   "version": "1.0.0",
   "private": true,
   "main": "./src/index.ts",
@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "codegen": "openapi-typescript ./openapi/otsukai.v1.yaml -o ./src/api.types.ts",
+    "codegen": "openapi-typescript ./openapi/otsy.v1.yaml -o ./src/api.types.ts",
     "watch": "npm run codegen && chokidar \"../**/*.yaml\" -c 'npm run codegen'",
     "type-check": "tsc --noEmit"
   },

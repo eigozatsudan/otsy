@@ -1,5 +1,5 @@
 {
-  "name": "@otsukai/api",
+  "name": "@otsy/api",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -37,7 +37,7 @@
     "@nestjs/platform-socket.io": "^10.0.0",
     "@nestjs/swagger": "^7.1.16",
     "@nestjs/websockets": "^10.0.0",
-    "@otsukai/types": "workspace:*",
+    "@otsy/types": "workspace:*",
     "@prisma/client": "^5.22.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",

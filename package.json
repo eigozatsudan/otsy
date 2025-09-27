@@ -15,11 +15,11 @@
     "test": "turbo run test",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean",
-    "codegen:types": "pnpm -F @otsukai/types codegen",
-    "openapi:generate": "pnpm -F @otsukai/api openapi:generate",
-    "types:generate": "pnpm -F @otsukai/api types:generate",
+    "codegen:types": "pnpm -F @otsy/types codegen",
+    "openapi:generate": "pnpm -F @otsy/api openapi:generate",
+    "types:generate": "pnpm -F @otsy/api types:generate",
     "install:clean": "rm -rf node_modules */node_modules */*/node_modules && pnpm install",
-    "setup": "pnpm install && pnpm -F @otsukai/api db:generate"
+    "setup": "pnpm install && pnpm -F @otsy/api db:generate"
   },
   "devDependencies": {
     "@turbo/gen": "^1.10.12",
