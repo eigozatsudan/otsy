@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
+export const dynamic = 'force-dynamic';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { apiClient } from '@/lib/api';
 

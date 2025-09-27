@@ -3,7 +3,13 @@
 import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
-import { Toaster } from 'react-hot-toast';
+import dynamic from 'next/dynamic';
+
+// Toasterを動的インポートでラップ
+const Toaster = dynamic(() => import('react-hot-toast').then(mod => ({ default: mod.Toaster })), {
+  ssr: false,
+  loading: () => null
+});
 import { useAuthStore, startTokenRefresh, stopTokenRefresh } from '@/store/auth';
 
 // Create a client
