@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ShopperLandingPage } from '@/components/landing/shopper-landing-page';
 
+
 export default function HomePage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, shopper } = useAuthStore();

@@ -24,6 +24,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, formatDateTime, formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();

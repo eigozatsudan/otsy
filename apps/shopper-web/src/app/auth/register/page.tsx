@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/auth';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { isValidPhone } from '@/lib/utils';
 
+
 const registerSchema = z.object({
   firstName: z
     .string()

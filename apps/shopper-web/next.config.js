@@ -10,10 +10,13 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'otsukai.app'],
     formats: ['image/webp', 'image/avif'],
+    unoptimized: true, // 静的書き出し時の画像最適化を無効化
   },
   experimental: {
     optimizePackageImports: ['@heroicons/react'],
   },
+  // 動的レンダリングを強制
+  trailingSlash: false,
   async rewrites() {
     return [
       {

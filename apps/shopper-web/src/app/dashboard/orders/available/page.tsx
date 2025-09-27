@@ -16,6 +16,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, formatDistance, formatRelativeTime, calculateEarnings } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 export default function AvailableOrdersPage() {
   const { 
     availableOrders, 

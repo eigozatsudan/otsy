@@ -17,6 +17,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, compressImage } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 interface ActualItem {
   name: string;
   qty: string;

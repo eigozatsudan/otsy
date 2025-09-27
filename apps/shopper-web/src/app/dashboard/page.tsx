@@ -20,6 +20,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, formatRelativeTime, getStatusText, getStatusColor } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
+// 動的レンダリングを強制
+export const dynamic = 'force-dynamic';
+
 export default function ShopperDashboardPage() {
   const { shopper } = useAuthStore();
   const { availableOrders, myOrders, isLoading, fetchAvailableOrders, fetchMyOrders } = useOrdersStore();
