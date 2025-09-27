@@ -18,6 +18,12 @@ const nextConfig = {
   // 動的レンダリングを強制
   trailingSlash: false,
   output: 'standalone',
+  // カスタムエラーページを無効にする
+  async generateBuildId() {
+    return 'build-' + Date.now();
+  },
+  skipMiddlewareUrlNormalize: true,
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     return [
       {
