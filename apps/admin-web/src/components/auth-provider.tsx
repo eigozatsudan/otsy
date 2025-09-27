@@ -1,17 +1,26 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore, startTokenRefresh, stopTokenRefresh } from '@/store/auth';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isMounted, setIsMounted] = useState(false);
   const { checkAuth, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Check authentication on app start only once
-    checkAuth();
-  }, [checkAuth]);
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
+    if (!isMounted) return;
+    
+    // Check authentication on app start only once
+    checkAuth();
+  }, [checkAuth, isMounted]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    
     // Start/stop token refresh based on auth status
     if (isAuthenticated) {
       startTokenRefresh();
@@ -23,7 +32,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => {
       stopTokenRefresh();
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isMounted]);
+
+  if (!isMounted) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div></div>;
+  }
 
   return <>{children}</>;
 }

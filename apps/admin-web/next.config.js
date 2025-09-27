@@ -17,6 +17,7 @@ const nextConfig = {
   },
   // 動的レンダリングを強制
   trailingSlash: false,
+  output: 'standalone',
   async rewrites() {
     return [
       {

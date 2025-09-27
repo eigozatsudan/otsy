@@ -5,6 +5,8 @@ import { useAuthStore } from '@/store/auth';
 import { apiClient } from '@/lib/api';
 import { AdminLayout } from '@/components/layout/admin-layout';
 
+export const dynamic = 'force-dynamic';
+
 interface DashboardStats {
   totalOrders: number;
   activeOrders: number;
@@ -23,10 +25,14 @@ export default function DashboardPage() {
   const { admin } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Check if we're on the client side
-    if (typeof window === 'undefined') return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
     
     const fetchStats = async () => {
       try {
@@ -64,7 +70,7 @@ export default function DashboardPage() {
     };
 
     fetchStats();
-  }, []);
+  }, [isMounted]);
 
   const getStatusText = (status: string) => {
     const statusMap: { [key: string]: string } = {
@@ -85,7 +91,7 @@ export default function DashboardPage() {
     }).format(amount);
   };
 
-  if (isLoading) {
+  if (!isMounted || isLoading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">

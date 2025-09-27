@@ -11,13 +11,13 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { admin, logout } = useAuthStore();
 
   useEffect(() => {
-    setIsClient(true);
+    setIsMounted(true);
   }, []);
 
   const navigation = [
@@ -33,6 +33,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     await logout();
     router.push('/login');
   };
+
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -67,7 +75,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* ユーザー情報 */}
-        {isClient && (
+        {isMounted && (
           <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
