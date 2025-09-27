@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
-import { useAuthStore, startTokenRefresh, stopTokenRefresh } from '@/store/auth';
+import dynamic from 'next/dynamic';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -17,30 +17,25 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const { checkAuth, isAuthenticated } = useAuthStore();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Check authentication on app start only once
-    checkAuth();
-  }, [checkAuth]); // Remove isAuthenticated from dependencies
+    setIsClient(true);
+  }, []);
 
-  useEffect(() => {
-    // Start/stop token refresh based on auth status
-    if (isAuthenticated) {
-      startTokenRefresh();
-    } else {
-      stopTokenRefresh();
-    }
+  // Dynamically import the auth store to avoid SSR issues
+  const AuthProvider = dynamic(() => import('./auth-provider'), {
+    ssr: false,
+    loading: () => <>{children}</>
+  });
 
-    // Cleanup on unmount
-    return () => {
-      stopTokenRefresh();
-    };
-  }, [isAuthenticated]);
+  if (!isClient) {
+    return <>{children}</>;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthProvider>{children}</AuthProvider>
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
