@@ -30,7 +30,7 @@ interface AuthState {
 }
 
 interface AuthActions {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (shopperData: {
     email: string;
     password: string;
@@ -59,7 +59,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
 
       // Actions
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string): Promise<boolean> => {
         try {
           set({ isLoading: true });
           
@@ -78,6 +78,7 @@ export const useAuthStore = create<AuthStore>()(
           });
 
           toast.success('ログインしました');
+          return true;
         } catch (error: any) {
           set({ isLoading: false });
           
@@ -103,7 +104,8 @@ export const useAuthStore = create<AuthStore>()(
           
           toast.error(errorMessage);
           
-          throw error;
+          // Return false to indicate login failure
+          return false;
         }
       },
 

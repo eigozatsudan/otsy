@@ -46,18 +46,12 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   const onSubmit = async (data: LoginFormData) => {
-    try {
-      await login(data.email, data.password);
+    const success = await login(data.email, data.password);
+    if (success) {
       router.push('/dashboard');
-    } catch (error: any) {
-      // Error is already handled by the store and toast
-      console.error('Login page error:', {
-        error,
-        message: error?.message,
-        statusCode: error?.statusCode,
-        stack: error?.stack
-      });
     }
+    // If login fails, the error message is already shown by the store
+    // and the form remains on the login page
   };
 
   if (isAuthenticated) {
