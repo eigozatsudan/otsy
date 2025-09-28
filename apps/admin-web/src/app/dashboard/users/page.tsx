@@ -8,12 +8,15 @@ import { apiClient } from '@/lib/api';
 
 interface User {
     id: string;
-    name: string;
     email: string;
     phone: string;
-    role: 'customer' | 'shopper' | 'admin';
-    isActive: boolean;
-    createdAt: string;
+    subscription_tier?: string;
+    created_at: string;
+    updated_at: string;
+    // 追加フィールド（フロントエンドで生成）
+    name?: string;
+    role?: 'customer' | 'shopper' | 'admin';
+    isActive?: boolean;
     lastLoginAt?: string;
     totalOrders?: number;
 }
@@ -27,9 +30,23 @@ export default function UsersPage() {
         const fetchUsers = async () => {
             try {
                 const response = await apiClient.get('/users');
-                setUsers(response.data);
+                // APIレスポンスは直接配列の形式
+                const usersData = Array.isArray(response) ? response : response.data || [];
+                
+                // ユーザーデータを整形
+                const formattedUsers = usersData.map((user: any) => ({
+                    ...user,
+                    name: user.email.split('@')[0], // メールアドレスから名前を生成
+                    role: user.email.includes('shopper') ? 'shopper' : 'customer', // メールアドレスから役割を判定
+                    isActive: true, // デフォルトでアクティブ
+                    createdAt: user.created_at,
+                    totalOrders: 0 // デフォルト値
+                }));
+                
+                setUsers(formattedUsers);
             } catch (error) {
                 console.error('ユーザーデータの取得に失敗しました:', error);
+                setUsers([]); // エラー時は空配列を設定
             } finally {
                 setIsLoading(false);
             }
@@ -68,7 +85,7 @@ export default function UsersPage() {
         return colorMap[role] || 'bg-gray-100 text-gray-800';
     };
 
-    const filteredUsers = users.filter(user => {
+    const filteredUsers = (users || []).filter(user => {
         if (filter === 'all') return true;
         if (filter === 'active') return user.isActive;
         if (filter === 'inactive') return !user.isActive;
@@ -111,7 +128,7 @@ export default function UsersPage() {
                                             総ユーザー数
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {users.length}
+                                            {users?.length || 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -133,7 +150,7 @@ export default function UsersPage() {
                                             顧客
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {users.filter(u => u.role === 'customer').length}
+                                            {users?.filter(u => u.role === 'customer').length || 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -155,7 +172,7 @@ export default function UsersPage() {
                                             買い物代行者
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {users.filter(u => u.role === 'shopper').length}
+                                            {users?.filter(u => u.role === 'shopper').length || 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -177,7 +194,7 @@ export default function UsersPage() {
                                             アクティブ
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {users.filter(u => u.isActive).length}
+                                            {users?.filter(u => u.isActive).length || 0}
                                         </dd>
                                     </dl>
                                 </div>
@@ -196,7 +213,7 @@ export default function UsersPage() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
-                            すべて ({users.length})
+                            すべて ({users?.length || 0})
                         </button>
                         <button
                             onClick={() => setFilter('customer')}
@@ -205,7 +222,7 @@ export default function UsersPage() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
-                            顧客 ({users.filter(u => u.role === 'customer').length})
+                            顧客 ({users?.filter(u => u.role === 'customer').length || 0})
                         </button>
                         <button
                             onClick={() => setFilter('shopper')}
@@ -214,7 +231,7 @@ export default function UsersPage() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
-                            買い物代行者 ({users.filter(u => u.role === 'shopper').length})
+                            買い物代行者 ({users?.filter(u => u.role === 'shopper').length || 0})
                         </button>
                         <button
                             onClick={() => setFilter('active')}
@@ -223,7 +240,7 @@ export default function UsersPage() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
-                            アクティブ ({users.filter(u => u.isActive).length})
+                            アクティブ ({users?.filter(u => u.isActive).length || 0})
                         </button>
                         <button
                             onClick={() => setFilter('inactive')}
@@ -232,7 +249,7 @@ export default function UsersPage() {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                         >
-                            非アクティブ ({users.filter(u => !u.isActive).length})
+                            非アクティブ ({users?.filter(u => !u.isActive).length || 0})
                         </button>
                     </div>
                 </div>
@@ -305,7 +322,7 @@ export default function UsersPage() {
                                             }
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(user.createdAt).toLocaleDateString('ja-JP')}
+                                            {new Date(user.createdAt || user.created_at).toLocaleDateString('ja-JP')}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <button
