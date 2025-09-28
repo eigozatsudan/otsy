@@ -105,6 +105,18 @@ export class ChatService {
     });
   }
 
+  async getOrderById(orderId: string): Promise<any> {
+    return this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        user_id: true,
+        shopper_id: true,
+        status: true,
+      },
+    });
+  }
+
   async getUserChats(userId: string, page = 1, limit = 20): Promise<{ chats: ChatResponseDto[]; total: number }> {
     const offset = (page - 1) * limit;
 
@@ -267,6 +279,17 @@ export class ChatService {
         sender_id: { not: userId },
         read_at: null,
       },
+    });
+  }
+
+  async getUnreadMessages(chatId: string, userId: string): Promise<any[]> {
+    return this.prisma.chatMessage.findMany({
+      where: {
+        chat_id: chatId,
+        sender_id: { not: userId },
+        read_at: null,
+      },
+      orderBy: { created_at: 'asc' },
     });
   }
 

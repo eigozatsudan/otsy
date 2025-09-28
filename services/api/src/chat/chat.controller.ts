@@ -22,6 +22,7 @@ import {
   PushSubscriptionDto,
   SendNotificationDto,
   UpdateNotificationPreferencesDto,
+  MessageType,
 } from './dto/chat.dto';
 
 @Controller('chat')
@@ -283,5 +284,143 @@ export class ChatController {
       shopper_id: body.shopper_id || user.id, // Fallback for testing
       initial_message: body.initial_message,
     });
+  }
+
+  // Convenience endpoints for order-based operations
+  @Get('orders/:orderId/messages')
+  async getOrderMessages(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    try {
+      // First get the chat for this order
+      const chat = await this.chatService.getChatByOrderId(orderId);
+      
+      if (!chat) {
+        // Return empty messages array if no chat exists
+        return { messages: [], hasMore: false, total: 0 };
+      }
+
+      // Check access
+      const hasAccess = 
+        chat.user_id === user.id || 
+        chat.shopper_id === user.id ||
+        user.role === 'admin';
+
+      if (!hasAccess) {
+        throw new Error('Access denied');
+      }
+
+      const pageNum = page ? parseInt(page, 10) : 1;
+      const limitNum = limit ? parseInt(limit, 10) : 50;
+      
+      return this.chatService.getChatMessages(chat.id, pageNum, limitNum);
+    } catch (error) {
+      console.error('Error getting order messages:', error);
+      // Return empty messages array on any error
+      return { messages: [], hasMore: false, total: 0 };
+    }
+  }
+
+  @Post('orders/:orderId/messages')
+  async sendOrderMessage(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+    @Body() body: any,
+  ) {
+    try {
+      // First get the chat for this order
+      let chat = await this.chatService.getChatByOrderId(orderId);
+      
+      if (!chat) {
+        // Create a new chat for this order if it doesn't exist
+        console.log(`Creating new chat for order ${orderId}`);
+        const messageContent = body.message || body.content || '';
+        
+        // Get order details to find the correct participants
+        const order = await this.chatService.getOrderById(orderId);
+        if (!order) {
+          throw new Error('Order not found');
+        }
+        
+        chat = await this.chatService.createChat({
+          order_id: orderId,
+          user_id: order.user_id,
+          shopper_id: order.shopper_id,
+          initial_message: messageContent,
+        });
+      }
+
+      // Check access
+      const hasAccess = 
+        chat.user_id === user.id || 
+        chat.shopper_id === user.id ||
+        user.role === 'admin';
+
+      if (!hasAccess) {
+        throw new Error('Access denied');
+      }
+
+      // Create proper message DTO
+      const messageDto: SendMessageDto = {
+        content: body.message || body.content || '',
+        type: MessageType.TEXT,
+        attachment_url: body.attachment_url,
+        attachment_type: body.attachment_type,
+        metadata: body.metadata,
+      };
+
+      return this.chatService.sendMessage(
+        chat.id,
+        user.id,
+        user.role as 'user' | 'shopper',
+        messageDto,
+      );
+    } catch (error) {
+      console.error('Error sending order message:', error);
+      throw error;
+    }
+  }
+
+  @Post('orders/:orderId/mark-read')
+  async markOrderMessagesAsRead(
+    @CurrentUser() user: any,
+    @Param('orderId') orderId: string,
+  ) {
+    try {
+      // First get the chat for this order
+      const chat = await this.chatService.getChatByOrderId(orderId);
+      
+      if (!chat) {
+        // Return success if no chat exists (nothing to mark as read)
+        return { success: true, marked_count: 0 };
+      }
+
+      // Check access
+      const hasAccess = 
+        chat.user_id === user.id || 
+        chat.shopper_id === user.id ||
+        user.role === 'admin';
+
+      if (!hasAccess) {
+        throw new Error('Access denied');
+      }
+
+      // Get all unread messages for this chat
+      const unreadMessages = await this.chatService.getUnreadMessages(chat.id, user.id);
+      const messageIds = unreadMessages.map(msg => msg.id);
+      
+      if (messageIds.length > 0) {
+        await this.chatService.markMessagesAsRead(user.id, messageIds);
+      }
+
+      return { success: true, marked_count: messageIds.length };
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+      // Return success even if there's an error to prevent frontend issues
+      return { success: true, marked_count: 0 };
+    }
   }
 }

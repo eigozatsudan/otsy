@@ -447,7 +447,7 @@ export const paymentsApi = {
 
 // Chat API methods
 export const chatApi = {
-  getOrderMessages: (orderId: string) => apiClient.get<any[]>(`/chat/orders/${orderId}/messages`),
+  getOrderMessages: (orderId: string) => apiClient.get<any>(`/chat/orders/${orderId}/messages`),
 
   sendMessage: (orderId: string, message: string, attachments?: File[]) => {
     const formData = new FormData();

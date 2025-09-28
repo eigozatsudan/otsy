@@ -100,7 +100,10 @@ export default function ChatPage() {
   const loadMessages = async (orderId: string) => {
     try {
       setIsLoading(true);
-      const messagesData = await chatApi.getOrderMessages(orderId);
+      const response = await chatApi.getOrderMessages(orderId);
+      
+      // Handle both array format (legacy) and object format (new)
+      const messagesData = Array.isArray(response) ? response : response.messages || [];
       setMessages(messagesData);
       
       // Mark messages as read
