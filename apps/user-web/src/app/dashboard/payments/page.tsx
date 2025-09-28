@@ -398,7 +398,7 @@ export default function PaymentsPage() {
                         {formatCurrency(payment.amount)}
                       </div>
                       {payment.order.estimate_amount !== payment.amount && (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 line-through">
                           見積: {formatCurrency(payment.order.estimate_amount)}
                         </div>
                       )}

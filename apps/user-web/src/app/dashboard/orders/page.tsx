@@ -206,7 +206,22 @@ export default function OrdersPage() {
                       <div>
                         <span className="font-medium">金額:</span>
                         <br />
-                        {formatCurrency(order.actualAmount || order.estimateAmount)}
+                        {order.actualAmount ? (
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {formatCurrency(order.actualAmount)}
+                            </div>
+                            {order.actualAmount !== order.estimateAmount && (
+                              <div className="text-sm text-gray-500 line-through">
+                                見積: {formatCurrency(order.estimateAmount)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-gray-600">
+                            見積: {formatCurrency(order.estimateAmount)}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <span className="font-medium">配送先:</span>

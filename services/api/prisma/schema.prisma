@@ -104,6 +104,7 @@ model Order {
   receipt_check   String   // required, auto
   estimate_amount Int      // JPY
   auth_amount     Int?     // JPY
+  actual_amount   Int?     // JPY
   deadline_ts     DateTime?
   priority        Float?
   address_json    Json

@@ -206,21 +206,56 @@ export const authApi = {
   updateProfile: (data: any) => apiClient.patch<any>('/auth/profile', data),
 };
 
+// Helper function to transform API response to frontend format
+const transformOrderResponse = (order: any) => ({
+  ...order,
+  estimateAmount: order.estimate_amount,
+  actualAmount: order.actual_amount,
+  authAmount: order.auth_amount,
+  createdAt: order.created_at,
+  updatedAt: order.updated_at,
+  deliveryAddress: order.address_json ? 
+    `${order.address_json.postal_code} ${order.address_json.prefecture} ${order.address_json.city} ${order.address_json.address_line}` : 
+    '',
+  items: order.items?.map((item: any) => ({
+    ...item,
+    estimatePrice: item.price_min || item.price_max || 0,
+    actualPrice: item.actual_price,
+    notes: item.notes,
+  })) || [],
+});
+
 // Orders API methods
 export const ordersApi = {
   createOrder: (orderData: any) => apiClient.post<any>('/orders', orderData),
 
-  getMyOrders: (params?: { page?: number; limit?: number; status?: string }) =>
-    apiClient.get<PaginatedResponse<any>>('/orders/my-orders', { params }),
+  getMyOrders: async (params?: { page?: number; limit?: number; status?: string }) => {
+    const response = await apiClient.get<PaginatedResponse<any>>('/orders/my-orders', { params });
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        orders: response.data.orders?.map(transformOrderResponse) || [],
+      }
+    };
+  },
 
-  getOrder: (orderId: string) => apiClient.get<any>(`/orders/${orderId}`),
+  getOrder: async (orderId: string) => {
+    const response = await apiClient.get<any>(`/orders/${orderId}`);
+    return transformOrderResponse(response.data);
+  },
 
   updateOrder: (orderId: string, data: any) => apiClient.patch<any>(`/orders/${orderId}`, data),
 
-  cancelOrder: (orderId: string, reason: string) =>
-    apiClient.delete<any>(`/orders/${orderId}`, { data: { reason } }),
+  cancelOrder: async (orderId: string, reason: string) => {
+    const response = await apiClient.delete<any>(`/orders/${orderId}`, { data: { reason } });
+    return transformOrderResponse(response.data);
+  },
 
-  approveReceipt: (orderId: string) => apiClient.post<any>(`/orders/${orderId}/approve-receipt`),
+  approveReceipt: async (orderId: string) => {
+    const response = await apiClient.post<any>(`/orders/${orderId}/approve-receipt`);
+    return transformOrderResponse(response.data);
+  },
 
   rejectReceipt: (orderId: string, reason: string) =>
     apiClient.post<any>(`/orders/${orderId}/reject-receipt`, { reason }),

@@ -186,13 +186,26 @@ export default function OrderDetailPage() {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-gray-900">合計金額</span>
                 <div className="text-right">
-                  <p className="text-xl font-bold text-gray-900">
-                    {formatCurrency(order.actualAmount || order.estimateAmount)}
-                  </p>
-                  {order.actualAmount && order.actualAmount !== order.estimateAmount && (
-                    <p className="text-sm text-gray-500">
-                      見積: {formatCurrency(order.estimateAmount)}
-                    </p>
+                  {order.actualAmount ? (
+                    <div>
+                      <p className="text-xl font-bold text-gray-900">
+                        {formatCurrency(order.actualAmount)}
+                      </p>
+                      {order.actualAmount !== order.estimateAmount && (
+                        <p className="text-sm text-gray-500 line-through">
+                          見積: {formatCurrency(order.estimateAmount)}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xl font-bold text-gray-600">
+                        見積: {formatCurrency(order.estimateAmount)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        実際の金額は確定後に更新されます
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

@@ -190,6 +190,7 @@ export class OrderResponseDto {
   receipt_check: ReceiptCheck;
   estimate_amount: number;
   auth_amount?: number;
+  actual_amount?: number;
   deadline_ts?: Date;
   priority?: number;
   address_json: object;
