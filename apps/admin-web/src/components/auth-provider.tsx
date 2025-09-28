@@ -5,13 +5,13 @@ import { useAuthStore, startTokenRefresh, stopTokenRefresh } from '@/store/auth'
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
+  
+  // 常にHooksを呼び出す（条件分岐しない）
+  const { checkAuth, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  // クライアントサイドでのみストアを使用
-  const { checkAuth, isAuthenticated } = isMounted ? useAuthStore() : { checkAuth: async () => {}, isAuthenticated: false };
 
   useEffect(() => {
     if (!isMounted) return;
