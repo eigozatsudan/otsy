@@ -9,7 +9,8 @@ import {
   PlusIcon,
   MinusIcon,
   TrashIcon,
-  CheckIcon
+  CheckIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { useOrdersStore, type ShoppingListItem } from '@/store/orders';
 import { LoadingSpinner, LoadingDots } from '@/components/ui/loading-spinner';
@@ -65,15 +66,15 @@ export default function OrderPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [priceEdit, setPriceEdit] = useState({ min: '', max: '' });
 
   const loadCategories = useCallback(async () => {
     try {
       setIsLoadingCategories(true);
       const response = await itemsApi.getCategories();
-      console.log('API Response:', response);
       // APIレスポンスが配列の場合は直接使用、オブジェクトの場合はdataプロパティを使用
       const categoriesData = Array.isArray(response) ? response : response.data || [];
-      console.log('Categories Data:', categoriesData);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -126,6 +127,41 @@ export default function OrderPage() {
     );
   };
 
+  const handleStartPriceEdit = (itemName: string) => {
+    const item = shoppingList.find(i => i.name === itemName);
+    if (item) {
+      setEditingItem(itemName);
+      setPriceEdit({
+        min: item.price_min?.toString() || '',
+        max: item.price_max?.toString() || '',
+      });
+    }
+  };
+
+  const handleSavePriceEdit = () => {
+    if (!editingItem) return;
+    
+    setShoppingList(prev => 
+      prev.map(item => 
+        item.name === editingItem 
+          ? { 
+              ...item, 
+              price_min: priceEdit.min ? parseInt(priceEdit.min) : undefined,
+              price_max: priceEdit.max ? parseInt(priceEdit.max) : undefined,
+            } 
+          : item
+      )
+    );
+    setEditingItem(null);
+    setPriceEdit({ min: '', max: '' });
+    toast.success('価格を更新しました');
+  };
+
+  const handleCancelPriceEdit = () => {
+    setEditingItem(null);
+    setPriceEdit({ min: '', max: '' });
+  };
+
   const handleProcessTextInput = async () => {
     if (!textInput.trim()) return;
     
@@ -136,6 +172,8 @@ export default function OrderPage() {
       const newItem: ShoppingListItem = {
         name: textInput.trim(),
         qty: '1',
+        price_min: undefined,
+        price_max: undefined,
         allow_subs: true,
         note: '',
       };
@@ -165,26 +203,45 @@ export default function OrderPage() {
       const orderData = {
         mode: 'approve',
         receipt_check: 'required',
-        estimate_amount: shoppingList.reduce((total, item) => 
-          total + (item.price_max || item.price_min || 0), 0
-        ),
+        estimate_amount: Math.max(100, shoppingList.reduce((total, item) => 
+          total + ((item.price_max || item.price_min || 0) * parseInt(item.qty) || 0), 0
+        )),
         address_json: {
           postal_code: '100-0001',
           prefecture: 'Tokyo',
           city: 'Chiyoda',
-          address_line: deliveryInfo.address,
+          address_line: deliveryInfo.address || '住所を入力してください',
           building: '',
-          delivery_notes: deliveryInfo.instructions,
+          delivery_notes: deliveryInfo.instructions || '',
         },
-        items: shoppingList,
+        items: shoppingList.map(item => ({
+          name: item.name,
+          qty: item.qty,
+          price_min: item.price_min,
+          price_max: item.price_max,
+          allow_subs: item.allow_subs,
+          note: item.note || '',
+        })),
       };
 
       await createOrder(orderData);
       toast.success('注文が作成されました');
       router.push('/dashboard/orders');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create order:', error);
-      toast.error('注文の作成に失敗しました');
+      
+      // より詳細なエラーメッセージを表示
+      let errorMessage = '注文の作成に失敗しました';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -192,9 +249,6 @@ export default function OrderPage() {
     ? (categories || []).find(cat => cat.id === selectedCategory)?.items || []
     : (categories || []).flatMap(cat => cat.items);
   
-  console.log('Categories state:', categories);
-  console.log('Filtered items:', filteredItems);
-  console.log('First item category:', filteredItems[0]?.category);
 
   const searchResults = searchQuery 
     ? (filteredItems || []).filter(item => 
@@ -509,11 +563,67 @@ export default function OrderPage() {
                             <PlusIcon className="h-4 w-4" />
                           </button>
                         </div>
-                        {item.price_min && item.price_max && (
-                          <span className="text-sm text-gray-500">
-                            {formatCurrency(item.price_min)} - {formatCurrency(item.price_max)}
-                          </span>
-                        )}
+                        {/* 価格表示・編集 */}
+                        <div className="flex items-center space-x-2">
+                          {editingItem === item.name ? (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="number"
+                                value={priceEdit.min}
+                                onChange={(e) => setPriceEdit(prev => ({ ...prev, min: e.target.value }))}
+                                placeholder="最小価格"
+                                className="w-20 p-1 text-sm border border-gray-300 rounded"
+                                min="0"
+                              />
+                              <span className="text-sm text-gray-500">-</span>
+                              <input
+                                type="number"
+                                value={priceEdit.max}
+                                onChange={(e) => setPriceEdit(prev => ({ ...prev, max: e.target.value }))}
+                                placeholder="最大価格"
+                                className="w-20 p-1 text-sm border border-gray-300 rounded"
+                                min="0"
+                              />
+                              <button
+                                onClick={handleSavePriceEdit}
+                                className="p-1 text-green-600 hover:bg-green-50 rounded"
+                              >
+                                <CheckIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={handleCancelPriceEdit}
+                                className="p-1 text-gray-500 hover:bg-gray-50 rounded"
+                              >
+                                <XMarkIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              {item.price_min && item.price_max ? (
+                                <span className="text-sm text-gray-500">
+                                  {formatCurrency(item.price_min)} - {formatCurrency(item.price_max)}
+                                </span>
+                              ) : item.price_min ? (
+                                <span className="text-sm text-gray-500">
+                                  {formatCurrency(item.price_min)}〜
+                                </span>
+                              ) : item.price_max ? (
+                                <span className="text-sm text-gray-500">
+                                  〜{formatCurrency(item.price_max)}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400">価格未設定</span>
+                              )}
+                              <button
+                                onClick={() => handleStartPriceEdit(item.name)}
+                                className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                title="価格を編集"
+                              >
+                                <PencilIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -532,11 +642,13 @@ export default function OrderPage() {
                 <div className="flex justify-between items-center mb-4">
                   <span className="font-semibold">合計見積もり:</span>
                   <span className="text-lg font-bold text-primary-600">
-                    {formatCurrency(
-                      shoppingList.reduce((total, item) => 
-                        total + (item.price_max || item.price_min || 0), 0
-                      )
-                    )}
+                    {(() => {
+                      const total = shoppingList.reduce((total, item) => {
+                        const price = item.price_max || item.price_min || 0;
+                        return total + (price * parseInt(item.qty) || 0);
+                      }, 0);
+                      return total > 0 ? formatCurrency(total) : '価格未設定';
+                    })()}
                   </span>
                 </div>
                 <button
