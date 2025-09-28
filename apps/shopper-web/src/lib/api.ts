@@ -98,13 +98,15 @@ class ApiClient {
         const apiError: ApiError = {
           message,
           statusCode: error.response?.status || 500,
-          error: error.response?.data?.error,
+          error: error.response?.data?.error || error.code || 'UNKNOWN_ERROR',
         };
         
         // Add more detailed error information
         (apiError as any).originalError = error;
         (apiError as any).responseData = error.response?.data;
         (apiError as any).requestConfig = error.config;
+        (apiError as any).url = error.config?.url;
+        (apiError as any).method = error.config?.method;
         
         // Handle specific error cases
         if (error.response?.status === 401) {
@@ -161,7 +163,15 @@ class ApiClient {
         }
 
         // Log the error for debugging
-        console.error('API Error - Rejecting with:', apiError);
+        console.error('API Error - Rejecting with:', {
+          message: apiError.message,
+          statusCode: apiError.statusCode,
+          error: apiError.error,
+          url: (apiError as any).url,
+          method: (apiError as any).method,
+          responseData: (apiError as any).responseData,
+          originalError: (apiError as any).originalError
+        });
         return Promise.reject(apiError);
       }
     );
@@ -407,17 +417,25 @@ export const ordersApi = {
 
   acceptOrder: async (orderId: string) => {
     try {
-      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/accept`);
+      console.log('Attempting to accept order:', orderId);
+      const order = await apiClient.post<any>(`/orders/${orderId}/accept`, {
+        note: '注文を受付ました',
+        estimated_completion: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() // 2時間後
+      });
+      console.log('Order accepted successfully:', order);
       return transformOrderResponse(order);
     } catch (error) {
-      console.error('acceptOrder API error:', error);
+      console.error('acceptOrder API error for orderId:', orderId, error);
       throw error;
     }
   },
 
   startShopping: async (orderId: string) => {
     try {
-      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/start-shopping`);
+      const order = await apiClient.patch<any>(`/orders/${orderId}/status`, {
+        status: 'shopping',
+        notes: '買い物を開始しました'
+      });
       return transformOrderResponse(order);
     } catch (error) {
       console.error('startShopping API error:', error);
@@ -427,7 +445,7 @@ export const ordersApi = {
 
   updateOrderStatus: async (orderId: string, status: string, data?: any) => {
     try {
-      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/status`, { status, ...data });
+      const order = await apiClient.patch<any>(`/orders/${orderId}/status`, { status, ...data });
       return transformOrderResponse(order);
     } catch (error) {
       console.error('updateOrderStatus API error:', error);
@@ -439,23 +457,26 @@ export const ordersApi = {
     const formData = new FormData();
     formData.append('receipt', receiptImage);
     formData.append('actualItems', JSON.stringify(actualItems));
+    formData.append('orderId', orderId);
     
-    const order = await apiClient.post<any>(`/shopper/orders/${orderId}/receipt`, formData, {
+    const receipt = await apiClient.post<any>(`/receipts`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return transformOrderResponse(order);
+    return receipt;
   },
 
   completeDelivery: async (orderId: string, deliveryProof?: File) => {
-    const formData = new FormData();
-    if (deliveryProof) {
-      formData.append('deliveryProof', deliveryProof);
+    try {
+      const order = await apiClient.patch<any>(`/orders/${orderId}/status`, {
+        status: 'delivered',
+        notes: '配達が完了しました',
+        delivery_proof: deliveryProof ? 'uploaded' : undefined
+      });
+      return transformOrderResponse(order);
+    } catch (error) {
+      console.error('completeDelivery API error:', error);
+      throw error;
     }
-    
-    const order = await apiClient.post<any>(`/shopper/orders/${orderId}/complete`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return transformOrderResponse(order);
   },
 
   cancelOrder: async (orderId: string, reason?: string) => {

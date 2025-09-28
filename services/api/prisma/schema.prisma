@@ -37,7 +37,6 @@ model User {
   notification_logs NotificationLog[]
   notification_preferences NotificationPreferences[]
   shopper_profile   Shopper?
-  shopper_orders    Order[] @relation("ShopperOrders")
 
   @@map("users")
 }
@@ -125,7 +124,6 @@ model Order {
   audit_logs    OrderAuditLog[]
   ratings       ShopperRating[]
   order_runs    OrderRun[]
-  shopper_user  User?          @relation("ShopperOrders", fields: [shopper_id], references: [id], map: "orders_shopper_user_fkey")
 
   @@map("orders")
 }

@@ -538,22 +538,21 @@ export class MatchingService {
   }
 
   private async getTopShoppers(): Promise<any[]> {
-    const shoppers = await this.prisma.user.findMany({
-      where: { role: 'shopper' },
+    const shoppers = await this.prisma.shopper.findMany({
       include: {
         _count: {
           select: {
-            shopper_orders: {
+            orders: {
               where: { status: 'delivered' },
             },
           },
         },
-        shopper_ratings: {
+        ratings: {
           select: { overall_rating: true },
         },
       },
       orderBy: {
-        shopper_orders: {
+        orders: {
           _count: 'desc',
         },
       },
@@ -561,14 +560,14 @@ export class MatchingService {
     });
 
     return shoppers.map(shopper => {
-      const avgRating = shopper.shopper_ratings.length > 0
-        ? shopper.shopper_ratings.reduce((sum, r) => sum + r.overall_rating, 0) / shopper.shopper_ratings.length
+      const avgRating = shopper.ratings.length > 0
+        ? shopper.ratings.reduce((sum, r) => sum + r.overall_rating, 0) / shopper.ratings.length
         : 0;
 
       return {
         id: shopper.id,
         name: `${shopper.first_name} ${shopper.last_name}`,
-        total_orders: shopper._count.shopper_orders,
+        total_orders: shopper._count.orders,
         avg_rating: Math.round(avgRating * 10) / 10,
       };
     });
