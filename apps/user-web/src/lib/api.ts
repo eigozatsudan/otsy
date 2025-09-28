@@ -229,6 +229,12 @@ const transformOrderResponse = (order: any) => {
       actualPrice: item.actual_price,
       notes: item.notes,
     })) || [],
+    shopper: order.shopper ? {
+      id: order.shopper.id,
+      firstName: order.shopper.first_name || order.shopper.firstName || '',
+      lastName: order.shopper.last_name || order.shopper.lastName || '',
+      rating: order.shopper.rating || 0,
+    } : undefined,
   };
 };
 

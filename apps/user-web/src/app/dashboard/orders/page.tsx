@@ -256,11 +256,11 @@ export default function OrdersPage() {
                       <div className="mt-3 flex items-center text-sm text-gray-600">
                         <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center mr-2">
                           <span className="text-xs font-medium text-primary-700">
-                            {order.shopper.firstName[0]}
+                            {order.shopper.firstName?.[0] || '?'}
                           </span>
                         </div>
                         <span>
-                          ショッパー: {order.shopper.lastName} {order.shopper.firstName}
+                          ショッパー: {order.shopper.lastName || ''} {order.shopper.firstName || ''}
                         </span>
                         {order.shopper.rating && (
                           <span className="ml-2 text-yellow-500">
