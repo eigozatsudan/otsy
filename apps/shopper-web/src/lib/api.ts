@@ -323,11 +323,41 @@ export const authApi = {
   updateProfile: (data: any) => apiClient.patch<any>('/auth/profile', data),
 };
 
+// Helper function to transform API response to frontend format
+const transformOrderResponse = (order: any) => {
+  if (!order) {
+    console.warn('transformOrderResponse called with undefined/null order');
+    return null;
+  }
+  
+  return {
+    ...order,
+    estimateAmount: order.estimate_amount,
+    actualAmount: order.actual_amount,
+    authAmount: order.auth_amount,
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
+    deliveryAddress: order.address_json ? 
+      `${order.address_json.postal_code} ${order.address_json.prefecture} ${order.address_json.city} ${order.address_json.address_line}` : 
+      '',
+    items: order.items?.map((item: any) => ({
+      ...item,
+      estimatePrice: item.price_min || item.price_max || 0,
+      actualPrice: item.actual_price,
+      notes: item.notes,
+    })) || [],
+  };
+};
+
 // Orders API methods (shopper perspective)
 export const ordersApi = {
   getAvailableOrders: async (params?: { page?: number; limit?: number; location?: string }) => {
     try {
-      return await apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/available', { params });
+      const response = await apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/available', { params });
+      return {
+        ...response,
+        orders: response.orders?.map(transformOrderResponse).filter(Boolean) || []
+      };
     } catch (error) {
       console.error('getAvailableOrders API error:', error);
       // Return mock data for development
@@ -345,7 +375,11 @@ export const ordersApi = {
 
   getMyOrders: async (params?: { page?: number; limit?: number; status?: string }) => {
     try {
-      return await apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/my-orders', { params });
+      const response = await apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/my-orders', { params });
+      return {
+        ...response,
+        orders: response.orders?.map(transformOrderResponse).filter(Boolean) || []
+      };
     } catch (error) {
       console.error('getMyOrders API error:', error);
       // Return mock data for development
@@ -363,7 +397,8 @@ export const ordersApi = {
 
   getOrder: async (orderId: string) => {
     try {
-      return await apiClient.get<any>(`/shopper/orders/${orderId}`);
+      const order = await apiClient.get<any>(`/shopper/orders/${orderId}`);
+      return transformOrderResponse(order);
     } catch (error) {
       console.error('getOrder API error:', error);
       throw error;
@@ -372,7 +407,8 @@ export const ordersApi = {
 
   acceptOrder: async (orderId: string) => {
     try {
-      return await apiClient.post<any>(`/shopper/orders/${orderId}/accept`);
+      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/accept`);
+      return transformOrderResponse(order);
     } catch (error) {
       console.error('acceptOrder API error:', error);
       throw error;
@@ -381,7 +417,8 @@ export const ordersApi = {
 
   startShopping: async (orderId: string) => {
     try {
-      return await apiClient.post<any>(`/shopper/orders/${orderId}/start-shopping`);
+      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/start-shopping`);
+      return transformOrderResponse(order);
     } catch (error) {
       console.error('startShopping API error:', error);
       throw error;
@@ -390,37 +427,41 @@ export const ordersApi = {
 
   updateOrderStatus: async (orderId: string, status: string, data?: any) => {
     try {
-      return await apiClient.post<any>(`/shopper/orders/${orderId}/status`, { status, ...data });
+      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/status`, { status, ...data });
+      return transformOrderResponse(order);
     } catch (error) {
       console.error('updateOrderStatus API error:', error);
       throw error;
     }
   },
 
-  submitReceipt: (orderId: string, receiptImage: File, actualItems: any[]) => {
+  submitReceipt: async (orderId: string, receiptImage: File, actualItems: any[]) => {
     const formData = new FormData();
     formData.append('receipt', receiptImage);
     formData.append('actualItems', JSON.stringify(actualItems));
     
-    return apiClient.post<any>(`/shopper/orders/${orderId}/receipt`, formData, {
+    const order = await apiClient.post<any>(`/shopper/orders/${orderId}/receipt`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return transformOrderResponse(order);
   },
 
-  completeDelivery: (orderId: string, deliveryProof?: File) => {
+  completeDelivery: async (orderId: string, deliveryProof?: File) => {
     const formData = new FormData();
     if (deliveryProof) {
       formData.append('deliveryProof', deliveryProof);
     }
     
-    return apiClient.post<any>(`/shopper/orders/${orderId}/complete`, formData, {
+    const order = await apiClient.post<any>(`/shopper/orders/${orderId}/complete`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return transformOrderResponse(order);
   },
 
   cancelOrder: async (orderId: string, reason?: string) => {
     try {
-      return await apiClient.post<any>(`/shopper/orders/${orderId}/cancel`, { reason });
+      const order = await apiClient.post<any>(`/shopper/orders/${orderId}/cancel`, { reason });
+      return transformOrderResponse(order);
     } catch (error) {
       console.error('cancelOrder API error:', error);
       throw error;

@@ -316,7 +316,7 @@ export default function ShopperDashboardPage() {
                   </p>
                   <div className="flex items-center text-xs text-gray-600">
                     <MapPinIcon className="h-4 w-4 mr-1" />
-                    <span className="truncate">{order.deliveryAddress.split('\n')[0]}</span>
+                    <span className="truncate">{order.deliveryAddress?.split('\n')[0] || '住所不明'}</span>
                   </div>
                   <div className="mt-3 flex space-x-2">
                     <Link
@@ -396,7 +396,7 @@ export default function ShopperDashboardPage() {
                   </p>
                   <div className="flex items-center text-xs text-gray-600 mb-3">
                     <MapPinIcon className="h-4 w-4 mr-1" />
-                    <span className="truncate">{order.deliveryAddress.split('\n')[0]}</span>
+                    <span className="truncate">{order.deliveryAddress?.split('\n')[0] || '住所不明'}</span>
                   </div>
                   <div className="flex space-x-2">
                     <Link
