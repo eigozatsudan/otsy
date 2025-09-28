@@ -16,6 +16,7 @@ import { chatApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatRelativeTime, formatTime } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+import { useSocket } from '@/hooks/useSocket';
 
 interface Message {
   id: string;
@@ -42,6 +43,7 @@ export default function ChatPage() {
   
   const { user } = useAuthStore();
   const { orders, fetchOrders } = useOrdersStore();
+  const { socket, isConnected } = useSocket();
   
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
@@ -85,17 +87,60 @@ export default function ChatPage() {
     }
   }, [orders, selectedOrderId, selectedRoom]);
 
-  // Fetch messages for selected room
+  // Fetch messages for selected room and join chat
   useEffect(() => {
-    if (selectedRoom) {
+    if (selectedRoom && socket && isConnected) {
       loadMessages(selectedRoom);
+      // Join the chat room for real-time updates
+      socket.emit('join_chat', { chatId: selectedRoom });
     }
-  }, [selectedRoom]);
+  }, [selectedRoom, socket, isConnected]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // WebSocket event listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (message: Message) => {
+      console.log('New message received:', message);
+      setMessages(prev => {
+        // Check if message already exists to avoid duplicates
+        const exists = prev.some(msg => msg.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    const handleJoinChat = (data: { chatId: string; userId: string }) => {
+      console.log('Joined chat:', data);
+    };
+
+    const handleLeaveChat = (data: { chatId: string; userId: string }) => {
+      console.log('Left chat:', data);
+    };
+
+    const handleError = (error: any) => {
+      console.error('Socket error:', error);
+      toast.error('接続エラーが発生しました');
+    };
+
+    // Listen for new messages
+    socket.on('new_message', handleNewMessage);
+    socket.on('join_chat', handleJoinChat);
+    socket.on('leave_chat', handleLeaveChat);
+    socket.on('error', handleError);
+
+    return () => {
+      socket.off('new_message', handleNewMessage);
+      socket.off('join_chat', handleJoinChat);
+      socket.off('leave_chat', handleLeaveChat);
+      socket.off('error', handleError);
+    };
+  }, [socket]);
 
   const loadMessages = async (orderId: string) => {
     try {
@@ -182,7 +227,15 @@ export default function ChatPage() {
       {/* Chat rooms sidebar */}
       <div className="w-80 border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">チャット</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">チャット</h2>
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs text-gray-500">
+                {isConnected ? '接続中' : '切断中'}
+              </span>
+            </div>
+          </div>
           <p className="text-sm text-gray-600">ショッパーとのやり取り</p>
         </div>
 
