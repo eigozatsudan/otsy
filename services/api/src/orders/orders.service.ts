@@ -343,6 +343,11 @@ export class OrdersService {
       throw new BadRequestException('Order cannot be cancelled in current status');
     }
 
+    // Check if shopper is already assigned
+    if (order.shopper_id) {
+      throw new BadRequestException('Cannot cancel order that has been assigned to a shopper');
+    }
+
     // Update order status
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.update({

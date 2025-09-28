@@ -98,7 +98,8 @@ export default function OrderDetailPage() {
   }
 
   const order = currentOrder;
-  const canCancel = ['new', 'accepted'].includes(order.status.toLowerCase());
+  // キャンセル可能な条件: ステータスが'new'または'accepted'で、かつショッパーがまだマッチングされていない場合
+  const canCancel = ['new', 'accepted'].includes(order.status.toLowerCase()) && !order.shopperId;
   const hasReceipt = order.receiptUrl && order.receiptStatus;
   const needsReceiptReview = hasReceipt && order.receiptStatus === 'pending';
 
@@ -430,7 +431,7 @@ export default function OrderDetailPage() {
                 </Link>
               )}
 
-              {canCancel && (
+              {canCancel ? (
                 <button
                   onClick={() => setShowCancelDialog(true)}
                   className="btn-danger w-full flex items-center justify-center"
@@ -438,6 +439,24 @@ export default function OrderDetailPage() {
                   <XCircleIcon className="h-5 w-5 mr-2" />
                   注文をキャンセル
                 </button>
+              ) : order.shopperId ? (
+                <div className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mr-2" />
+                    <p className="text-sm text-yellow-800">
+                      ショッパーとマッチング済みのため、キャンセルできません
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-gray-600 mr-2" />
+                    <p className="text-sm text-gray-600">
+                      この注文はキャンセルできません
+                    </p>
+                  </div>
+                </div>
               )}
 
               <Link
