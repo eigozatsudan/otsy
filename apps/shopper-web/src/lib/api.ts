@@ -417,6 +417,15 @@ export const ordersApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+
+  cancelOrder: async (orderId: string, reason?: string) => {
+    try {
+      return await apiClient.post<any>(`/shopper/orders/${orderId}/cancel`, { reason });
+    } catch (error) {
+      console.error('cancelOrder API error:', error);
+      throw error;
+    }
+  },
 };
 
 // KYC API methods

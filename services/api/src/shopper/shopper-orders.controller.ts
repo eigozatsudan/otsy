@@ -1,9 +1,11 @@
 import { 
   Controller, 
   Get, 
+  Post,
   Query, 
   UseGuards,
-  Param
+  Param,
+  Body
 } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -38,5 +40,14 @@ export class ShopperOrdersController {
   @Get(':id')
   async getOrder(@CurrentUser() shopper: any, @Param('id') orderId: string) {
     return this.ordersService.findOne(orderId);
+  }
+
+  @Post(':id/cancel')
+  async cancelOrder(
+    @CurrentUser() shopper: any, 
+    @Param('id') orderId: string,
+    @Body() body: { reason?: string }
+  ) {
+    return this.ordersService.cancelOrderByShopper(shopper.id, orderId, body.reason);
   }
 }

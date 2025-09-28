@@ -218,7 +218,7 @@ export const ordersApi = {
   updateOrder: (orderId: string, data: any) => apiClient.patch<any>(`/orders/${orderId}`, data),
 
   cancelOrder: (orderId: string, reason: string) =>
-    apiClient.post<any>(`/orders/${orderId}/cancel`, { reason }),
+    apiClient.delete<any>(`/orders/${orderId}`, { data: { reason } }),
 
   approveReceipt: (orderId: string) => apiClient.post<any>(`/orders/${orderId}/approve-receipt`),
 

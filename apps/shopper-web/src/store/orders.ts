@@ -73,6 +73,7 @@ interface OrdersActions {
   updateOrderStatus: (orderId: string, status: string, data?: any) => Promise<void>;
   submitReceipt: (orderId: string, receiptImage: File, actualItems: OrderItem[]) => Promise<void>;
   completeDelivery: (orderId: string, deliveryProof?: File) => Promise<void>;
+  cancelOrder: (orderId: string, reason?: string) => Promise<void>;
   
   // State management
   setCurrentOrder: (order: Order | null) => void;
@@ -332,6 +333,32 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
     } catch (error: any) {
       set({ isUpdating: false });
       toast.error('配送完了処理に失敗しました');
+      throw error;
+    }
+  },
+
+  cancelOrder: async (orderId: string, reason?: string) => {
+    try {
+      set({ isUpdating: true });
+      
+      const order = await ordersApi.cancelOrder(orderId, reason);
+      
+      // Update in my orders
+      const { myOrders, currentOrder } = get();
+      const updatedOrders = myOrders.map(o => 
+        o.id === orderId ? order : o
+      );
+      
+      set({
+        myOrders: updatedOrders,
+        currentOrder: currentOrder?.id === orderId ? order : currentOrder,
+        isUpdating: false,
+      });
+
+      toast.success('注文をキャンセルしました');
+    } catch (error: any) {
+      set({ isUpdating: false });
+      toast.error('注文のキャンセルに失敗しました');
       throw error;
     }
   },

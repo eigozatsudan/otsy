@@ -372,6 +372,48 @@ export class OrdersService {
     return this.findOne(updatedOrder.id);
   }
 
+  async cancelOrderByShopper(shopperId: string, orderId: string, reason?: string) {
+    const order = await this.findOne(orderId);
+
+    // Validate permissions - only the assigned shopper can cancel
+    if (order.shopper_id !== shopperId) {
+      throw new ForbiddenException('Not authorized to cancel this order');
+    }
+
+    // Validate order can be cancelled
+    if ([OrderStatus.DELIVERED, OrderStatus.CANCELLED].includes(order.status as OrderStatus)) {
+      throw new BadRequestException('Order cannot be cancelled in current status');
+    }
+
+    // Update order status
+    const updatedOrder = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: OrderStatus.CANCELLED,
+        },
+      });
+
+      // Create audit log
+      await tx.orderAuditLog.create({
+        data: {
+          order_id: orderId,
+          actor_id: shopperId,
+          actor_role: 'shopper',
+          action: 'order_cancelled',
+          payload: {
+            reason,
+            old_status: order.status,
+          },
+        },
+      });
+
+      return updated;
+    });
+
+    return this.findOne(updatedOrder.id);
+  }
+
   async getAvailableOrders(shopperId: string, filterDto: Partial<OrderFilterDto> = {}) {
     // Check if shopper can accept orders
     const shopper = await this.prisma.shopper.findUnique({
