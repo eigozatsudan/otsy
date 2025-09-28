@@ -8,18 +8,22 @@ import { apiClient } from '@/lib/api';
 
 interface Shopper {
   id: string;
-  name: string;
   email: string;
   phone: string;
-  isActive: boolean;
-  isAvailable: boolean;
-  rating: number;
-  totalOrders: number;
-  completedOrders: number;
-  earnings: number;
-  createdAt: string;
+  subscription_tier?: string;
+  created_at: string;
+  updated_at: string;
+  // 追加フィールド（フロントエンドで生成）
+  name?: string;
+  isActive?: boolean;
+  isAvailable?: boolean;
+  rating?: number;
+  totalOrders?: number;
+  completedOrders?: number;
+  earnings?: number;
+  createdAt?: string;
   lastActiveAt?: string;
-  currentOrders: number;
+  currentOrders?: number;
 }
 
 export default function ShoppersPage() {
@@ -30,10 +34,28 @@ export default function ShoppersPage() {
   useEffect(() => {
     const fetchShoppers = async () => {
       try {
-        const response = await apiClient.get('/users?role=shopper');
-        setShoppers(response.data);
+        const response = await apiClient.get('/shoppers');
+        // APIレスポンスは直接配列の形式
+        const shoppersData = Array.isArray(response) ? response : response.data || [];
+        
+        // 買い物代行者データを整形
+        const formattedShoppers = shoppersData.map((shopper: any) => ({
+          ...shopper,
+          name: shopper.email.split('@')[0], // メールアドレスから名前を生成
+          isActive: shopper.status === 'active', // ステータスから判定
+          isAvailable: shopper.status === 'active', // アクティブな場合のみ利用可能
+          rating: shopper.rating_avg || 4.5, // 実際の評価またはデフォルト
+          totalOrders: 0, // デフォルト値（今後APIで提供される予定）
+          completedOrders: 0, // デフォルト値
+          earnings: 0, // デフォルト値
+          createdAt: shopper.created_at,
+          currentOrders: 0 // デフォルト値
+        }));
+        
+        setShoppers(formattedShoppers);
       } catch (error) {
         console.error('買い物代行者データの取得に失敗しました:', error);
+        setShoppers([]); // エラー時は空配列を設定
       } finally {
         setIsLoading(false);
       }
@@ -73,11 +95,11 @@ export default function ShoppersPage() {
     return stars;
   };
 
-  const filteredShoppers = shoppers.filter(shopper => {
+  const filteredShoppers = (shoppers || []).filter(shopper => {
     if (filter === 'all') return true;
     if (filter === 'active') return shopper.isActive;
     if (filter === 'available') return shopper.isAvailable;
-    if (filter === 'busy') return shopper.currentOrders > 0;
+    if (filter === 'busy') return (shopper.currentOrders || 0) > 0;
     return false;
   });
 
@@ -117,7 +139,7 @@ export default function ShoppersPage() {
                       総代行者数
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {shoppers.length}
+                      {shoppers?.length || 0}
                     </dd>
                   </dl>
                 </div>
@@ -139,7 +161,7 @@ export default function ShoppersPage() {
                       利用可能
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {shoppers.filter(s => s.isAvailable).length}
+                      {shoppers?.filter(s => s.isAvailable).length || 0}
                     </dd>
                   </dl>
                 </div>
@@ -161,7 +183,7 @@ export default function ShoppersPage() {
                       作業中
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {shoppers.filter(s => s.currentOrders > 0).length}
+                      {shoppers?.filter(s => (s.currentOrders || 0) > 0).length || 0}
                     </dd>
                   </dl>
                 </div>
@@ -183,7 +205,7 @@ export default function ShoppersPage() {
                       総売上
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {formatCurrency(shoppers.reduce((sum, s) => sum + s.earnings, 0))}
+                      {formatCurrency(shoppers?.reduce((sum, s) => sum + (s.earnings || 0), 0) || 0)}
                     </dd>
                   </dl>
                 </div>
@@ -203,7 +225,7 @@ export default function ShoppersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              すべて ({shoppers.length})
+              すべて ({shoppers?.length || 0})
             </button>
             <button
               onClick={() => setFilter('active')}
@@ -213,7 +235,7 @@ export default function ShoppersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              アクティブ ({shoppers.filter(s => s.isActive).length})
+              アクティブ ({shoppers?.filter(s => s.isActive).length || 0})
             </button>
             <button
               onClick={() => setFilter('available')}
@@ -223,7 +245,7 @@ export default function ShoppersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              利用可能 ({shoppers.filter(s => s.isAvailable).length})
+              利用可能 ({shoppers?.filter(s => s.isAvailable).length || 0})
             </button>
             <button
               onClick={() => setFilter('busy')}
@@ -233,7 +255,7 @@ export default function ShoppersPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              作業中 ({shoppers.filter(s => s.currentOrders > 0).length})
+              作業中 ({shoppers?.filter(s => (s.currentOrders || 0) > 0).length || 0})
             </button>
           </div>
         </div>
@@ -289,25 +311,25 @@ export default function ShoppersPage() {
                           {getRatingStars(shopper.rating)}
                         </div>
                         <span className="ml-2 text-sm text-gray-600">
-                          ({shopper.rating.toFixed(1)})
+                          ({(shopper.rating || 0).toFixed(1)})
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        完了: {shopper.completedOrders}
+                        完了: {shopper.completedOrders || 0}
                       </div>
                       <div className="text-sm text-gray-500">
-                        総計: {shopper.totalOrders}
+                        総計: {shopper.totalOrders || 0}
                       </div>
-                      {shopper.currentOrders > 0 && (
+                      {(shopper.currentOrders || 0) > 0 && (
                         <div className="text-sm text-blue-600">
-                          進行中: {shopper.currentOrders}
+                          進行中: {shopper.currentOrders || 0}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(shopper.earnings)}
+                      {formatCurrency(shopper.earnings || 0)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
