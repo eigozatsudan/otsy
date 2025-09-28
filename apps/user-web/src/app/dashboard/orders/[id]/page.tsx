@@ -272,7 +272,7 @@ export default function OrderDetailPage() {
                 </div>
               </div>
 
-              {order.status !== 'new' && (
+              {['accepted', 'shopping', 'purchased', 'enroute', 'delivered'].includes(order.status.toLowerCase()) && (
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 w-2 h-2 bg-success-500 rounded-full mt-2"></div>
                   <div>
@@ -307,6 +307,16 @@ export default function OrderDetailPage() {
                   <div className="flex-shrink-0 w-2 h-2 bg-success-500 rounded-full mt-2"></div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">配送完了</p>
+                    <p className="text-xs text-gray-500">{formatRelativeTime(order.updatedAt)}</p>
+                  </div>
+                </div>
+              )}
+
+              {order.status.toLowerCase() === 'cancelled' && (
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">注文がキャンセルされました</p>
                     <p className="text-xs text-gray-500">{formatRelativeTime(order.updatedAt)}</p>
                   </div>
                 </div>
