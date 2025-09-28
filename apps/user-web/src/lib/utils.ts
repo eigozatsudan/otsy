@@ -13,33 +13,61 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(date: string | Date): string {
+  if (!date) return '日付不明';
+  
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) {
+    return '日付不明';
+  }
+  
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(new Date(date));
+  }).format(dateObj);
 }
 
 export function formatDateTime(date: string | Date): string {
+  if (!date) return '日付不明';
+  
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) {
+    return '日付不明';
+  }
+  
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(dateObj);
 }
 
 export function formatTime(date: string | Date): string {
+  if (!date) return '時間不明';
+  
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) {
+    return '時間不明';
+  }
+  
   return new Intl.DateTimeFormat('ja-JP', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(dateObj);
 }
 
 export function formatRelativeTime(date: string | Date): string {
+  if (!date) return '時間不明';
+  
   const now = new Date();
   const targetDate = new Date(date);
+  
+  if (isNaN(targetDate.getTime())) {
+    return '時間不明';
+  }
+  
   const diffInSeconds = Math.floor((now.getTime() - targetDate.getTime()) / 1000);
 
   if (diffInSeconds < 60) {

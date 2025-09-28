@@ -226,6 +226,11 @@ export default function OrderPage() {
 
       await createOrder(orderData);
       toast.success('注文が作成されました');
+      
+      // 注文履歴を再読み込み
+      const { fetchOrders } = useOrdersStore.getState();
+      await fetchOrders({ page: 1, limit: 10 });
+      
       router.push('/dashboard/orders');
     } catch (error: any) {
       console.error('Failed to create order:', error);

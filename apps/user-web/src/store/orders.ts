@@ -148,10 +148,40 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
       }
 
       const response = await ordersApi.getMyOrders(queryParams);
+      console.log('API response:', response);
+      console.log('Response data:', response.data);
+      console.log('Response orders:', response.orders);
+      
+      // Transform API response to frontend format
+      const ordersData = response.data || response.orders || [];
+      console.log('Orders data to transform:', ordersData);
+      const transformedOrders = ordersData.map(order => ({
+        ...order,
+        deliveryAddress: order.address_json?.address_line || '住所未設定',
+        deliveryDate: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        deliveryTimeSlot: '指定なし',
+        specialInstructions: order.address_json?.delivery_notes || '',
+        estimateAmount: order.estimate_amount,
+        actualAmount: order.actual_amount,
+        authAmount: order.auth_amount,
+        createdAt: order.created_at,
+        updatedAt: order.updated_at,
+        userId: order.user_id,
+        shopperId: order.shopper_id,
+        status: order.status,
+        items: order.items || [],
+      }));
+      
+      console.log('Transformed orders:', transformedOrders);
       
       set({
-        orders: response.data,
-        pagination: response.meta,
+        orders: transformedOrders,
+        pagination: response.pagination || response.meta || {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+        },
         isLoading: false,
       });
     } catch (error: any) {
@@ -195,16 +225,34 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
       
       const order = await ordersApi.createOrder(orderData);
       
+      // Transform API response to frontend format
+      const transformedOrder = {
+        ...order,
+        deliveryAddress: order.address_json?.address_line || '住所未設定',
+        deliveryDate: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        deliveryTimeSlot: '指定なし',
+        specialInstructions: order.address_json?.delivery_notes || '',
+        estimateAmount: order.estimate_amount,
+        actualAmount: order.actual_amount,
+        authAmount: order.auth_amount,
+        createdAt: order.created_at,
+        updatedAt: order.updated_at,
+        userId: order.user_id,
+        shopperId: order.shopper_id,
+        status: order.status,
+        items: order.items || [],
+      };
+      
       // Add to orders list
       const { orders } = get();
       set({
-        orders: [order, ...orders],
-        currentOrder: order,
+        orders: [transformedOrder, ...(orders || [])],
+        currentOrder: transformedOrder,
         isCreatingOrder: false,
       });
 
       toast.success('注文を作成しました');
-      return order;
+      return transformedOrder;
     } catch (error: any) {
       set({ isCreatingOrder: false });
       toast.error('注文の作成に失敗しました');

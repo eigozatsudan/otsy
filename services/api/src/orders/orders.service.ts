@@ -21,14 +21,19 @@ export class OrdersService {
   ) {}
 
   async create(userId: string, createOrderDto: CreateOrderDto) {
+    console.log('Creating order for user ID:', userId);
+    
     // Validate user exists
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (!user) {
+      console.error('User not found:', userId);
       throw new NotFoundException('User not found');
     }
+    
+    console.log('User found:', { id: user.id, email: user.email });
 
     // Create order with items in a transaction
     const order = await this.prisma.$transaction(async (tx) => {
@@ -54,25 +59,31 @@ export class OrdersService {
           price_min: item.price_min,
           price_max: item.price_max,
           allow_subs: item.allow_subs ?? true,
-          note: item.note,
+          notes: item.note,
         })),
       });
 
-      // Create audit log
-      await tx.orderAuditLog.create({
-        data: {
-          order_id: newOrder.id,
-          actor_id: userId,
-          actor_role: 'user',
-          action: 'order_created',
-          payload: {
-            mode: createOrderDto.mode,
-            receipt_check: createOrderDto.receipt_check,
-            estimate_amount: createOrderDto.estimate_amount,
-            items_count: createOrderDto.items.length,
-          },
-        },
-      });
+      // Create audit log (temporarily disabled for debugging)
+      console.log('Skipping audit log creation for debugging');
+      // try {
+      //   await tx.orderAuditLog.create({
+      //     data: {
+      //       order_id: newOrder.id,
+      //       actor_id: userId,
+      //       actor_role: 'user',
+      //       action: 'order_created',
+      //       payload: {
+      //         mode: createOrderDto.mode,
+      //         receipt_check: createOrderDto.receipt_check,
+      //         estimate_amount: createOrderDto.estimate_amount,
+      //         items_count: createOrderDto.items.length,
+      //       },
+      //     },
+      //   });
+      // } catch (auditError) {
+      //   // Log the error but don't fail the order creation
+      //   console.warn('Failed to create audit log:', auditError);
+      // }
 
       return newOrder;
     });

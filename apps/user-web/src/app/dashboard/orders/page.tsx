@@ -53,8 +53,14 @@ export default function OrdersPage() {
 
   // Fetch orders when filters change
   useEffect(() => {
+    console.log('Fetching orders with filters:', filters);
     fetchOrders({ page: 1, limit: 10, ...filters });
   }, [filters, fetchOrders]);
+
+  // Debug log for orders
+  useEffect(() => {
+    console.log('Orders updated:', { orders, isLoading, pagination });
+  }, [orders, isLoading, pagination]);
 
   const handleStatusFilter = (status: string) => {
     setFilters({ status });
@@ -206,7 +212,7 @@ export default function OrdersPage() {
                         <span className="font-medium">配送先:</span>
                         <br />
                         <span className="truncate block">
-                          {order.deliveryAddress.split('\n')[0]}
+                          {order.deliveryAddress?.split('\n')[0] || '住所未設定'}
                         </span>
                       </div>
                     </div>
