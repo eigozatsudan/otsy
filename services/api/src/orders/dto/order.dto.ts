@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsArray, ValidateNested, IsInt, IsBoolean, IsDateString, Min, Max } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsArray, ValidateNested, IsInt, IsBoolean, IsDateString, Min, Max, IsObject } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export enum OrderStatus {
@@ -28,6 +28,28 @@ export enum RunStatus {
   AWAIT_RECEIPT_OK = 'await_receipt_ok',
   ENROUTE = 'enroute',
   DELIVERED = 'delivered',
+}
+
+export class AddressDto {
+  @IsString()
+  postal_code: string;
+
+  @IsString()
+  prefecture: string;
+
+  @IsString()
+  city: string;
+
+  @IsString()
+  address_line: string;
+
+  @IsOptional()
+  @IsString()
+  building?: string;
+
+  @IsOptional()
+  @IsString()
+  delivery_notes?: string;
 }
 
 export class CreateOrderItemDto {
@@ -78,14 +100,10 @@ export class CreateOrderDto {
   @Max(10)
   priority?: number;
 
-  address_json: {
-    postal_code: string;
-    prefecture: string;
-    city: string;
-    address_line: string;
-    building?: string;
-    delivery_notes?: string;
-  };
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AddressDto)
+  address_json: AddressDto;
 
   @IsArray()
   @ValidateNested({ each: true })
