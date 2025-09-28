@@ -45,8 +45,20 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await apiClient.get('/admin/settings');
-        setSettings(response.data);
+        // 設定エンドポイントが存在しないため、ローカルストレージから読み込み
+        // 将来的にAPIが実装されたら以下のコメントアウトを解除
+        // const response = await apiClient.get('/admin/settings');
+        // setSettings(response.data);
+        
+        // ローカルストレージから設定を読み込み
+        const savedSettings = localStorage.getItem('admin-settings');
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings);
+          setSettings(parsedSettings);
+          console.log('ローカルストレージから設定を読み込みました');
+        } else {
+          console.log('デフォルト設定を使用します');
+        }
       } catch (error) {
         console.error('設定データの取得に失敗しました:', error);
       } finally {
@@ -60,8 +72,13 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setIsSaving(true);
     try {
-      await apiClient.put('/admin/settings', settings);
-      alert('設定が保存されました');
+      // 設定エンドポイントが存在しないため、ローカルストレージに保存
+      // 将来的にAPIが実装されたら以下のコメントアウトを解除
+      // await apiClient.put('/admin/settings', settings);
+      
+      // ローカルストレージに保存
+      localStorage.setItem('admin-settings', JSON.stringify(settings));
+      alert('設定が保存されました（ローカル保存）');
     } catch (error) {
       console.error('設定の保存に失敗しました:', error);
       alert('設定の保存に失敗しました');

@@ -34,10 +34,68 @@ export default function PaymentsPage() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const response = await apiClient.get('/payments/admin');
-        setPayments(response.data.payments || []);
+        // 支払いエンドポイントが未実装のため、デモデータを使用
+        // 将来的にAPIが実装されたら以下のコメントアウトを解除
+        // const response = await apiClient.get('/payments/admin');
+        // setPayments(response.data.payments || []);
+        
+        // デモデータを設定
+        const demoPayments: Payment[] = [
+          {
+            id: 'pay_001',
+            orderId: 'ord_001',
+            customerName: '田中太郎',
+            amount: 2500,
+            status: 'captured',
+            method: 'クレジットカード',
+            stripePaymentIntentId: 'pi_1234567890',
+            createdAt: '2025-09-27T10:00:00Z',
+            updatedAt: '2025-09-27T10:05:00Z',
+            order: {
+              id: 'ord_001',
+              customerName: '田中太郎',
+              status: 'delivered'
+            }
+          },
+          {
+            id: 'pay_002',
+            orderId: 'ord_002',
+            customerName: '佐藤花子',
+            amount: 1800,
+            status: 'authorized',
+            method: '銀行振込',
+            createdAt: '2025-09-27T11:30:00Z',
+            updatedAt: '2025-09-27T11:30:00Z',
+            order: {
+              id: 'ord_002',
+              customerName: '佐藤花子',
+              status: 'shopping'
+            }
+          },
+          {
+            id: 'pay_003',
+            orderId: 'ord_003',
+            customerName: '鈴木一郎',
+            amount: 3200,
+            status: 'refunded',
+            method: 'クレジットカード',
+            stripePaymentIntentId: 'pi_0987654321',
+            refundAmount: 3200,
+            createdAt: '2025-09-26T14:20:00Z',
+            updatedAt: '2025-09-26T16:45:00Z',
+            order: {
+              id: 'ord_003',
+              customerName: '鈴木一郎',
+              status: 'cancelled'
+            }
+          }
+        ];
+        
+        setPayments(demoPayments);
+        console.log('デモデータを使用して支払い管理ページを表示します');
       } catch (error) {
         console.error('支払いデータの取得に失敗しました:', error);
+        setPayments([]); // エラー時は空配列を設定
       } finally {
         setIsLoading(false);
       }
@@ -49,13 +107,16 @@ export default function PaymentsPage() {
   const capturePayment = async (paymentId: string) => {
     setIsProcessing(true);
     try {
-      await apiClient.post('/payments/admin/capture', { payment_id: paymentId });
+      // 支払いエンドポイントが未実装のため、ローカルで状態を更新
+      // 将来的にAPIが実装されたら以下のコメントアウトを解除
+      // await apiClient.post('/payments/admin/capture', { payment_id: paymentId });
+      
       setPayments(payments.map(payment => 
         payment.id === paymentId 
           ? { ...payment, status: 'captured' as const }
           : payment
       ));
-      alert('支払いが確定されました');
+      alert('支払いが確定されました（デモモード）');
     } catch (error) {
       console.error('支払い確定に失敗しました:', error);
       alert('支払いの確定に失敗しました');
@@ -73,13 +134,16 @@ export default function PaymentsPage() {
 
     setIsProcessing(true);
     try {
-      await apiClient.post('/payments/admin/refund', { payment_id: paymentId, amount: refundAmount });
+      // 支払いエンドポイントが未実装のため、ローカルで状態を更新
+      // 将来的にAPIが実装されたら以下のコメントアウトを解除
+      // await apiClient.post('/payments/admin/refund', { payment_id: paymentId, amount: refundAmount });
+      
       setPayments(payments.map(payment => 
         payment.id === paymentId 
           ? { ...payment, status: 'refunded' as const, refundAmount }
           : payment
       ));
-      alert('返金が完了しました');
+      alert('返金が完了しました（デモモード）');
     } catch (error) {
       console.error('返金に失敗しました:', error);
       alert('返金に失敗しました');
