@@ -145,16 +145,29 @@ export default function ChatPage() {
   const loadMessages = async (orderId: string) => {
     try {
       setIsLoading(true);
+      console.log('Loading messages for order:', orderId);
       const response = await chatApi.getOrderMessages(orderId);
+      
+      console.log('Messages API response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Is array:', Array.isArray(response));
       
       // Handle both array format (legacy) and object format (new)
       const messagesData = Array.isArray(response) ? response : response.messages || [];
+      console.log('Processed messages data:', messagesData);
+      console.log('Messages count:', messagesData.length);
+      
       setMessages(messagesData);
       
       // Mark messages as read
       await chatApi.markMessagesAsRead(orderId);
     } catch (error) {
       console.error('Error loading messages:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
       toast.error('メッセージの読み込みに失敗しました');
     } finally {
       setIsLoading(false);

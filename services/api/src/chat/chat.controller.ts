@@ -62,10 +62,17 @@ export class ChatController {
     const chat = await this.chatService.getChatById(id);
     
     // Check if user has access to this chat
-    const hasAccess = 
+    let hasAccess = 
       chat.user_id === user.id || 
-      chat.shopper_id === user.id ||
       user.role === 'admin';
+
+    // If user is a shopper, check if they are the shopper for this chat
+    if (!hasAccess && user.role === 'shopper') {
+      const shopper = await this.chatService.getShopperById(user.id);
+      if (shopper && chat.shopper_id === shopper.user_id) {
+        hasAccess = true;
+      }
+    }
 
     if (!hasAccess) {
       throw new Error('Access denied');
@@ -83,10 +90,17 @@ export class ChatController {
   ) {
     // Verify access to chat
     const chat = await this.chatService.getChatById(id);
-    const hasAccess = 
+    let hasAccess = 
       chat.user_id === user.id || 
-      chat.shopper_id === user.id ||
       user.role === 'admin';
+
+    // If user is a shopper, check if they are the shopper for this chat
+    if (!hasAccess && user.role === 'shopper') {
+      const shopper = await this.chatService.getShopperById(user.id);
+      if (shopper && chat.shopper_id === shopper.user_id) {
+        hasAccess = true;
+      }
+    }
 
     if (!hasAccess) {
       throw new Error('Access denied');
@@ -309,10 +323,17 @@ export class ChatController {
       }
 
       // Check access
-      const hasAccess = 
+      let hasAccess = 
         chat.user_id === user.id || 
-        chat.shopper_id === user.id ||
         user.role === 'admin';
+
+      // If user is a shopper, check if they are the shopper for this chat
+      if (!hasAccess && user.role === 'shopper') {
+        const shopper = await this.chatService.getShopperById(user.id);
+        if (shopper && chat.shopper_id === shopper.user_id) {
+          hasAccess = true;
+        }
+      }
 
       if (!hasAccess) {
         throw new Error('Access denied');
@@ -321,7 +342,20 @@ export class ChatController {
       const pageNum = page ? parseInt(page, 10) : 1;
       const limitNum = limit ? parseInt(limit, 10) : 50;
       
-      return this.chatService.getChatMessages(chat.id, pageNum, limitNum);
+      console.log('Getting messages for chat:', {
+        chatId: chat.id,
+        page: pageNum,
+        limit: limitNum
+      });
+      
+      const result = await this.chatService.getChatMessages(chat.id, pageNum, limitNum);
+      console.log('Messages result:', {
+        messageCount: result.messages.length,
+        hasMore: result.hasMore,
+        total: result.total
+      });
+      
+      return result;
     } catch (error) {
       console.error('Error getting order messages:', error);
       // Return empty messages array on any error
@@ -387,8 +421,8 @@ export class ChatController {
 
       // If user is a shopper, check if they are the shopper for this chat
       if (!hasAccess && user.role === 'shopper') {
-        // Get the shopper record to find the user_id
-        const shopper = await this.chatService.getShopperByUserId(user.id);
+        // Get the shopper record by shopper ID to find the user_id
+        const shopper = await this.chatService.getShopperById(user.id);
         console.log('Shopper lookup result:', {
           userId: user.id,
           shopper: shopper,

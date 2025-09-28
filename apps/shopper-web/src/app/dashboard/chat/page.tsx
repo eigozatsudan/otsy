@@ -49,6 +49,16 @@ export default function ChatPage() {
   const { myOrders, fetchMyOrders } = useOrdersStore();
   const { socket, isConnected } = useSocket();
   
+  // Debug socket state
+  useEffect(() => {
+    console.log('Socket state changed - socket:', !!socket, 'isConnected:', isConnected);
+  }, [socket, isConnected]);
+  
+  // Debug selectedRoom state
+  useEffect(() => {
+    console.log('selectedRoom state changed:', selectedRoom);
+  }, [selectedRoom]);
+  
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,10 +85,13 @@ export default function ChatPage() {
 
   // Create chat rooms from orders
   useEffect(() => {
+    console.log('Creating chat rooms from orders:', myOrders);
     const activeOrders = myOrders?.filter(order => 
       ['accepted', 'shopping', 'enroute'].includes(order.status.toLowerCase()) &&
       order.user
     ) || [];
+
+    console.log('Active orders for chat:', activeOrders);
 
     const rooms: ChatRoom[] = activeOrders.map(order => {
       const firstName = order.user?.firstName || '';
@@ -93,22 +106,38 @@ export default function ChatPage() {
       };
     });
 
+    console.log('Created chat rooms:', rooms);
     setChatRooms(rooms);
 
     // Auto-select room if specified in URL
     if (selectedOrderId && rooms.find(room => room.orderId === selectedOrderId)) {
+      console.log('Auto-selecting room from URL:', selectedOrderId);
       setSelectedRoom(selectedOrderId);
     } else if (rooms.length > 0 && !selectedRoom) {
+      console.log('Auto-selecting first room:', rooms[0].orderId);
       setSelectedRoom(rooms[0].orderId);
+    } else if (rooms.length > 0 && selectedRoom && !rooms.find(room => room.orderId === selectedRoom)) {
+      console.log('Selected room not found in current rooms, selecting first room:', rooms[0].orderId);
+      setSelectedRoom(rooms[0].orderId);
+    } else {
+      console.log('No room selection - selectedOrderId:', selectedOrderId, 'rooms.length:', rooms.length, 'selectedRoom:', selectedRoom);
     }
   }, [myOrders, selectedOrderId, selectedRoom]);
 
   // Fetch messages for selected room and join chat
   useEffect(() => {
+    console.log('useEffect triggered - selectedRoom:', selectedRoom, 'socket:', !!socket, 'isConnected:', isConnected);
     if (selectedRoom && socket && isConnected) {
+      console.log('Loading messages and joining chat for:', selectedRoom);
       loadMessages(selectedRoom);
       // Join the chat room for real-time updates
       socket.emit('join_chat', { chatId: selectedRoom });
+    } else {
+      console.log('Not loading messages - conditions not met:', {
+        selectedRoom: !!selectedRoom,
+        socket: !!socket,
+        isConnected
+      });
     }
   }, [selectedRoom, socket, isConnected]);
 
@@ -169,16 +198,25 @@ export default function ChatPage() {
       const response = await chatApi.getOrderMessages(orderId);
       
       console.log('Messages API response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Is array:', Array.isArray(response));
       
       // Handle both array format (legacy) and object format (new)
       const messagesData = Array.isArray(response) ? response : response.messages || [];
       console.log('Processed messages data:', messagesData);
+      console.log('Messages count:', messagesData.length);
+      
       setMessages(messagesData);
       
       // Mark messages as read
       await chatApi.markMessagesAsRead(orderId);
     } catch (error) {
       console.error('Error loading messages:', error);
+      console.error('Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
       toast.error('メッセージの読み込みに失敗しました');
     } finally {
       setIsLoading(false);
@@ -351,6 +389,11 @@ export default function ChatPage() {
                     <p className="mt-1 text-sm text-gray-500">
                       お客様との会話を始めましょう
                     </p>
+                    <div className="mt-4 text-xs text-gray-400">
+                      Debug: messages.length = {messages.length}, isLoading = {isLoading.toString()}
+                      <br />
+                      Messages: {JSON.stringify(messages, null, 2)}
+                    </div>
                   </div>
                 ) : (
                   messages.map((message) => (

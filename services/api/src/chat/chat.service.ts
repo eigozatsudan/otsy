@@ -179,6 +179,14 @@ export class ChatService {
     return shopper;
   }
 
+  async getShopperById(shopperId: string): Promise<any> {
+    const shopper = await this.prisma.shopper.findUnique({
+      where: { id: shopperId },
+      select: { id: true, user_id: true },
+    });
+    return shopper;
+  }
+
   async getUserChats(userId: string, page = 1, limit = 20): Promise<{ chats: ChatResponseDto[]; total: number }> {
     const offset = (page - 1) * limit;
 
@@ -239,7 +247,16 @@ export class ChatService {
     // Verify chat exists and user has access
     const chat = await this.getChatById(chatId);
     
-    const hasAccess = chat.user_id === senderId || chat.shopper_id === senderId;
+    let hasAccess = chat.user_id === senderId;
+    
+    // If sender is a shopper, check if they are the shopper for this chat
+    if (!hasAccess && senderRole === 'shopper') {
+      const shopper = await this.getShopperById(senderId);
+      if (shopper && chat.shopper_id === shopper.user_id) {
+        hasAccess = true;
+      }
+    }
+    
     if (!hasAccess) {
       throw new ForbiddenException('Access denied to this chat');
     }
