@@ -189,7 +189,7 @@ export default function AvailableOrdersPage() {
 
                   <div className="mb-4">
                     <p className="text-sm text-gray-700 mb-2">
-                      <strong>配送先:</strong> {order.deliveryAddress.split('\n')[0]}
+                      <strong>配送先:</strong> {order.deliveryAddress?.split('\n')[0] || '住所不明'}
                     </p>
                     {order.deliveryTimeSlot && (
                       <p className="text-sm text-gray-700 mb-2">
@@ -231,11 +231,11 @@ export default function AvailableOrdersPage() {
                   <div className="flex items-center text-sm text-gray-600 mb-4">
                     <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center mr-2">
                       <span className="text-xs font-medium text-primary-700">
-                        {order.user.firstName[0]}
+                        {order.user?.firstName?.[0] || '?'}
                       </span>
                     </div>
                     <span>
-                      お客様: {order.user.lastName} {order.user.firstName}
+                      お客様: {order.user?.lastName || '不明'} {order.user?.firstName || '不明'}
                     </span>
                   </div>
                 </div>
