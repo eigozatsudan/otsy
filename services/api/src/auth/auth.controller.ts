@@ -35,7 +35,7 @@ export class AuthController {
   @Post('register/shopper')
   async registerShopper(@Body() registerDto: RegisterShopperDto) {
     const shopper = await this.authService.registerShopper(registerDto);
-    return this.authService.login(shopper);
+    return this.authService.loginShopper(shopper);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

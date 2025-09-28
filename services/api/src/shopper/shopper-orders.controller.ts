@@ -2,7 +2,8 @@ import {
   Controller, 
   Get, 
   Query, 
-  UseGuards 
+  UseGuards,
+  Param
 } from '@nestjs/common';
 import { OrdersService } from '../orders/orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -26,5 +27,16 @@ export class ShopperOrdersController {
   async getMyOrders(@CurrentUser() shopper: any, @Query() filterDto: OrderFilterDto) {
     const customFilter = { ...filterDto, shopper_id: shopper.id };
     return this.ordersService.findMany(customFilter);
+  }
+
+  @Get('history')
+  async getOrderHistory(@CurrentUser() shopper: any, @Query() filterDto: OrderFilterDto) {
+    const customFilter = { ...filterDto, shopper_id: shopper.id };
+    return this.ordersService.findMany(customFilter);
+  }
+
+  @Get(':id')
+  async getOrder(@CurrentUser() shopper: any, @Param('id') orderId: string) {
+    return this.ordersService.findOne(orderId);
   }
 }

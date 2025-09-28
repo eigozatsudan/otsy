@@ -38,7 +38,25 @@ export class AuthService {
   }
 
   async validateShopper(email: string, password: string) {
-    const shopper = await this.prisma.shopper.findUnique({ where: { email } });
+    const shopper = await this.prisma.shopper.findUnique({ 
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone: true,
+        kyc_status: true,
+        risk_tier: true,
+        rating_avg: true,
+        rating_count: true,
+        status: true,
+        is_online: true,
+        created_at: true,
+        updated_at: true,
+        password_hash: true,
+      }
+    });
     if (shopper && await bcrypt.compare(password, shopper.password_hash)) {
       const { password_hash, ...result } = shopper;
       return result;
@@ -105,8 +123,8 @@ export class AuthService {
         createdAt: shopper.created_at,
         updatedAt: shopper.updated_at,
       },
-      token: accessToken,
-      refreshToken: refreshToken,
+      access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 
@@ -132,8 +150,14 @@ export class AuthService {
         expiresIn: '15m',
       });
 
+      const newRefreshToken = this.jwtService.sign(newPayload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: '7d',
+      });
+
       return {
         access_token: accessToken,
+        refresh_token: newRefreshToken,
       };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -194,10 +218,17 @@ export class AuthService {
       select: {
         id: true,
         email: true,
+        first_name: true,
+        last_name: true,
         phone: true,
         kyc_status: true,
+        risk_tier: true,
+        rating_avg: true,
+        rating_count: true,
         status: true,
+        is_online: true,
         created_at: true,
+        updated_at: true,
       },
     });
 
