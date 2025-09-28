@@ -60,7 +60,8 @@ export default function ChatPage() {
   // Debug selectedRoom state
   useEffect(() => {
     console.log('selectedRoom state changed:', selectedRoom);
-  }, [selectedRoom]);
+    console.log('Current socket state - socket:', !!socket, 'isConnected:', isConnected);
+  }, [selectedRoom, socket, isConnected]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -127,17 +128,19 @@ export default function ChatPage() {
   // Fetch messages for selected room and join chat
   useEffect(() => {
     console.log('useEffect triggered - selectedRoom:', selectedRoom, 'socket:', !!socket, 'isConnected:', isConnected);
-    if (selectedRoom && socket && isConnected) {
-      console.log('Loading messages and joining chat for:', selectedRoom);
+    if (selectedRoom) {
+      console.log('Loading messages for:', selectedRoom);
       loadMessages(selectedRoom);
-      // Join the chat room for real-time updates
-      socket.emit('join_chat', { chatId: selectedRoom });
+      
+      // Join the chat room for real-time updates if socket is connected
+      if (socket && isConnected) {
+        console.log('Joining chat room for real-time updates:', selectedRoom);
+        socket.emit('join_chat', { chatId: selectedRoom });
+      } else {
+        console.log('Socket not connected, skipping join_chat');
+      }
     } else {
-      console.log('Not loading messages - conditions not met:', {
-        selectedRoom: !!selectedRoom,
-        socket: !!socket,
-        isConnected
-      });
+      console.log('No selectedRoom, not loading messages');
     }
   }, [selectedRoom, socket, isConnected]);
 
