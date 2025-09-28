@@ -8,7 +8,10 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ChatService } from './chat.service';
 import { NotificationService } from '../notifications/notification.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -325,10 +328,13 @@ export class ChatController {
   }
 
   @Post('orders/:orderId/messages')
+  @UseInterceptors(FilesInterceptor('attachments'))
   async sendOrderMessage(
     @CurrentUser() user: any,
     @Param('orderId') orderId: string,
     @Body() body: any,
+    @UploadedFiles() files: any[],
+    @Request() req: any,
   ) {
     try {
       // First get the chat for this order
@@ -345,10 +351,20 @@ export class ChatController {
           throw new Error('Order not found');
         }
         
+        // Check if shopper_id exists and is valid
+        let validShopperId = order.shopper_id;
+        if (validShopperId) {
+          const shopperExists = await this.chatService.checkShopperExists(validShopperId);
+          if (!shopperExists) {
+            console.log(`Shopper ${validShopperId} does not exist, setting shopper_id to null`);
+            validShopperId = null;
+          }
+        }
+        
         chat = await this.chatService.createChat({
           order_id: orderId,
           user_id: order.user_id,
-          shopper_id: order.shopper_id,
+          shopper_id: validShopperId,
           initial_message: messageContent,
         });
       }
@@ -371,6 +387,9 @@ export class ChatController {
         attachment_type: body.attachment_type,
         metadata: body.metadata,
       };
+
+      console.log('Controller received body:', body);
+      console.log('Created messageDto:', messageDto);
 
       return this.chatService.sendMessage(
         chat.id,

@@ -40,15 +40,42 @@ export class ChatService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.user_id !== createChatDto.user_id || order.shopper_id !== createChatDto.shopper_id) {
-      throw new BadRequestException('Invalid participants for this order');
+    // Convert order's shopper_id to shopper's user_id for comparison
+    let orderShopperUserId = null;
+    if (order.shopper_id) {
+      const shopper = await this.prisma.shopper.findUnique({
+        where: { id: order.shopper_id },
+        select: { user_id: true },
+      });
+      orderShopperUserId = shopper?.user_id || null;
     }
+
+    // Validate user_id matches
+    if (order.user_id !== createChatDto.user_id) {
+      throw new BadRequestException('Invalid user for this order');
+    }
+    
+    // For shopper validation, compare the converted shopper user_ids
+    if (orderShopperUserId && createChatDto.shopper_id) {
+      // Both order and chat have shopper_id, they should match
+      if (orderShopperUserId !== createChatDto.shopper_id) {
+        throw new BadRequestException('Invalid shopper for this order');
+      }
+    } else if (orderShopperUserId && !createChatDto.shopper_id) {
+      // Order has shopper but chat creation doesn't specify shopper
+      console.log(`Order has shopper user_id ${orderShopperUserId} but chat creation requested without shopper_id`);
+      // Allow creation with null shopper_id - this might be a user-initiated chat
+    } else if (!orderShopperUserId && createChatDto.shopper_id) {
+      // Order doesn't have shopper but chat creation specifies one
+      throw new BadRequestException('Order does not have a shopper assigned');
+    }
+    // If both are null, that's also allowed (order without shopper)
 
     const chat = await this.prisma.chat.create({
       data: {
         order_id: createChatDto.order_id,
         user_id: createChatDto.user_id,
-        shopper_id: createChatDto.shopper_id,
+        shopper_id: orderShopperUserId, // Use the converted shopper user_id
         status: ChatStatus.ACTIVE,
       },
     });
@@ -106,7 +133,7 @@ export class ChatService {
   }
 
   async getOrderById(orderId: string): Promise<any> {
-    return this.prisma.order.findUnique({
+    const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       select: {
         id: true,
@@ -115,6 +142,33 @@ export class ChatService {
         status: true,
       },
     });
+
+    if (!order) {
+      return null;
+    }
+
+    // Convert shopper_id to shopper's user_id for chat creation
+    let shopperUserId = null;
+    if (order.shopper_id) {
+      const shopper = await this.prisma.shopper.findUnique({
+        where: { id: order.shopper_id },
+        select: { user_id: true },
+      });
+      shopperUserId = shopper?.user_id || null;
+    }
+
+    return {
+      ...order,
+      shopper_id: shopperUserId, // Return shopper's user_id instead of shopper's id
+    };
+  }
+
+  async checkShopperExists(shopperUserId: string): Promise<boolean> {
+    const shopper = await this.prisma.shopper.findUnique({
+      where: { user_id: shopperUserId },
+      select: { id: true },
+    });
+    return !!shopper;
   }
 
   async getUserChats(userId: string, page = 1, limit = 20): Promise<{ chats: ChatResponseDto[]; total: number }> {
@@ -186,17 +240,25 @@ export class ChatService {
       throw new BadRequestException('Cannot send message to closed chat');
     }
 
+    // For now, set sender_id to null to avoid foreign key constraint issues
+    // The sender information is stored in the sender and sender_role fields
+    console.log('sendMessage - senderId:', senderId, 'senderRole:', senderRole);
+
+
     const message = await this.prisma.chatMessage.create({
       data: {
+        order_id: chat.order_id,
         chat_id: chatId,
-        sender_id: senderId,
+        sender: senderRole,
+        sender_id: null, // Set to null to avoid foreign key constraint issues
         sender_role: senderRole,
+        text: messageDto.content, // Use text field as it's required
         content: messageDto.content,
         type: messageDto.type,
         attachment_url: messageDto.attachment_url,
         attachment_type: messageDto.attachment_type,
         metadata: messageDto.metadata,
-      } as any,
+      },
       include: {
         user: { select: { id: true, first_name: true, last_name: true } },
       },
@@ -216,15 +278,28 @@ export class ChatService {
     content: string,
     metadata?: Record<string, any>,
   ): Promise<ChatMessageResponseDto> {
+    // Get chat to find order_id
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: chatId },
+      select: { order_id: true },
+    });
+
+    if (!chat) {
+      throw new Error('Chat not found');
+    }
+
     const message = await this.prisma.chatMessage.create({
       data: {
+        order_id: chat.order_id,
         chat_id: chatId,
-        sender_id: 'system',
+        sender: 'system',
+        sender_id: null, // Set to null to avoid foreign key constraint issues
         sender_role: 'system',
+        text: content, // Use text field as it's required
         content,
         type: MessageType.SYSTEM,
         metadata,
-      } as any,
+      },
     });
 
     return this.formatMessageResponse(message);
@@ -402,7 +477,7 @@ export class ChatService {
       chat_id: message.chat_id,
       sender_id: message.sender_id,
       sender_role: message.sender_role,
-      content: message.content,
+      content: message.content || message.text, // Use text field as fallback
       type: message.type,
       attachment_url: message.attachment_url,
       attachment_type: message.attachment_type,

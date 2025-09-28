@@ -290,28 +290,26 @@ export default function ChatPage() {
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.senderRole === 'shopper' ? 'justify-end' : 'justify-start'
+                        message.sender_role === 'shopper' ? 'justify-end' : 'justify-start'
                       }`}
                     >
                       <div
                         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.senderRole === 'shopper'
+                          message.sender_role === 'shopper'
                             ? 'bg-blue-500 text-white'
                             : 'bg-gray-100 text-gray-900'
                         }`}
                       >
-                        <p className="text-sm">{message.message}</p>
-                        {message.attachments && message.attachments.length > 0 && (
+                        <p className="text-sm">{message.content}</p>
+                        {message.attachment_url && (
                           <div className="mt-2 space-y-1">
-                            {message.attachments.map((attachment, index) => (
-                              <div key={index} className="text-xs opacity-75">
-                                📎 {attachment}
-                              </div>
-                            ))}
+                            <div className="text-xs opacity-75">
+                              📎 {message.attachment_url}
+                            </div>
                           </div>
                         )}
                         <p className="text-xs mt-1 opacity-75">
-                          {formatTime(message.createdAt)}
+                          {formatTime(message.created_at)}
                         </p>
                       </div>
                     </div>

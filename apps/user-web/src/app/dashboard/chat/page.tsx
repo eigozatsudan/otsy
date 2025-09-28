@@ -268,39 +268,37 @@ export default function ChatPage() {
                   <div
                     key={message.id}
                     className={`flex ${
-                      message.senderId === user?.id ? 'justify-end' : 'justify-start'
+                      message.sender_role === 'user' ? 'justify-end' : 'justify-start'
                     }`}
                   >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.senderId === user?.id
+                        message.sender_role === 'user'
                           ? 'bg-primary-600 text-white'
                           : 'bg-gray-200 text-gray-900'
                       }`}
                     >
-                      <p className="text-sm">{message.message}</p>
+                      <p className="text-sm">{message.content}</p>
                       
-                      {message.attachments && message.attachments.length > 0 && (
+                      {message.attachment_url && (
                         <div className="mt-2 space-y-1">
-                          {message.attachments.map((attachment, index) => (
-                            <div key={index} className="text-xs">
-                              <a
-                                href={attachment}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline"
-                              >
-                                添付ファイル {index + 1}
-                              </a>
-                            </div>
-                          ))}
+                          <div className="text-xs">
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline"
+                            >
+                              添付ファイル
+                            </a>
+                          </div>
                         </div>
                       )}
                       
                       <p className={`text-xs mt-1 ${
-                        message.senderId === user?.id ? 'text-primary-200' : 'text-gray-500'
+                        message.sender_role === 'user' ? 'text-primary-200' : 'text-gray-500'
                       }`}>
-                        {formatTime(message.createdAt)}
+                        {formatTime(message.created_at)}
                       </p>
                     </div>
                   </div>
