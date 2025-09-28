@@ -49,6 +49,9 @@ export default function ChatPage() {
   const { myOrders, fetchMyOrders } = useOrdersStore();
   const { socket, isConnected } = useSocket();
   
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
+  
   // Debug socket state
   useEffect(() => {
     console.log('Socket state changed - socket:', !!socket, 'isConnected:', isConnected);
@@ -58,9 +61,6 @@ export default function ChatPage() {
   useEffect(() => {
     console.log('selectedRoom state changed:', selectedRoom);
   }, [selectedRoom]);
-  
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
