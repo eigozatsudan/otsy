@@ -207,54 +207,181 @@ export const authApi = {
 };
 
 // Helper function to transform API response to frontend format
-const transformOrderResponse = (order: any) => ({
-  ...order,
-  estimateAmount: order.estimate_amount,
-  actualAmount: order.actual_amount,
-  authAmount: order.auth_amount,
-  createdAt: order.created_at,
-  updatedAt: order.updated_at,
-  deliveryAddress: order.address_json ? 
-    `${order.address_json.postal_code} ${order.address_json.prefecture} ${order.address_json.city} ${order.address_json.address_line}` : 
-    '',
-  items: order.items?.map((item: any) => ({
-    ...item,
-    estimatePrice: item.price_min || item.price_max || 0,
-    actualPrice: item.actual_price,
-    notes: item.notes,
-  })) || [],
-});
+const transformOrderResponse = (order: any) => {
+  if (!order) {
+    console.warn('transformOrderResponse called with undefined/null order');
+    return null;
+  }
+  
+  return {
+    ...order,
+    estimateAmount: order.estimate_amount,
+    actualAmount: order.actual_amount,
+    authAmount: order.auth_amount,
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
+    deliveryAddress: order.address_json ? 
+      `${order.address_json.postal_code} ${order.address_json.prefecture} ${order.address_json.city} ${order.address_json.address_line}` : 
+      '',
+    items: order.items?.map((item: any) => ({
+      ...item,
+      estimatePrice: item.price_min || item.price_max || 0,
+      actualPrice: item.actual_price,
+      notes: item.notes,
+    })) || [],
+  };
+};
 
 // Orders API methods
 export const ordersApi = {
   createOrder: (orderData: any) => apiClient.post<any>('/orders', orderData),
 
   getMyOrders: async (params?: { page?: number; limit?: number; status?: string }) => {
+    console.log('getMyOrders called with params:', params);
     const response = await apiClient.get<PaginatedResponse<any>>('/orders/my-orders', { params });
-    return {
-      ...response,
-      data: {
-        ...response.data,
-        orders: response.data.orders?.map(transformOrderResponse) || [],
-      }
-    };
+    console.log('Raw API Response:', response);
+    console.log('Response data:', response.data);
+    console.log('Response status:', response.status);
+    
+    // Check if the response structure is different than expected
+    let apiData;
+    if (response.data && typeof response.data === 'object') {
+      apiData = response.data;
+    } else if (response && typeof response === 'object' && response.orders) {
+      // If the response itself contains the data (not in response.data)
+      apiData = response;
+    } else {
+      console.warn('Unexpected response structure:', response);
+      apiData = response.data || response;
+    }
+    
+    console.log('API Data:', apiData);
+    console.log('API Data type:', typeof apiData);
+    console.log('API Data is array:', Array.isArray(apiData));
+    if (apiData && typeof apiData === 'object') {
+      console.log('API Data keys:', Object.keys(apiData));
+    }
+    
+    // Handle different response structures
+    if (Array.isArray(apiData)) {
+      // If the response is directly an array of orders
+      return {
+        ...response,
+        data: {
+          orders: apiData.map(transformOrderResponse).filter(Boolean),
+          meta: {
+            total: apiData.length,
+            page: 1,
+            limit: apiData.length,
+            totalPages: 1,
+          }
+        }
+      };
+    } else if (apiData && apiData.orders) {
+      // If the response has orders property (expected structure)
+      return {
+        ...response,
+        data: {
+          orders: apiData.orders.map(transformOrderResponse).filter(Boolean),
+          meta: apiData.pagination || {
+            total: apiData.orders.length,
+            page: 1,
+            limit: apiData.orders.length,
+            totalPages: 1,
+          }
+        }
+      };
+    } else {
+      // Fallback for unexpected structure
+      console.warn('Unexpected API response structure:', apiData);
+      return {
+        ...response,
+        data: {
+          orders: [],
+          meta: {
+            total: 0,
+            page: 1,
+            limit: 10,
+            totalPages: 0,
+          }
+        }
+      };
+    }
   },
 
   getOrder: async (orderId: string) => {
+    console.log('getOrder called with orderId:', orderId);
     const response = await apiClient.get<any>(`/orders/${orderId}`);
-    return transformOrderResponse(response.data);
+    console.log('getOrder response:', response);
+    console.log('getOrder response.data:', response.data);
+    console.log('getOrder response.status:', response.status);
+    
+    // Check if the response structure is different than expected
+    let orderData;
+    if (response.data && typeof response.data === 'object') {
+      orderData = response.data;
+    } else if (response && typeof response === 'object' && response.id) {
+      // If the response itself contains the order data (not in response.data)
+      orderData = response;
+    } else {
+      console.warn('getOrder: Unexpected response structure:', response);
+      throw new Error('Order not found');
+    }
+    
+    console.log('getOrder orderData:', orderData);
+    
+    if (!orderData) {
+      console.warn('getOrder: orderData is undefined');
+      throw new Error('Order not found');
+    }
+    
+    return transformOrderResponse(orderData);
   },
 
   updateOrder: (orderId: string, data: any) => apiClient.patch<any>(`/orders/${orderId}`, data),
 
   cancelOrder: async (orderId: string, reason: string) => {
     const response = await apiClient.delete<any>(`/orders/${orderId}`, { data: { reason } });
-    return transformOrderResponse(response.data);
+    
+    // Check if the response structure is different than expected
+    let orderData;
+    if (response.data && typeof response.data === 'object') {
+      orderData = response.data;
+    } else if (response && typeof response === 'object' && response.id) {
+      orderData = response;
+    } else {
+      console.warn('cancelOrder: Unexpected response structure:', response);
+      throw new Error('Failed to cancel order');
+    }
+    
+    if (!orderData) {
+      console.warn('cancelOrder: orderData is undefined');
+      throw new Error('Failed to cancel order');
+    }
+    
+    return transformOrderResponse(orderData);
   },
 
   approveReceipt: async (orderId: string) => {
     const response = await apiClient.post<any>(`/orders/${orderId}/approve-receipt`);
-    return transformOrderResponse(response.data);
+    
+    // Check if the response structure is different than expected
+    let orderData;
+    if (response.data && typeof response.data === 'object') {
+      orderData = response.data;
+    } else if (response && typeof response === 'object' && response.id) {
+      orderData = response;
+    } else {
+      console.warn('approveReceipt: Unexpected response structure:', response);
+      throw new Error('Failed to approve receipt');
+    }
+    
+    if (!orderData) {
+      console.warn('approveReceipt: orderData is undefined');
+      throw new Error('Failed to approve receipt');
+    }
+    
+    return transformOrderResponse(orderData);
   },
 
   rejectReceipt: (orderId: string, reason: string) =>
