@@ -113,27 +113,27 @@ export default function DashboardPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">ダッシュボード</h1>
-          <p className="text-gray-600">Otsukai DX 管理画面へようこそ、{admin?.firstName}さん</p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">ダッシュボード</h1>
+          <p className="text-gray-600 mt-2">Otsukai DX 管理画面へようこそ、{admin?.firstName || '管理者'}さん</p>
         </div>
 
         {/* 統計カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">注</span>
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">📦</span>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-4 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
                       総注文数
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-2xl font-bold text-gray-900">
                       {stats?.totalOrders || 0}
                     </dd>
                   </dl>
@@ -142,20 +142,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">進</span>
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">🔄</span>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-4 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
                       進行中注文
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-2xl font-bold text-gray-900">
                       {stats?.activeOrders || 0}
                     </dd>
                   </dl>
@@ -164,20 +164,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">買</span>
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">🛒</span>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-4 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
                       買い物代行者
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-2xl font-bold text-gray-900">
                       {stats?.totalShoppers || 0}
                     </dd>
                   </dl>
@@ -186,20 +186,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
+          <div className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow">
+            <div className="p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">¥</span>
+                  <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">💰</span>
                   </div>
                 </div>
-                <div className="ml-5 w-0 flex-1">
+                <div className="ml-4 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">
                       総売上
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-2xl font-bold text-gray-900">
                       {formatCurrency(stats?.totalRevenue || 0)}
                     </dd>
                   </dl>
@@ -215,8 +215,14 @@ export default function DashboardPage() {
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
               最近の注文
             </h3>
-            <div className="overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
+            {stats?.recentOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-4xl mb-4">📦</div>
+                <p className="text-gray-500">まだ注文がありません</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -259,8 +265,9 @@ export default function DashboardPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -43,16 +43,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* サイドバー */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-lg transform ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:flex-shrink-0 lg:h-screen flex flex-col`}>
         <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
           <h1 className="text-xl font-bold text-white">Otsukai DX</h1>
         </div>
         
-        <nav className="mt-8">
+        <nav className="mt-8 flex-1">
           <div className="px-4 space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -76,7 +76,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* ユーザー情報 */}
         {isMounted && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 bg-white">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -102,7 +102,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="lg:pl-64">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* トップバー */}
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
@@ -135,8 +135,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* ページコンテンツ */}
-        <main className="py-8">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <main className="flex-1 py-6">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </main>
