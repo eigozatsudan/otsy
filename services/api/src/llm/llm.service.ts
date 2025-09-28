@@ -367,7 +367,7 @@ Respond ONLY in valid JSON format matching the original structure.`;
   }
 
   private buildSystemPrompt(request: GenerateShoppingListRequest): string {
-    return `You are an advanced AI shopping assistant powered by GPT-4o mini for a Japanese grocery delivery service called "Otsukai DX". 
+    return `You are an advanced AI shopping assistant powered by GPT-4o mini for a Japanese grocery delivery service called "Otsy". 
 Your task is to efficiently convert natural language requests into structured shopping lists with high accuracy.
 
 Guidelines:

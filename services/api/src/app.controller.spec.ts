@@ -16,7 +16,7 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return API info', () => {
-      expect(appController.getHello()).toBe('Otsukai DX API v1.0.0');
+      expect(appController.getHello()).toBe('Otsy API v1.0.0');
     });
   });
 

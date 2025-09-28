@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary colors for Otsukai DX
+        // Primary colors for Otsy
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',

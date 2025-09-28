@@ -49,7 +49,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:flex-shrink-0 lg:h-screen flex flex-col`}>
         <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
-          <h1 className="text-xl font-bold text-white">Otsukai DX</h1>
+          <h1 className="text-xl font-bold text-white">Otsy</h1>
         </div>
         
         <nav className="mt-8 flex-1">

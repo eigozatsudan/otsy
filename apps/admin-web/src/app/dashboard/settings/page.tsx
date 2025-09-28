@@ -127,7 +127,7 @@ export default function SettingsPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">システム設定</h1>
-            <p className="text-gray-600">Otsukai DXの各種設定を管理できます</p>
+            <p className="text-gray-600">Otsyの各種設定を管理できます</p>
           </div>
           <button
             onClick={saveSettings}

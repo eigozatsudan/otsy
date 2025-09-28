@@ -1,4 +1,4 @@
-# Otsukai DX Setup Guide
+# Otsy Setup Guide
 
 ## Prerequisites
 

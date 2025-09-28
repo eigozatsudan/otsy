@@ -1,4 +1,4 @@
-# Otsukai DX Admin Web Application
+# Otsy Admin Web Application
 
 管理者向けのWebアプリケーションです。注文管理、ユーザー管理、買い物代行者管理、支払い管理、システム設定などの機能を提供します。
 
@@ -75,7 +75,7 @@ npm start
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
-NEXT_PUBLIC_APP_NAME=Otsukai DX Admin
+NEXT_PUBLIC_APP_NAME=Otsy Admin
 ```
 
 ## ディレクトリ構造

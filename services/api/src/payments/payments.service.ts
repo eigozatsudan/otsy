@@ -69,7 +69,7 @@ export class PaymentsService {
                     order_id: createPaymentDto.order_id,
                     user_id: userId,
                 },
-                description: `Otsukai DX Order ${createPaymentDto.order_id}`,
+                description: `Otsy Order ${createPaymentDto.order_id}`,
             });
 
             // Create payment record in database

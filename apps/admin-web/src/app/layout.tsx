@@ -6,8 +6,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Otsukai DX 管理画面',
-  description: 'Otsukai DX買い物代行サービスの管理画面',
+  title: 'Otsy 管理画面',
+  description: 'Otsy買い物代行サービスの管理画面',
   manifest: '/manifest.json',
 };
 
