@@ -41,29 +41,38 @@ export default function DashboardPage() {
           apiClient.get('/users?role=shopper')
         ]);
 
-        const orders = ordersRes.data;
-        const shoppers = shoppersRes.data;
+        // APIレスポンスの構造に合わせて修正
+        const orders = ordersRes.orders || [];
+        const shoppers = Array.isArray(shoppersRes) ? shoppersRes : [];
 
-        const totalRevenue = orders.reduce((sum: number, order: any) => sum + order.total, 0);
-        const activeOrders = orders?.filter((order: any) => 
+        const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
+        const activeOrders = orders.filter((order: any) => 
           ['new', 'accepted', 'shopping', 'await_receipt_ok', 'enroute'].includes(order.status)
-        ).length || 0;
+        ).length;
 
         setStats({
-          totalOrders: orders?.length || 0,
+          totalOrders: orders.length,
           activeOrders,
           totalShoppers: shoppers.length,
           totalRevenue,
-          recentOrders: orders?.slice(0, 5).map((order: any) => ({
+          recentOrders: orders.slice(0, 5).map((order: any) => ({
             id: order.id,
             customerName: order.customer?.name || '不明',
             status: order.status,
-            total: order.total,
-            createdAt: order.createdAt
+            total: order.total || 0,
+            createdAt: order.createdAt || order.created_at
           }))
         });
       } catch (error) {
         console.error('統計データの取得に失敗しました:', error);
+        // エラー時はデフォルト値を設定
+        setStats({
+          totalOrders: 0,
+          activeOrders: 0,
+          totalShoppers: 0,
+          totalRevenue: 0,
+          recentOrders: []
+        });
       } finally {
         setIsLoading(false);
       }
