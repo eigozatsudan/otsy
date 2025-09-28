@@ -12,14 +12,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for authentication token
-  const token = request.cookies.get('admin-token')?.value;
-
-  if (!token && pathname.startsWith('/dashboard')) {
-    // Redirect to login if no token and trying to access dashboard
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
+  // For client-side authentication, we'll let the client handle the redirect
+  // The AuthProvider will handle authentication state
   return NextResponse.next();
 }
 

@@ -33,7 +33,7 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: (typeof window !== 'undefined' ? window.location.origin : '') + '/api' || 'http://localhost:4000/v1',
+      baseURL: 'http://localhost:4000/v1',
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -148,14 +148,14 @@ export const apiClient = new ApiClient();
 // Auth API methods
 export const authApi = {
   login: (email: string, password: string) =>
-    apiClient.post<{ admin: any; token: string; refreshToken: string }>('/auth/admin/login', {
+    apiClient.post<{ user: any; access_token: string; refresh_token: string }>('/auth/login', {
       email,
       password,
     }),
 
   refreshToken: (refreshToken: string) =>
-    apiClient.post<{ token: string; refreshToken: string }>('/auth/refresh', {
-      refreshToken,
+    apiClient.post<{ access_token: string; refresh_token: string }>('/auth/refresh', {
+      refresh_token: refreshToken,
     }),
 
   logout: () => apiClient.post('/auth/logout'),

@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true });
           
           const response = await authApi.login(email, password);
-          const { admin, token, refreshToken } = response;
+          const { user: admin, access_token: token, refresh_token: refreshToken } = response;
 
           // Set token in API client
           apiClient.setToken(token);
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           const response = await authApi.refreshToken(refreshToken);
-          const { token: newToken, refreshToken: newRefreshToken } = response;
+          const { access_token: newToken, refresh_token: newRefreshToken } = response;
 
           // Set new token in API client
           apiClient.setToken(newToken);
