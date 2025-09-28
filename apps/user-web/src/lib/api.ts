@@ -67,6 +67,7 @@ class ApiClient {
         
         // Handle specific error cases
         if (error.response?.status === 401) {
+          console.log('401 Unauthorized error detected, clearing token');
           this.clearToken();
           // Don't automatically redirect - let the auth store handle it
           // This prevents conflicts with login flow

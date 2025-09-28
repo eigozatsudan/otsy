@@ -207,6 +207,39 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
         
+        // Check if token is expired
+        if (token) {
+          try {
+            const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+            const isExpired = payload.exp < Math.floor(Date.now() / 1000);
+            if (isExpired) {
+              console.log('Token expired, logging out');
+              set({
+                user: null,
+                isAuthenticated: false,
+                token: null,
+                refreshToken: null,
+                isLoading: false,
+                isCheckingAuth: false
+              });
+              apiClient.clearToken();
+              return;
+            }
+          } catch (error) {
+            console.log('Invalid token format, logging out');
+            set({
+              user: null,
+              isAuthenticated: false,
+              token: null,
+              refreshToken: null,
+              isLoading: false,
+              isCheckingAuth: false
+            });
+            apiClient.clearToken();
+            return;
+          }
+        }
+        
         // If already authenticated and have user data, skip check
         if (isAuthenticated && get().user) {
           console.log('Already authenticated, skipping auth check');

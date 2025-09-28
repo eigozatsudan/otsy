@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ordersApi } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useAuthStore } from './auth';
 
 export interface OrderItem {
   id?: string;
@@ -128,6 +129,24 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
         ...params,
       };
 
+      // Check authentication state before making API call
+      const authState = useAuthStore.getState();
+      console.log('fetchOrders - Auth state:', {
+        isAuthenticated: authState.isAuthenticated,
+        hasUser: !!authState.user,
+        hasToken: !!authState.token,
+        tokenLength: authState.token?.length,
+        tokenStart: authState.token?.substring(0, 20) + '...',
+        userEmail: authState.user?.email
+      });
+
+      // If not authenticated, redirect to login
+      if (!authState.isAuthenticated || !authState.token) {
+        console.log('Not authenticated, redirecting to login');
+        window.location.href = '/auth/login';
+        return;
+      }
+
       const response = await ordersApi.getMyOrders(queryParams);
       
       set({
@@ -137,6 +156,17 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
       });
     } catch (error: any) {
       set({ isLoading: false });
+      console.error('Error fetching orders:', error);
+      
+      // Handle specific error cases
+      if (error?.statusCode === 401) {
+        console.log('401 Unauthorized in fetchOrders, redirecting to login');
+        // Clear auth state and redirect to login
+        useAuthStore.getState().logout();
+        window.location.href = '/auth/login';
+        return;
+      }
+      
       toast.error('注文の取得に失敗しました');
       throw error;
     }
