@@ -45,6 +45,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
   ) {}
 
+  // Method to broadcast message from HTTP API
+  public broadcastMessage(chatId: string, message: any) {
+    this.logger.log(`Broadcasting message to chat ${chatId}`);
+    this.server.to(`chat:${chatId}`).emit('new_message', message);
+  }
+
   async handleConnection(client: AuthenticatedSocket) {
     try {
       const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');

@@ -175,12 +175,19 @@ export default function ChatPage() {
     try {
       setIsSending(true);
       
+      console.log('Sending message:', {
+        orderId: selectedRoom,
+        message: newMessage,
+        attachments: attachments.length
+      });
+      
       const message = await chatApi.sendMessage(
         selectedRoom,
         newMessage,
         attachments.length > 0 ? attachments : undefined
       );
 
+      console.log('Message sent successfully:', message);
       setMessages(prev => [...prev, message]);
       setNewMessage('');
       setAttachments([]);

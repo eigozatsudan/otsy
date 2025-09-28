@@ -80,12 +80,18 @@ export default function ChatPage() {
       order.user
     ) || [];
 
-    const rooms: ChatRoom[] = activeOrders.map(order => ({
-      orderId: order.id,
-      orderNumber: `#${order.id.slice(-8)}`,
-      customerName: `${order.user!.lastName} ${order.user!.firstName}`,
-      unreadCount: 0, // This would come from API
-    }));
+    const rooms: ChatRoom[] = activeOrders.map(order => {
+      const firstName = order.user?.firstName || '';
+      const lastName = order.user?.lastName || '';
+      const customerName = `${lastName} ${firstName}`.trim() || order.user?.email || 'Unknown Customer';
+      
+      return {
+        orderId: order.id,
+        orderNumber: `#${order.id.slice(-8)}`,
+        customerName,
+        unreadCount: 0, // This would come from API
+      };
+    });
 
     setChatRooms(rooms);
 
@@ -116,11 +122,15 @@ export default function ChatPage() {
     if (!socket) return;
 
     const handleNewMessage = (message: Message) => {
-      console.log('New message received:', message);
+      console.log('New message received via WebSocket:', message);
       setMessages(prev => {
         // Check if message already exists to avoid duplicates
         const exists = prev.some(msg => msg.id === message.id);
-        if (exists) return prev;
+        if (exists) {
+          console.log('Message already exists, skipping duplicate');
+          return prev;
+        }
+        console.log('Adding new message to chat');
         return [...prev, message];
       });
     };
@@ -155,10 +165,14 @@ export default function ChatPage() {
   const loadMessages = async (orderId: string) => {
     try {
       setIsLoading(true);
+      console.log('Loading messages for order:', orderId);
       const response = await chatApi.getOrderMessages(orderId);
+      
+      console.log('Messages API response:', response);
       
       // Handle both array format (legacy) and object format (new)
       const messagesData = Array.isArray(response) ? response : response.messages || [];
+      console.log('Processed messages data:', messagesData);
       setMessages(messagesData);
       
       // Mark messages as read

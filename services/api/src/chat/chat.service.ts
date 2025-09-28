@@ -171,6 +171,14 @@ export class ChatService {
     return !!shopper;
   }
 
+  async getShopperByUserId(userId: string): Promise<any> {
+    const shopper = await this.prisma.shopper.findUnique({
+      where: { user_id: userId },
+      select: { id: true, user_id: true },
+    });
+    return shopper;
+  }
+
   async getUserChats(userId: string, page = 1, limit = 20): Promise<{ chats: ChatResponseDto[]; total: number }> {
     const offset = (page - 1) * limit;
 

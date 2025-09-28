@@ -14,6 +14,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ChatService } from './chat.service';
 import { NotificationService } from '../notifications/notification.service';
+import { ChatGateway } from './chat.gateway';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -34,6 +35,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly notificationService: NotificationService,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   // Chat management endpoints
@@ -351,7 +353,7 @@ export class ChatController {
           throw new Error('Order not found');
         }
         
-        // Check if shopper_id exists and is valid
+        // Use the shopper_id from order (which is already converted to user_id by getOrderById)
         let validShopperId = order.shopper_id;
         if (validShopperId) {
           const shopperExists = await this.chatService.checkShopperExists(validShopperId);
@@ -370,12 +372,44 @@ export class ChatController {
       }
 
       // Check access
-      const hasAccess = 
+      console.log('Access check:', {
+        chatUserId: chat.user_id,
+        chatShopperId: chat.shopper_id,
+        currentUserId: user.id,
+        userRole: user.role,
+        orderId: orderId
+      });
+      
+      // For shoppers, we need to check if the current user is the shopper's user_id
+      let hasAccess = 
         chat.user_id === user.id || 
-        chat.shopper_id === user.id ||
         user.role === 'admin';
 
+      // If user is a shopper, check if they are the shopper for this chat
+      if (!hasAccess && user.role === 'shopper') {
+        // Get the shopper record to find the user_id
+        const shopper = await this.chatService.getShopperByUserId(user.id);
+        console.log('Shopper lookup result:', {
+          userId: user.id,
+          shopper: shopper,
+          chatShopperId: chat.shopper_id
+        });
+        
+        if (shopper && chat.shopper_id === shopper.user_id) {
+          hasAccess = true;
+          console.log('Shopper access granted');
+        }
+      }
+
+      console.log('Access result:', hasAccess);
+
       if (!hasAccess) {
+        console.error('Access denied for user:', {
+          userId: user.id,
+          userRole: user.role,
+          chatUserId: chat.user_id,
+          chatShopperId: chat.shopper_id
+        });
         throw new Error('Access denied');
       }
 
@@ -391,12 +425,17 @@ export class ChatController {
       console.log('Controller received body:', body);
       console.log('Created messageDto:', messageDto);
 
-      return this.chatService.sendMessage(
+      const message = await this.chatService.sendMessage(
         chat.id,
         user.id,
         user.role as 'user' | 'shopper',
         messageDto,
       );
+
+      // Broadcast message via WebSocket
+      this.chatGateway.broadcastMessage(chat.id, message);
+
+      return message;
     } catch (error) {
       console.error('Error sending order message:', error);
       throw error;
