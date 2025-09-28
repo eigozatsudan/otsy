@@ -40,7 +40,7 @@ export class OrdersService {
           estimate_amount: createOrderDto.estimate_amount,
           deadline_ts: createOrderDto.deadline_ts ? new Date(createOrderDto.deadline_ts) : null,
           priority: createOrderDto.priority,
-          address_json: createOrderDto.address_json,
+          address_json: createOrderDto.address_json as any,
           status: OrderStatus.NEW,
         },
       });
