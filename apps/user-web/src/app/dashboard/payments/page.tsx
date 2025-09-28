@@ -16,18 +16,19 @@ import { paymentsApi } from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth';
 
 interface Payment {
   id: string;
-  orderId: string;
+  order_id: string;
   status: string;
   amount: number;
   currency: string;
-  createdAt: string;
+  created_at: string;
   order: {
     id: string;
     status: string;
-    estimateAmount: number;
+    estimate_amount: number;
     items: Array<{
       name: string;
       qty: string;
@@ -45,8 +46,10 @@ const statusOptions = [
 ];
 
 export default function PaymentsPage() {
+  const { isAuthenticated, user, token } = useAuthStore();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [dateRange, setDateRange] = useState({
@@ -55,16 +58,60 @@ export default function PaymentsPage() {
   });
 
   useEffect(() => {
-    loadPayments();
-  }, []);
+    // Only load payments if authenticated
+    if (isAuthenticated && user && token) {
+      loadPayments();
+    } else {
+      console.log('Not authenticated, skipping payments load', {
+        isAuthenticated,
+        hasUser: !!user,
+        hasToken: !!token
+      });
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user, token]);
 
   const loadPayments = async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      console.log('Loading payments...', {
+        isAuthenticated,
+        hasUser: !!user,
+        hasToken: !!token,
+        tokenLength: token?.length
+      });
       const paymentsData = await paymentsApi.getMyPayments();
+      console.log('Payments loaded:', paymentsData);
       setPayments(paymentsData);
-    } catch (error) {
-      console.error('Error loading payments:', error);
+    } catch (error: any) {
+      console.error('Error loading payments:', {
+        error,
+        message: error?.message,
+        statusCode: error?.statusCode,
+        response: error?.response,
+        stack: error?.stack,
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name,
+        stringified: JSON.stringify(error, null, 2)
+      });
+      
+      // Handle specific error cases
+      let errorMessage = '決済履歴の読み込みに失敗しました。';
+      
+      if (error?.message === 'Payment not found' || error?.statusCode === 404 || error?.response?.statusCode === 404) {
+        // If no payments found, show empty state instead of error
+        console.log('No payments found, showing empty state');
+        setPayments([]);
+        setError(null);
+        return;
+      } else if (error?.statusCode === 401) {
+        errorMessage = '認証が必要です。ログインし直してください。';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -75,11 +122,11 @@ export default function PaymentsPage() {
       return false;
     }
     
-    if (dateRange.from && new Date(payment.createdAt) < new Date(dateRange.from)) {
+    if (dateRange.from && new Date(payment.created_at) < new Date(dateRange.from)) {
       return false;
     }
     
-    if (dateRange.to && new Date(payment.createdAt) > new Date(dateRange.to)) {
+    if (dateRange.to && new Date(payment.created_at) > new Date(dateRange.to)) {
       return false;
     }
     
@@ -262,10 +309,39 @@ export default function PaymentsPage() {
         </div>
       </div>
 
+      {/* Error message */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
+              <p className="text-red-700">{error}</p>
+            </div>
+            <button
+              onClick={loadPayments}
+              className="text-red-600 hover:text-red-800 text-sm font-medium"
+            >
+              再試行
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Payments list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="lg" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <XCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500 mb-4">決済履歴を読み込めませんでした</p>
+          <button
+            onClick={loadPayments}
+            className="btn-primary"
+          >
+            再試行
+          </button>
         </div>
       ) : filteredPayments.length > 0 ? (
         <div className="card">
@@ -300,7 +376,7 @@ export default function PaymentsPage() {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            注文 #{payment.orderId.slice(-8)}
+                            注文 #{payment.order_id.slice(-8)}
                           </div>
                           <div className="text-sm text-gray-500">
                             {payment.order.items.slice(0, 2).map(item => item.name).join(', ')}
@@ -311,19 +387,19 @@ export default function PaymentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {formatDate(payment.createdAt)}
+                        {formatDate(payment.created_at)}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {formatDateTime(payment.createdAt).split(' ')[1]}
+                        {formatDateTime(payment.created_at).split(' ')[1]}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {formatCurrency(payment.amount)}
                       </div>
-                      {payment.order.estimateAmount !== payment.amount && (
+                      {payment.order.estimate_amount !== payment.amount && (
                         <div className="text-sm text-gray-500">
-                          見積: {formatCurrency(payment.order.estimateAmount)}
+                          見積: {formatCurrency(payment.order.estimate_amount)}
                         </div>
                       )}
                     </td>
@@ -334,7 +410,7 @@ export default function PaymentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <Link
-                        href={`/dashboard/orders/${payment.orderId}`}
+                        href={`/dashboard/orders/${payment.order_id}`}
                         className="text-primary-600 hover:text-primary-900"
                       >
                         詳細

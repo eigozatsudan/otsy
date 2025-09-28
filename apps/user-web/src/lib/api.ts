@@ -70,18 +70,27 @@ class ApiClient {
           this.clearToken();
           // Don't automatically redirect - let the auth store handle it
           // This prevents conflicts with login flow
+        } else if (error.response?.status === 404) {
+          // Don't show toast for 404 errors - let the calling code handle it
+          // For 404 errors, create a special error that can be handled by the calling code
+          const apiError = new Error(message);
+          (apiError as any).statusCode = 404;
+          (apiError as any).error = error.response?.data?.error;
+          (apiError as any).originalError = error;
+          (apiError as any).response = error.response?.data;
+          return Promise.reject(apiError);
         } else if (error.response?.status >= 500) {
           toast.error('サーバーエラーが発生しました。しばらく後でお試しください。');
         } else if (error.response?.status >= 400) {
           toast.error(message);
         }
 
-        const apiError = {
-          message,
-          statusCode: error.response?.status || 500,
-          error: error.response?.data?.error,
-          originalError: error
-        } as ApiError;
+        // Create a proper error object
+        const apiError = new Error(message);
+        (apiError as any).statusCode = error.response?.status || 500;
+        (apiError as any).error = error.response?.data?.error;
+        (apiError as any).originalError = error;
+        (apiError as any).response = error.response?.data;
 
         return Promise.reject(apiError);
       }
@@ -232,7 +241,27 @@ export const paymentsApi = {
       payment_method_id: paymentMethodId,
     }),
 
-  getMyPayments: () => apiClient.get<any[]>('/payments/my-payments'),
+  getMyPayments: async () => {
+    try {
+      console.log('Making payments API request...');
+      const result = await apiClient.get<any[]>('/payments/my-payments');
+      console.log('Payments API response:', result);
+      return result;
+    } catch (error: any) {
+      // Handle specific error cases
+      if (error?.statusCode === 404 || error?.message === 'Payment not found' || error?.response?.statusCode === 404) {
+        // Return empty array for no payments found
+        return [];
+      }
+      
+      // Re-throw the error with proper message
+      const errorMessage = error?.message || error?.response?.data?.message || '決済履歴の取得に失敗しました';
+      const newError = new Error(errorMessage);
+      (newError as any).statusCode = error?.statusCode;
+      (newError as any).response = error?.response;
+      throw newError;
+    }
+  },
 
   getPayment: (paymentId: string) => apiClient.get<any>(`/payments/${paymentId}`),
 

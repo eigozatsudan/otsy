@@ -214,7 +214,11 @@ export const useAuthStore = create<AuthStore>()(
         }
         
         try {
-          console.log('Starting auth check...');
+          console.log('Starting auth check...', {
+            hasToken: !!token,
+            tokenLength: token?.length,
+            tokenStart: token?.substring(0, 20) + '...'
+          });
           
           if (!token) {
             // No token, ensure we're logged out
@@ -230,7 +234,9 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true, isCheckingAuth: true });
           
           // Verify token by getting user profile
+          console.log('Calling authApi.getProfile()...');
           const user = await authApi.getProfile();
+          console.log('Auth profile response:', user);
           
           console.log('Auth check successful, setting user data');
           set({
@@ -241,7 +247,13 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error: any) {
           // If check fails, clear auth state
-          console.error('Auth check failed:', error?.message || 'Unknown error');
+          console.error('Auth check failed:', {
+            error,
+            message: error?.message,
+            statusCode: error?.statusCode,
+            response: error?.response,
+            stack: error?.stack
+          });
           
           // Only clear auth state if it's a 401 (unauthorized) error
           // For network errors, keep the token but mark as not authenticated
