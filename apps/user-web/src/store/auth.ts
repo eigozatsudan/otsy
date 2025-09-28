@@ -58,9 +58,11 @@ export const useAuthStore = create<AuthStore>()(
       // Actions
       login: async (email: string, password: string): Promise<boolean> => {
         try {
+          console.log('Auth store: Starting login...');
           set({ isLoading: true });
           
           const response = await authApi.login(email, password);
+          console.log('Auth store: API response:', response);
           const { user, access_token, refresh_token } = response;
 
           // Set token in API client
@@ -74,6 +76,7 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
           });
 
+          console.log('Auth store: Login successful, state updated');
           toast.success('ログインしました');
           return true;
         } catch (error: any) {
@@ -111,15 +114,15 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true });
           
           const response = await authApi.register(userData);
-          const { user, token, refreshToken } = response;
+          const { user, access_token, refresh_token } = response;
 
           // Set token in API client
-          apiClient.setToken(token);
+          apiClient.setToken(access_token);
 
           set({
             user,
-            token,
-            refreshToken,
+            token: access_token,
+            refreshToken: refresh_token,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -164,7 +167,7 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           const response = await authApi.refreshToken(refreshToken);
-          const { token: newToken, refreshToken: newRefreshToken } = response;
+          const { access_token: newToken, refresh_token: newRefreshToken } = response;
 
           // Set new token in API client
           apiClient.setToken(newToken);

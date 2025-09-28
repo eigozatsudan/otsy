@@ -48,24 +48,44 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      console.log('Starting login process...');
       const success = await login(data.email, data.password);
+      console.log('Login result:', success);
+      
       if (success) {
-        // Redirect will be handled by useEffect when isAuthenticated becomes true
-        // No need to do anything here as useEffect will handle the redirect
+        console.log('Login successful, redirecting to dashboard...');
+        // Force redirect immediately after successful login
+        router.replace('/dashboard');
+      } else {
+        console.log('Login failed');
       }
       // If login fails, the error message is already shown by the store
       // and the form remains on the login page
     } catch (error: any) {
+      console.error('Login error:', error);
       // This should not happen since login function now returns boolean
       // but if it does, show a generic error message
       toast.error('ログイン中にエラーが発生しました。もう一度お試しください。');
     }
   };
 
-  if (isAuthenticated && !isLoading) {
+  // Show loading spinner while checking authentication or during login
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[400px]">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // If already authenticated, show loading and redirect
+  if (isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">ダッシュボードに移動しています...</p>
+        </div>
       </div>
     );
   }

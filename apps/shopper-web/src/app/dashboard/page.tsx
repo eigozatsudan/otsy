@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ShoppingBagIcon,
@@ -24,8 +25,9 @@ import { cn } from '@/lib/utils';
 export const dynamic = 'force-dynamic';
 
 export default function ShopperDashboardPage() {
-  const { shopper } = useAuthStore();
-  const { availableOrders, myOrders, isLoading, fetchAvailableOrders, fetchMyOrders } = useOrdersStore();
+  const router = useRouter();
+  const { shopper, isAuthenticated, isLoading } = useAuthStore();
+  const { availableOrders, myOrders, isLoading: ordersLoading, fetchAvailableOrders, fetchMyOrders } = useOrdersStore();
   const [todayStats, setTodayStats] = useState({
     completedOrders: 3,
     workingHours: 4.5,
@@ -33,11 +35,35 @@ export default function ShopperDashboardPage() {
     rating: 4.8,
   });
 
+  // Redirect to login if not authenticated (but not while loading)
   useEffect(() => {
-    // Fetch available orders and active orders
-    fetchAvailableOrders({ limit: 5 });
-    fetchMyOrders({ limit: 5 });
-  }, [fetchAvailableOrders, fetchMyOrders]);
+    console.log('Dashboard useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+    if (!isLoading && !isAuthenticated) {
+      console.log('Redirecting to login - not authenticated');
+      // Add a small delay to prevent immediate redirect
+      setTimeout(() => {
+        console.log('Executing redirect to login');
+        router.replace('/auth/login');
+      }, 200);
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  useEffect(() => {
+    // Only fetch orders if authenticated
+    if (isAuthenticated) {
+      console.log('Shopper profile:', shopper);
+      console.log('KYC Status:', shopper?.kycStatus);
+      console.log('Is Verified:', shopper?.isVerified);
+      
+      // Add error handling for order fetching
+      fetchAvailableOrders({ limit: 5 }).catch(error => {
+        console.error('Failed to fetch available orders:', error);
+      });
+      fetchMyOrders({ limit: 5 }).catch(error => {
+        console.error('Failed to fetch my orders:', error);
+      });
+    }
+  }, [isAuthenticated, shopper, fetchAvailableOrders, fetchMyOrders]);
 
   const activeOrders = myOrders.filter(order => 
     ['accepted', 'shopping', 'enroute'].includes(order.status.toLowerCase())
@@ -115,6 +141,56 @@ export default function ShopperDashboardPage() {
     },
   ];
 
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Show KYC pending message if not verified
+  if (shopper && !shopper.isVerified) {
+    return (
+      <div className="space-y-8">
+        <div className="bg-warning-50 border border-warning-200 rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-warning-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-warning-800">
+                KYC認証が必要です
+              </h3>
+              <div className="mt-2 text-sm text-warning-700">
+                <p>
+                  注文を受けるためには、本人確認（KYC）の認証が必要です。
+                  現在のステータス: <span className="font-medium">{shopper.kycStatus}</span>
+                </p>
+              </div>
+              <div className="mt-4">
+                <Link
+                  href="/dashboard/kyc"
+                  className="btn-warning text-sm"
+                >
+                  KYC認証を完了する
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome section */}
@@ -124,13 +200,13 @@ export default function ShopperDashboardPage() {
             <h1 className="text-2xl font-bold">
               おはようございます、{shopper?.firstName}さん
             </h1>
-            <p className="text-primary-100 mt-1 flex items-center">
+            <div className="text-primary-100 mt-1 flex items-center">
               <div className={cn('w-2 h-2 rounded-full mr-2',
                 shopper?.status === 'available' ? 'bg-success-400' :
                 shopper?.status === 'busy' ? 'bg-warning-400' : 'bg-gray-400'
               )} />
               現在のステータス: {getStatusText(shopper?.status || 'offline')}
-            </p>
+            </div>
           </div>
           <div className="hidden sm:block">
             <div className="text-right">
@@ -214,7 +290,7 @@ export default function ShopperDashboardPage() {
             </Link>
           </div>
 
-          {isLoading ? (
+          {ordersLoading ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner />
             </div>
@@ -294,7 +370,7 @@ export default function ShopperDashboardPage() {
             </Link>
           </div>
 
-          {isLoading ? (
+          {ordersLoading ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner />
             </div>

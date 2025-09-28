@@ -40,30 +40,60 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    console.log('Login page useEffect - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+    if (isAuthenticated && !isLoading) {
+      console.log('Redirecting to dashboard - already authenticated');
+      // Add a small delay to ensure state is fully updated
+      setTimeout(() => {
+        console.log('Executing redirect to dashboard');
+        router.replace('/dashboard');
+      }, 200);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      console.log('Shopper login: Starting login process...');
       const success = await login(data.email, data.password);
-      if (success) {
-        router.push('/dashboard');
+      console.log('Shopper login result:', success);
+      
+          if (success) {
+            console.log('Shopper login successful, redirecting to dashboard...');
+            // Add a small delay to ensure state is fully updated
+            setTimeout(() => {
+              console.log('Executing redirect after successful login');
+              router.replace('/dashboard');
+            }, 200);
+          } else {
+        console.log('Shopper login failed');
       }
       // If login fails, the error message is already shown by the store
       // and the form remains on the login page
     } catch (error) {
+      console.error('Shopper login error:', error);
       // This should not happen since login function now returns boolean
       // but if it does, show a generic error message
       toast.error('ログイン中にエラーが発生しました。もう一度お試しください。');
     }
   };
 
+  // Show loading spinner while checking authentication or during login
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // If already authenticated, show loading and redirect
   if (isAuthenticated) {
     return (
-      <div className="flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">ダッシュボードに移動しています...</p>
+        </div>
       </div>
     );
   }

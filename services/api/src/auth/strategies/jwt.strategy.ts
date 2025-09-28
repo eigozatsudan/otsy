@@ -32,34 +32,44 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     const { sub: id, role } = payload;
 
-    let user;
-    switch (role) {
-      case 'user':
-        user = await this.usersService.findOne(id);
-        break;
-      case 'shopper':
-        user = await this.shoppersService.findOne(id);
-        break;
-      case 'admin':
-        user = await this.prisma.admin.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            created_at: true,
-            updated_at: true,
-          },
-        });
-        break;
-      default:
-        throw new UnauthorizedException('Invalid role');
-    }
+    try {
+      let user;
+      switch (role) {
+        case 'user':
+          user = await this.usersService.findOne(id);
+          break;
+        case 'shopper':
+          user = await this.shoppersService.findOne(id);
+          break;
+        case 'admin':
+          user = await this.prisma.admin.findUnique({
+            where: { id },
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              created_at: true,
+              updated_at: true,
+            },
+          });
+          break;
+        default:
+          throw new UnauthorizedException('Invalid role');
+      }
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
 
-    return { ...user, role };
+      return { ...user, role };
+    } catch (error) {
+      console.error('JWT validation error:', {
+        id,
+        role,
+        error: error.message,
+        stack: error.stack
+      });
+      throw new UnauthorizedException('Authentication failed');
+    }
   }
 }

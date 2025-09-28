@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import dynamic from 'next/dynamic';
@@ -24,22 +24,33 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const { checkAuth, isAuthenticated } = useAuthStore();
+  const { checkAuth, isAuthenticated, token, shopper } = useAuthStore();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
-    // Check authentication on app start
-    checkAuth();
+    // Check authentication on app start only once
+    console.log('Providers: Checking auth on mount, token exists:', !!token, 'shopper exists:', !!shopper, 'hasCheckedAuth:', hasCheckedAuth);
+    if (!hasCheckedAuth) {
+      setHasCheckedAuth(true);
+      checkAuth();
+    }
+  }, []); // Empty dependency array to run only once
 
-    // Start token refresh if authenticated
+  useEffect(() => {
+    // Start/stop token refresh based on authentication status
     if (isAuthenticated) {
+      console.log('Providers: Starting token refresh');
       startTokenRefresh();
+    } else {
+      console.log('Providers: Stopping token refresh');
+      stopTokenRefresh();
     }
 
     // Cleanup on unmount
     return () => {
       stopTokenRefresh();
     };
-  }, [checkAuth, isAuthenticated]);
+  }, [isAuthenticated]);
 
   return (
     <QueryClientProvider client={queryClient}>

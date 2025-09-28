@@ -30,10 +30,14 @@ export interface PaginatedResponse<T> {
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
+  private isRefreshing = false;
 
   constructor() {
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1';
+    console.log('API Client initialized with baseURL:', baseURL);
+    
     this.client = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/v1',
+      baseURL,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -47,12 +51,25 @@ class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
-        if (this.token) {
-          config.headers.Authorization = `Bearer ${this.token}`;
+        const token = this.getToken();
+        console.log('API Request:', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          baseURL: config.baseURL,
+          fullURL: `${config.baseURL}${config.url}`,
+          hasToken: !!token,
+          tokenPreview: token ? token.substring(0, 20) + '...' : 'null',
+          tokenValue: token,
+          tokenType: typeof token
+        });
+        
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
       (error) => {
+        console.error('Request interceptor error:', error);
         return Promise.reject(error);
       }
     );
@@ -62,21 +79,73 @@ class ApiClient {
       (response: AxiosResponse) => {
         return response;
       },
-      (error) => {
-        console.error('API Error:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          config: error.config,
+      async (error) => {
+        console.error('API Error Details:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          config: error?.config,
+          code: error?.code,
+          name: error?.name,
+          stack: error?.stack,
           fullError: error
         });
         
         const message = error.response?.data?.message || error.message || 'An error occurred';
         
+        // Create apiError object first
+        const apiError: ApiError = {
+          message,
+          statusCode: error.response?.status || 500,
+          error: error.response?.data?.error,
+        };
+        
         // Handle specific error cases
         if (error.response?.status === 401) {
+          // Prevent infinite refresh loops
+          if (this.isRefreshing) {
+            console.log('Already refreshing token, skipping');
+            this.clearToken();
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {
+              window.location.href = '/auth/login';
+            }
+            return Promise.reject(apiError);
+          }
+
+          // Check if this is a refresh token request to avoid infinite loop
+          if (error.config?.url?.includes('/auth/refresh')) {
+            console.log('Refresh token request failed, logging out');
+            this.clearToken();
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {
+              window.location.href = '/auth/login';
+            }
+            return Promise.reject(apiError);
+          }
+
+          // Try to refresh token before giving up
+          const refreshToken = this.getRefreshToken();
+          if (refreshToken) {
+            console.log('401 error - attempting token refresh');
+            this.isRefreshing = true;
+            try {
+              const response = await this.refreshToken(refreshToken);
+              if (response) {
+                console.log('Token refreshed successfully, retrying original request');
+                // Retry the original request with the new token
+                const originalRequest = error.config;
+                originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
+                this.isRefreshing = false;
+                return this.client(originalRequest);
+              }
+            } catch (refreshError) {
+              console.error('Token refresh failed:', refreshError);
+              this.isRefreshing = false;
+            }
+          }
+          
+          // If refresh failed or no refresh token, clear token and redirect
           this.clearToken();
-          // Redirect to login if not already there
           if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth')) {
             window.location.href = '/auth/login';
           }
@@ -86,21 +155,27 @@ class ApiClient {
           toast.error(message);
         }
 
-        const apiError: ApiError = {
-          message,
-          statusCode: error.response?.status || 500,
-          error: error.response?.data?.error,
-        };
-
         return Promise.reject(apiError);
       }
     );
   }
 
   setToken(token: string) {
-    this.token = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('shopper_auth_token', token);
+    console.log('setToken() called with:', token ? token.substring(0, 20) + '...' : 'null', 'type:', typeof token);
+    
+    // Only set valid tokens
+    if (token && token !== 'undefined' && token !== 'null' && typeof token === 'string') {
+      this.token = token;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('shopper_auth_token', token);
+        console.log('Token saved to localStorage, verifying:', localStorage.getItem('shopper_auth_token') ? 'saved' : 'not saved');
+      }
+    } else {
+      console.log('Invalid token provided, clearing token');
+      this.token = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('shopper_auth_token');
+      }
     }
   }
 
@@ -112,17 +187,53 @@ class ApiClient {
   }
 
   getToken(): string | null {
-    if (this.token) return this.token;
+    console.log('getToken() called - this.token:', this.token, 'type:', typeof this.token);
+    
+    if (this.token && this.token !== 'undefined' && this.token !== 'null') {
+      console.log('Returning cached token:', this.token.substring(0, 20) + '...');
+      return this.token;
+    }
     
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('shopper_auth_token');
-      if (token) {
+      console.log('localStorage token:', token, 'type:', typeof token);
+      if (token && token !== 'undefined' && token !== 'null') {
+        console.log('Loading token from localStorage:', token.substring(0, 20) + '...');
         this.token = token;
         return token;
       }
     }
     
+    console.log('No valid token found');
     return null;
+  }
+
+  getRefreshToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('shopper_refresh_token');
+    }
+    return null;
+  }
+
+  async refreshToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string } | null> {
+    try {
+      const response = await this.client.post('/auth/refresh', {
+        refresh_token: refreshToken,
+      });
+      
+      const { access_token, refresh_token } = response.data;
+      
+      // Update tokens
+      this.setToken(access_token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('shopper_refresh_token', refresh_token);
+      }
+      
+      return { access_token, refresh_token };
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return null;
+    }
   }
 
   // Generic request methods
@@ -179,7 +290,7 @@ export const apiClient = new ApiClient();
 // Auth API methods
 export const authApi = {
   login: (email: string, password: string) =>
-    apiClient.post<{ shopper: any; token: string; refreshToken: string }>('/auth/shopper/login', {
+    apiClient.post<{ shopper: any; access_token: string; refresh_token: string }>('/auth/shopper/login', {
       email,
       password,
     }),
@@ -191,11 +302,11 @@ export const authApi = {
     lastName: string;
     phone: string;
   }) =>
-    apiClient.post<{ shopper: any; token: string; refreshToken: string }>('/auth/shopper/register', shopperData),
+    apiClient.post<{ shopper: any; access_token: string; refresh_token: string }>('/auth/shopper/register', shopperData),
 
   refreshToken: (refreshToken: string) =>
-    apiClient.post<{ token: string; refreshToken: string }>('/auth/refresh', {
-      refreshToken,
+    apiClient.post<{ access_token: string; refresh_token: string }>('/auth/refresh', {
+      refresh_token: refreshToken,
     }),
 
   logout: () => apiClient.post('/auth/logout'),
@@ -208,26 +319,26 @@ export const authApi = {
 // Orders API methods (shopper perspective)
 export const ordersApi = {
   getAvailableOrders: (params?: { page?: number; limit?: number; location?: string }) =>
-    apiClient.get<PaginatedResponse<any>>('/shoppers/orders/available', { params }),
+    apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/available', { params }),
 
   getMyOrders: (params?: { page?: number; limit?: number; status?: string }) =>
-    apiClient.get<PaginatedResponse<any>>('/shoppers/orders/my-orders', { params }),
+    apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/my-orders', { params }),
 
-  getOrder: (orderId: string) => apiClient.get<any>(`/shoppers/orders/${orderId}`),
+  getOrder: (orderId: string) => apiClient.get<any>(`/shopper/orders/${orderId}`),
 
-  acceptOrder: (orderId: string) => apiClient.post<any>(`/shoppers/orders/${orderId}/accept`),
+  acceptOrder: (orderId: string) => apiClient.post<any>(`/shopper/orders/${orderId}/accept`),
 
-  startShopping: (orderId: string) => apiClient.post<any>(`/shoppers/orders/${orderId}/start-shopping`),
+  startShopping: (orderId: string) => apiClient.post<any>(`/shopper/orders/${orderId}/start-shopping`),
 
   updateOrderStatus: (orderId: string, status: string, data?: any) =>
-    apiClient.post<any>(`/shoppers/orders/${orderId}/status`, { status, ...data }),
+    apiClient.post<any>(`/shopper/orders/${orderId}/status`, { status, ...data }),
 
   submitReceipt: (orderId: string, receiptImage: File, actualItems: any[]) => {
     const formData = new FormData();
     formData.append('receipt', receiptImage);
     formData.append('actualItems', JSON.stringify(actualItems));
     
-    return apiClient.post<any>(`/shoppers/orders/${orderId}/receipt`, formData, {
+    return apiClient.post<any>(`/shopper/orders/${orderId}/receipt`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -238,7 +349,7 @@ export const ordersApi = {
       formData.append('deliveryProof', deliveryProof);
     }
     
-    return apiClient.post<any>(`/shoppers/orders/${orderId}/complete`, formData, {
+    return apiClient.post<any>(`/shopper/orders/${orderId}/complete`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -246,19 +357,19 @@ export const ordersApi = {
 
 // KYC API methods
 export const kycApi = {
-  getKycStatus: () => apiClient.get<any>('/shoppers/kyc/status'),
+  getKycStatus: () => apiClient.get<any>('/kyc/status'),
 
   uploadDocument: (documentType: string, file: File) => {
     const formData = new FormData();
     formData.append('document', file);
     formData.append('type', documentType);
     
-    return apiClient.post<any>('/shoppers/kyc/upload', formData, {
+    return apiClient.post<any>('/kyc/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
-  submitKyc: (kycData: any) => apiClient.post<any>('/shoppers/kyc/submit', kycData),
+  submitKyc: (kycData: any) => apiClient.post<any>('/kyc/submit', kycData),
 };
 
 // Chat API methods
@@ -308,10 +419,22 @@ export const statusApi = {
 
 // Initialize token from localStorage on client side
 if (typeof window !== 'undefined') {
+  console.log('Initializing API client from localStorage...');
   const token = localStorage.getItem('shopper_auth_token');
+  console.log('Found token in localStorage:', token ? token.substring(0, 20) + '...' : 'null', 'type:', typeof token);
   if (token) {
     apiClient.setToken(token);
+  } else {
+    console.log('No token found in localStorage');
   }
+  
+  // Test API connection on client side
+  console.log('Testing API connection...');
+  apiClient.get('/health').then(response => {
+    console.log('API health check successful:', response);
+  }).catch(error => {
+    console.error('API health check failed:', error);
+  });
 }
 
 export default apiClient;

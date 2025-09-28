@@ -61,22 +61,32 @@ export const useAuthStore = create<AuthStore>()(
       // Actions
       login: async (email: string, password: string): Promise<boolean> => {
         try {
+          console.log('Shopper auth store: Starting login...');
           set({ isLoading: true });
           
           const response = await authApi.login(email, password);
-          const { shopper, token, refreshToken } = response;
+          console.log('Shopper auth store: API response:', response);
+          const { shopper, access_token, refresh_token } = response;
 
           // Set token in API client
-          apiClient.setToken(token);
+          apiClient.setToken(access_token);
+
+          // Save refresh token to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('shopper_refresh_token', refresh_token);
+          }
 
           set({
             shopper,
-            token,
-            refreshToken,
+            token: access_token,
+            refreshToken: refresh_token,
             isAuthenticated: true,
             isLoading: false,
           });
 
+          console.log('Shopper auth store: Login successful, state updated');
+          console.log('Shopper auth store: isAuthenticated set to true');
+          console.log('Shopper auth store: shopper data:', shopper);
           toast.success('ログインしました');
           return true;
         } catch (error: any) {
@@ -114,15 +124,20 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true });
           
           const response = await authApi.register(shopperData);
-          const { shopper, token, refreshToken } = response;
+          const { shopper, access_token, refresh_token } = response;
 
           // Set token in API client
-          apiClient.setToken(token);
+          apiClient.setToken(access_token);
+
+          // Save refresh token to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('shopper_refresh_token', refresh_token);
+          }
 
           set({
             shopper,
-            token,
-            refreshToken,
+            token: access_token,
+            refreshToken: refresh_token,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -147,6 +162,11 @@ export const useAuthStore = create<AuthStore>()(
         // Clear token from API client
         apiClient.clearToken();
 
+        // Clear refresh token from localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('shopper_refresh_token');
+        }
+
         set({
           shopper: null,
           token: null,
@@ -166,10 +186,15 @@ export const useAuthStore = create<AuthStore>()(
           }
 
           const response = await authApi.refreshToken(refreshToken);
-          const { token: newToken, refreshToken: newRefreshToken } = response;
+          const { access_token: newToken, refresh_token: newRefreshToken } = response;
 
           // Set new token in API client
           apiClient.setToken(newToken);
+
+          // Save new refresh token to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('shopper_refresh_token', newRefreshToken);
+          }
 
           set({
             token: newToken,
@@ -203,24 +228,69 @@ export const useAuthStore = create<AuthStore>()(
 
       checkAuth: async () => {
         try {
-          const { token } = get();
+          const { token, isLoading, shopper, isAuthenticated } = get();
+          
+          console.log('checkAuth called - token exists:', !!token, 'isLoading:', isLoading, 'shopper exists:', !!shopper, 'isAuthenticated:', isAuthenticated);
+          console.log('Token value:', token ? token.substring(0, 20) + '...' : 'null');
+          
+          // If no token, we're not authenticated
           if (!token) {
+            console.log('No token found, setting as not authenticated');
+            set({ isAuthenticated: false, isLoading: false });
+            return;
+          }
+          
+          // If already loading, don't start another check
+          if (isLoading) {
+            console.log('Already loading, skipping check');
             return;
           }
 
+          // If we're already authenticated and have shopper data, don't check again
+          if (isAuthenticated && shopper) {
+            console.log('Already authenticated with shopper data, skipping check');
+            return;
+          }
+
+          // If we have a token and shopper data, we're already authenticated
+          if (shopper) {
+            console.log('Have token and shopper data, setting as authenticated');
+            set({ isAuthenticated: true, isLoading: false });
+            return;
+          }
+
+          // If we have a token but no shopper data, verify with API
+          console.log('Have token but no shopper data, verifying with API');
           set({ isLoading: true });
           
           const response = await authApi.getProfile();
-          const { shopper } = response;
+          const { shopper: profileShopper } = response;
+          
+          console.log('Profile API response:', profileShopper);
           
           set({
-            shopper,
+            shopper: profileShopper,
             isAuthenticated: true,
             isLoading: false,
           });
         } catch (error) {
-          // If check fails, clear auth state
-          get().logout();
+          console.error('Auth check failed:', {
+            message: error?.message,
+            statusCode: error?.statusCode,
+            error: error?.error,
+            fullError: error,
+            stack: error?.stack
+          });
+          set({ isLoading: false });
+          // Only logout if it's an authentication error, not a network error
+          if (error?.statusCode === 401 || error?.statusCode === 403) {
+            console.log('Authentication error, logging out');
+            get().logout();
+          } else {
+            // For other errors, just set as not authenticated but keep token
+            console.log('Network error, keeping token but setting as not authenticated');
+            set({ isAuthenticated: false });
+          }
         }
       },
 
@@ -246,9 +316,28 @@ export const useAuthStore = create<AuthStore>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
+        console.log('Rehydrating auth state:', {
+          hasToken: !!state?.token,
+          hasShopper: !!state?.shopper,
+          isAuthenticated: state?.isAuthenticated
+        });
+        
         // Set token in API client when rehydrating
         if (state?.token) {
           apiClient.setToken(state.token);
+          // If we have a token and shopper data, we should be authenticated
+          if (state.shopper) {
+            console.log('Setting isAuthenticated to true on rehydration');
+            state.isAuthenticated = true;
+          }
+        }
+
+        // Load refresh token from localStorage if not in state
+        if (typeof window !== 'undefined' && !state?.refreshToken) {
+          const refreshToken = localStorage.getItem('shopper_refresh_token');
+          if (refreshToken) {
+            state.refreshToken = refreshToken;
+          }
         }
       },
     }

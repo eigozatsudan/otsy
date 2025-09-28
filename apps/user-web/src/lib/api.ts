@@ -180,7 +180,7 @@ export const apiClient = new ApiClient();
 // Auth API methods
 export const authApi = {
   login: (email: string, password: string) =>
-    apiClient.post<{ user: any; token: string; refreshToken: string }>('/auth/login', {
+    apiClient.post<{ user: any; access_token: string; refresh_token: string }>('/auth/login', {
       email,
       password,
     }),
@@ -192,11 +192,11 @@ export const authApi = {
     lastName: string;
     phone: string;
   }) =>
-    apiClient.post<{ user: any; token: string; refreshToken: string }>('/auth/register', userData),
+    apiClient.post<{ user: any; access_token: string; refresh_token: string }>('/auth/register', userData),
 
   refreshToken: (refreshToken: string) =>
-    apiClient.post<{ token: string; refreshToken: string }>('/auth/refresh', {
-      refreshToken,
+    apiClient.post<{ access_token: string; refresh_token: string }>('/auth/refresh', {
+      refresh_token: refreshToken,
     }),
 
   logout: () => apiClient.post('/auth/logout'),

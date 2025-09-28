@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ordersApi } from '@/lib/api';
+import { ordersApi, apiClient } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 export interface OrderItem {
@@ -110,15 +110,34 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
         ...params,
       };
 
+      console.log('Fetching available orders with params:', queryParams);
+      console.log('API client token:', apiClient.getToken());
+      
       const response = await ordersApi.getAvailableOrders(queryParams);
       
       set({
-        availableOrders: response.data,
-        pagination: response.meta,
+        availableOrders: response.orders || [],
+        pagination: {
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.pages || 0,
+        },
         isLoading: false,
       });
     } catch (error: any) {
       set({ isLoading: false });
+      console.error('Failed to fetch available orders - Full error details:', {
+        message: error?.message,
+        statusCode: error?.statusCode,
+        error: error?.error,
+        name: error?.name,
+        code: error?.code,
+        stack: error?.stack,
+        fullError: error,
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name,
+      });
       toast.error('利用可能な注文の取得に失敗しました');
       throw error;
     }
@@ -137,12 +156,23 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
       const response = await ordersApi.getMyOrders(queryParams);
       
       set({
-        myOrders: response.data,
-        pagination: response.meta,
+        myOrders: response.orders || [],
+        pagination: {
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.pages || 0,
+        },
         isLoading: false,
       });
     } catch (error: any) {
       set({ isLoading: false });
+      console.error('Failed to fetch my orders:', {
+        message: error?.message,
+        statusCode: error?.statusCode,
+        error: error?.error,
+        fullError: error,
+      });
       toast.error('注文履歴の取得に失敗しました');
       throw error;
     }

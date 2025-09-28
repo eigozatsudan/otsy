@@ -61,7 +61,7 @@ export class AuthController {
     // Check user role and return appropriate profile
     if (user.role === 'shopper') {
       const shopper = await this.authService.getShopperProfile(user.id);
-      return { user: shopper };
+      return { shopper };
     } else {
       // For regular users, get full user profile
       const userProfile = await this.authService.getUserProfile(user.id);
