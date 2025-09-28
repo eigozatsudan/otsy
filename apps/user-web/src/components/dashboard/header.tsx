@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 
 const pageNames: Record<string, string> = {
   '/dashboard': 'ダッシュボード',
+  '/dashboard/order': '商品を注文',
   '/dashboard/voice-order': '音声注文',
   '/dashboard/orders': '注文履歴',
   '/dashboard/chat': 'チャット',

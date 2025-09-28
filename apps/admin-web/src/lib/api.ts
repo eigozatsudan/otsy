@@ -298,6 +298,32 @@ export const settingsApi = {
   getSystemStats: () => apiClient.get<any>('/admin/system/stats'),
 };
 
+// Items API methods
+export const itemsApi = {
+  // Categories
+  getCategories: () => apiClient.get<any[]>('/items/categories'),
+  
+  createCategory: (data: any) => apiClient.post<any>('/items/categories', data),
+  
+  updateCategory: (id: string, data: any) => apiClient.patch<any>(`/items/categories/${id}`, data),
+  
+  deleteCategory: (id: string) => apiClient.delete(`/items/categories/${id}`),
+  
+  // Items
+  getItems: (params?: { page?: number; limit?: number; search?: string; categoryId?: string }) =>
+    apiClient.get<PaginatedResponse<any>>('/items', { params }),
+  
+  getItem: (id: string) => apiClient.get<any>(`/items/${id}`),
+  
+  createItem: (data: any) => apiClient.post<any>('/items', data),
+  
+  updateItem: (id: string, data: any) => apiClient.patch<any>(`/items/${id}`, data),
+  
+  deleteItem: (id: string) => apiClient.delete(`/items/${id}`),
+  
+  searchItems: (query: string) => apiClient.get<any[]>(`/items/search?q=${encodeURIComponent(query)}`),
+};
+
 // Initialize token from localStorage on client side
 if (typeof window !== 'undefined') {
   const token = localStorage.getItem('admin_auth_token');

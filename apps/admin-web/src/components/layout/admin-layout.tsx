@@ -23,6 +23,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigation = [
     { name: 'ダッシュボード', href: '/dashboard', icon: '📊' },
     { name: '注文管理', href: '/dashboard/orders', icon: '📦' },
+    { name: '商品管理', href: '/dashboard/items', icon: '🛍️' },
     { name: 'ユーザー管理', href: '/dashboard/users', icon: '👥' },
     { name: '買い物代行者', href: '/dashboard/shoppers', icon: '🛒' },
     { name: '支払い管理', href: '/dashboard/payments', icon: '💳' },

@@ -13,13 +13,15 @@ import {
   Cog6ToothIcon,
   QuestionMarkCircleIcon,
   XMarkIcon,
-  Bars3Icon
+  Bars3Icon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 const navigation = [
   { name: 'ダッシュボード', href: '/dashboard', icon: HomeIcon },
+  { name: '商品を注文', href: '/dashboard/order', icon: PlusIcon },
   { name: '音声注文', href: '/dashboard/voice-order', icon: MicrophoneIcon },
   { name: '注文履歴', href: '/dashboard/orders', icon: ShoppingBagIcon },
   { name: 'チャット', href: '/dashboard/chat', icon: ChatBubbleLeftRightIcon },

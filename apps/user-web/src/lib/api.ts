@@ -229,6 +229,19 @@ export const ordersApi = {
     apiClient.post<{ items: any[]; totalEstimate: number }>('/orders/generate-list', voiceData),
 };
 
+// Items API methods
+export const itemsApi = {
+  getCategories: () => apiClient.get<any[]>('/items/categories'),
+  
+  getItems: () => apiClient.get<any[]>('/items'),
+  
+  getItemsByCategory: (categoryId: string) => 
+    apiClient.get<any[]>(`/items/category/${categoryId}`),
+  
+  searchItems: (query: string) => 
+    apiClient.get<any[]>(`/items/search?q=${encodeURIComponent(query)}`),
+};
+
 // Payments API methods
 export const paymentsApi = {
   createPaymentIntent: (orderData: { order_id: string; amount: number }) =>
