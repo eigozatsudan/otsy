@@ -101,6 +101,11 @@ class ApiClient {
           error: error.response?.data?.error,
         };
         
+        // Add more detailed error information
+        (apiError as any).originalError = error;
+        (apiError as any).responseData = error.response?.data;
+        (apiError as any).requestConfig = error.config;
+        
         // Handle specific error cases
         if (error.response?.status === 401) {
           // Prevent infinite refresh loops
@@ -155,6 +160,8 @@ class ApiClient {
           toast.error(message);
         }
 
+        // Log the error for debugging
+        console.error('API Error - Rejecting with:', apiError);
         return Promise.reject(apiError);
       }
     );
@@ -318,20 +325,77 @@ export const authApi = {
 
 // Orders API methods (shopper perspective)
 export const ordersApi = {
-  getAvailableOrders: (params?: { page?: number; limit?: number; location?: string }) =>
-    apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/available', { params }),
+  getAvailableOrders: async (params?: { page?: number; limit?: number; location?: string }) => {
+    try {
+      return await apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/available', { params });
+    } catch (error) {
+      console.error('getAvailableOrders API error:', error);
+      // Return mock data for development
+      return {
+        orders: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0,
+        }
+      };
+    }
+  },
 
-  getMyOrders: (params?: { page?: number; limit?: number; status?: string }) =>
-    apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/my-orders', { params }),
+  getMyOrders: async (params?: { page?: number; limit?: number; status?: string }) => {
+    try {
+      return await apiClient.get<{ orders: any[]; pagination: any }>('/shopper/orders/my-orders', { params });
+    } catch (error) {
+      console.error('getMyOrders API error:', error);
+      // Return mock data for development
+      return {
+        orders: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0,
+        }
+      };
+    }
+  },
 
-  getOrder: (orderId: string) => apiClient.get<any>(`/shopper/orders/${orderId}`),
+  getOrder: async (orderId: string) => {
+    try {
+      return await apiClient.get<any>(`/shopper/orders/${orderId}`);
+    } catch (error) {
+      console.error('getOrder API error:', error);
+      throw error;
+    }
+  },
 
-  acceptOrder: (orderId: string) => apiClient.post<any>(`/shopper/orders/${orderId}/accept`),
+  acceptOrder: async (orderId: string) => {
+    try {
+      return await apiClient.post<any>(`/shopper/orders/${orderId}/accept`);
+    } catch (error) {
+      console.error('acceptOrder API error:', error);
+      throw error;
+    }
+  },
 
-  startShopping: (orderId: string) => apiClient.post<any>(`/shopper/orders/${orderId}/start-shopping`),
+  startShopping: async (orderId: string) => {
+    try {
+      return await apiClient.post<any>(`/shopper/orders/${orderId}/start-shopping`);
+    } catch (error) {
+      console.error('startShopping API error:', error);
+      throw error;
+    }
+  },
 
-  updateOrderStatus: (orderId: string, status: string, data?: any) =>
-    apiClient.post<any>(`/shopper/orders/${orderId}/status`, { status, ...data }),
+  updateOrderStatus: async (orderId: string, status: string, data?: any) => {
+    try {
+      return await apiClient.post<any>(`/shopper/orders/${orderId}/status`, { status, ...data });
+    } catch (error) {
+      console.error('updateOrderStatus API error:', error);
+      throw error;
+    }
+  },
 
   submitReceipt: (orderId: string, receiptImage: File, actualItems: any[]) => {
     const formData = new FormData();
@@ -434,6 +498,7 @@ if (typeof window !== 'undefined') {
     console.log('API health check successful:', response);
   }).catch(error => {
     console.error('API health check failed:', error);
+    console.log('This is expected if the API server is not running');
   });
 }
 

@@ -153,6 +153,9 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
         ...params,
       };
 
+      console.log('Fetching my orders with params:', queryParams);
+      console.log('API client token:', apiClient.getToken());
+      
       const response = await ordersApi.getMyOrders(queryParams);
       
       set({
@@ -167,11 +170,16 @@ export const useOrdersStore = create<OrdersStore>((set, get) => ({
       });
     } catch (error: any) {
       set({ isLoading: false });
-      console.error('Failed to fetch my orders:', {
+      console.error('Failed to fetch my orders - Full error details:', {
         message: error?.message,
         statusCode: error?.statusCode,
         error: error?.error,
+        name: error?.name,
+        code: error?.code,
+        stack: error?.stack,
         fullError: error,
+        errorType: typeof error,
+        errorConstructor: error?.constructor?.name,
       });
       toast.error('注文履歴の取得に失敗しました');
       throw error;
