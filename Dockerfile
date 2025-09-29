@@ -1,0 +1,44 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache python3 make g++ postgresql-client openssl libssl3 libcrypto3
+
+# Ensure Prisma downloads correct engine for Alpine (musl, OpenSSL 3)
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
+
+# Enable corepack and prepare yarn
+RUN corepack enable && corepack prepare yarn@stable --activate
+
+# Copy package files first for better caching
+COPY package.json yarn.lock .yarnrc.yml turbo.json ./
+
+# Create workspace directories
+RUN mkdir -p apps/user-web apps/shopper-web apps/admin-web services/api packages/ui packages/types
+
+# Copy package.json files for all workspaces
+COPY apps/user-web/package.json ./apps/user-web/
+COPY apps/shopper-web/package.json ./apps/shopper-web/
+COPY apps/admin-web/package.json ./apps/admin-web/
+COPY services/api/package.json ./services/api/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/types/package.json ./packages/types/
+
+# Install dependencies
+RUN yarn install
+
+# Copy the rest of the application
+COPY . .
+
+# Generate Prisma client with proper binary targets
+RUN cd services/api && npx prisma generate || true
+
+# Build packages
+RUN yarn build
+
+# Expose ports
+EXPOSE 3000 3001 3002 4000
+
+# Default command
+CMD ["yarn", "dev"]

@@ -107,8 +107,3 @@ temp/
 test-results/
 playwright-report/
 playwright/.cache/
-
-# Docker
-.dockerignore
-Dockerfile*
-docker-compose*.yml
