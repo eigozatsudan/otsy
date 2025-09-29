@@ -74,7 +74,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     
     try {
       const roomName = `chat:${chatId}`;
-      const roomSize = this.server.sockets.adapter.rooms.get(roomName)?.size || 0;
+      const roomSize = this.server.sockets.adapter.rooms?.get(roomName)?.size || 0;
       this.logger.log(`Connected clients in room: ${roomSize}`);
       
       this.server.to(roomName).emit('new_message', message);
@@ -473,14 +473,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         data.message,
       );
 
+      // Send confirmation to sender
+      client.emit('message_sent', { message });
+
       // Broadcast to all participants in the chat
       this.logger.log(`Broadcasting message to chat:${chatId}`);
       this.server.to(`chat:${chatId}`).emit('new_message', message);
 
       // Also send to individual user rooms for better reliability
       const roomName = `chat:${chatId}`;
-      const room = this.server.sockets.adapter.rooms.get(roomName);
-      this.logger.log(`Room ${roomName} has ${room?.size || 0} connected clients`);
+      try {
+        const room = this.server.sockets.adapter.rooms?.get(roomName);
+        this.logger.log(`Room ${roomName} has ${room?.size || 0} connected clients`);
+      } catch (error) {
+        this.logger.warn(`Failed to get room info for ${roomName}:`, error);
+      }
 
       // Send push notification to offline users
       const otherParticipantId = chat.user_id === client.userId ? chat.shopper_id : chat.user_id;
@@ -607,7 +614,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   // Get online users for a chat
   async getOnlineUsers(chatId: string): Promise<string[]> {
-    const room = this.server.sockets.adapter.rooms.get(`chat:${chatId}`);
+    const room = this.server.sockets.adapter.rooms?.get(`chat:${chatId}`);
     if (!room) return [];
 
     const onlineUsers: string[] = [];

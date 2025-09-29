@@ -75,10 +75,15 @@ export default function ChatPage() {
 
   // Create chat rooms from orders
   useEffect(() => {
-    const activeOrders = orders?.filter(order => 
+    if (!orders) {
+      console.log('orders not loaded yet');
+      return;
+    }
+
+    const activeOrders = orders.filter(order => 
       ['accepted', 'shopping', 'enroute'].includes(order.status.toLowerCase()) &&
       order.shopper
-    ) || [];
+    );
 
     const rooms: ChatRoom[] = activeOrders.map(order => ({
       orderId: order.id,
@@ -115,8 +120,23 @@ export default function ChatPage() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleNewMessage = (message: Message) => {
-      console.log('New message received:', message);
+    const handleNewMessage = (rawMessage: any) => {
+      console.log('New message received:', rawMessage);
+      
+      // Convert backend message format to frontend format
+      const message: Message = {
+        id: rawMessage.id,
+        orderId: rawMessage.chat_id, // Backend sends chat_id, we use it as orderId
+        senderId: rawMessage.sender_id,
+        senderRole: rawMessage.sender_role,
+        message: rawMessage.content || rawMessage.text,
+        attachments: rawMessage.attachment_url ? [rawMessage.attachment_url] : undefined,
+        createdAt: rawMessage.created_at,
+        isRead: !!rawMessage.read_at,
+      };
+      
+      console.log('Converted message:', message);
+      
       setMessages(prev => {
         // Check if message already exists to avoid duplicates
         const exists = prev.some(msg => msg.id === message.id);
@@ -145,6 +165,26 @@ export default function ChatPage() {
     const handleMessageSent = (data: any) => {
       console.log('Message sent successfully:', data);
       toast.success('メッセージを送信しました');
+      
+      // Add the sent message to the local state immediately
+      if (data.message) {
+        const message: Message = {
+          id: data.message.id,
+          orderId: selectedRoom || '',
+          senderId: data.message.sender_id,
+          senderRole: data.message.sender_role,
+          message: data.message.content || data.message.text,
+          attachments: data.message.attachment_url ? [data.message.attachment_url] : undefined,
+          createdAt: data.message.created_at,
+          isRead: false,
+        };
+        
+        setMessages(prev => {
+          const exists = prev.some(msg => msg.id === message.id);
+          if (exists) return prev;
+          return [...prev, message];
+        });
+      }
     };
 
     // Listen for new messages
@@ -174,10 +214,23 @@ export default function ChatPage() {
       console.log('Is array:', Array.isArray(response));
       
       // Handle both array format (legacy) and object format (new)
-      const messagesData = Array.isArray(response) ? response : response.messages || [];
-      console.log('Processed messages data:', messagesData);
-      console.log('Messages count:', messagesData.length);
+      const rawMessages = Array.isArray(response) ? response : response.messages || [];
+      console.log('Processed messages data:', rawMessages);
+      console.log('Messages count:', rawMessages.length);
       
+      // Convert backend message format to frontend format
+      const messagesData: Message[] = rawMessages.map((rawMessage: any) => ({
+        id: rawMessage.id,
+        orderId: rawMessage.chat_id || orderId, // Use orderId as fallback
+        senderId: rawMessage.sender_id,
+        senderRole: rawMessage.sender_role,
+        message: rawMessage.content || rawMessage.text,
+        attachments: rawMessage.attachment_url ? [rawMessage.attachment_url] : undefined,
+        createdAt: rawMessage.created_at,
+        isRead: !!rawMessage.read_at,
+      }));
+      
+      console.log('Converted messages:', messagesData);
       setMessages(messagesData);
       
       // Mark messages as read
