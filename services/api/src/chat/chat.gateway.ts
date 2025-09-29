@@ -4,6 +4,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
@@ -33,7 +34,7 @@ interface AuthenticatedSocket extends Socket {
   },
   namespace: '/chat',
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -45,10 +46,41 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService: JwtService,
   ) {}
 
+  afterInit(server: Server) {
+    this.logger.log('ChatGateway initialized');
+    this.logger.log('Server instance:', !!server);
+    this.logger.log('Server sockets:', !!server?.sockets);
+    this.logger.log('Server adapter:', !!server?.sockets?.adapter);
+  }
+
   // Method to broadcast message from HTTP API
   public broadcastMessage(chatId: string, message: any) {
     this.logger.log(`Broadcasting message to chat ${chatId}`);
-    this.server.to(`chat:${chatId}`).emit('new_message', message);
+    this.logger.log(`Message data:`, JSON.stringify(message, null, 2));
+    this.logger.log(`Room name: chat:${chatId}`);
+    
+    // Check if server and adapter are available
+    if (!this.server) {
+      this.logger.warn('WebSocket server is not initialized - skipping broadcast');
+      return;
+    }
+    
+    if (!this.server.sockets || !this.server.sockets.adapter) {
+      this.logger.warn('WebSocket adapter is not available - skipping broadcast');
+      return;
+    }
+    
+    try {
+      const roomName = `chat:${chatId}`;
+      const roomSize = this.server.sockets.adapter.rooms.get(roomName)?.size || 0;
+      this.logger.log(`Connected clients in room: ${roomSize}`);
+      
+      this.server.to(roomName).emit('new_message', message);
+      
+      this.logger.log(`Message broadcasted to chat:${chatId}`);
+    } catch (error) {
+      this.logger.error('Error broadcasting message:', error);
+    }
   }
 
   async handleConnection(client: AuthenticatedSocket) {

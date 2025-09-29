@@ -45,6 +45,16 @@ export default function ChatPage() {
   const { orders, fetchOrders } = useOrdersStore();
   const { socket, isConnected } = useSocket();
   
+  // Debug auth state
+  useEffect(() => {
+    console.log('User-web auth state debug - user:', user, 'token exists:', !!useAuthStore.getState().token);
+  }, [user]);
+  
+  // Debug socket state
+  useEffect(() => {
+    console.log('User-web socket state debug - socket:', !!socket, 'isConnected:', isConnected);
+  }, [socket, isConnected]);
+  
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
   const [messages, setMessages] = useState<Message[]>([]);

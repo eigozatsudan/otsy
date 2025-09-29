@@ -459,6 +459,13 @@ export class ChatController {
       console.log('Controller received body:', body);
       console.log('Created messageDto:', messageDto);
 
+      console.log('About to call chatService.sendMessage with:', {
+        chatId: chat.id,
+        senderId: user.id,
+        senderRole: user.role,
+        messageDto: messageDto
+      });
+
       const message = await this.chatService.sendMessage(
         chat.id,
         user.id,
@@ -466,8 +473,22 @@ export class ChatController {
         messageDto,
       );
 
+      console.log('chatService.sendMessage returned:', message);
+
       // Broadcast message via WebSocket
-      this.chatGateway.broadcastMessage(chat.id, message);
+      console.log('About to broadcast message via WebSocket:', {
+        chatId: chat.id,
+        messageId: message.id,
+        messageContent: message.content
+      });
+      
+      try {
+        this.chatGateway.broadcastMessage(chat.id, message);
+        console.log('Message broadcasted successfully');
+      } catch (error) {
+        console.error('Error broadcasting message via WebSocket:', error);
+        // Don't fail the entire request if WebSocket broadcast fails
+      }
 
       return message;
     } catch (error) {
@@ -491,10 +512,16 @@ export class ChatController {
       }
 
       // Check access
-      const hasAccess = 
+      let hasAccess = 
         chat.user_id === user.id || 
-        chat.shopper_id === user.id ||
         user.role === 'admin';
+
+      if (!hasAccess && user.role === 'shopper') {
+        const shopper = await this.chatService.getShopperById(user.id);
+        if (shopper && chat.shopper_id === shopper.user_id) {
+          hasAccess = true;
+        }
+      }
 
       if (!hasAccess) {
         throw new Error('Access denied');

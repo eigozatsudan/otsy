@@ -9,9 +9,14 @@ export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    console.log('User-web useSocket useEffect triggered - user:', !!user, 'token:', !!token);
+    
     if (!user || !token) {
+      console.log('User-web: No user or token, skipping socket connection');
       return;
     }
+
+    console.log('User-web: Creating socket connection to:', process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000');
 
     // Create socket connection
     const newSocket = io(process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000', {
@@ -42,6 +47,7 @@ export const useSocket = () => {
 
     // Cleanup on unmount
     return () => {
+      console.log('User-web: Cleaning up socket connection');
       newSocket.close();
       socketRef.current = null;
       setSocket(null);

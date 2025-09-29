@@ -45,17 +45,22 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const selectedOrderId = searchParams?.get('order') || null;
   
-  const { user } = useAuthStore();
+  const { shopper } = useAuthStore();
   const { myOrders, fetchMyOrders } = useOrdersStore();
   const { socket, isConnected } = useSocket();
   
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
+  // Debug auth state
+  useEffect(() => {
+    console.log('Auth state debug - shopper:', shopper, 'token exists:', !!useAuthStore.getState().token);
+  }, [shopper]);
   
   // Debug socket state
   useEffect(() => {
-    console.log('Socket state changed - socket:', !!socket, 'isConnected:', isConnected);
+    console.log('Socket state debug - socket:', !!socket, 'isConnected:', isConnected);
   }, [socket, isConnected]);
+  
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(selectedOrderId);
   
   // Debug selectedRoom state
   useEffect(() => {
@@ -133,12 +138,13 @@ export default function ChatPage() {
       loadMessages(selectedRoom);
       
       // Join the chat room for real-time updates if socket is connected
-      if (socket && isConnected) {
-        console.log('Joining chat room for real-time updates:', selectedRoom);
-        socket.emit('join_chat', { chatId: selectedRoom });
-      } else {
-        console.log('Socket not connected, skipping join_chat');
-      }
+            if (socket && isConnected) {
+              console.log('Joining chat room for real-time updates:', selectedRoom);
+              console.log('Socket ID:', socket.id);
+              socket.emit('join_chat', { chatId: selectedRoom });
+            } else {
+              console.log('Socket not connected, skipping join_chat - socket:', !!socket, 'isConnected:', isConnected);
+            }
     } else {
       console.log('No selectedRoom, not loading messages');
     }
@@ -151,10 +157,19 @@ export default function ChatPage() {
 
   // WebSocket event listeners
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.log('No socket available for event listeners');
+      return;
+    }
+
+    console.log('Setting up WebSocket event listeners');
 
     const handleNewMessage = (message: Message) => {
       console.log('New message received via WebSocket:', message);
+      console.log('Current selectedRoom:', selectedRoom);
+      console.log('Message orderId:', message.orderId);
+      console.log('Message matches current room:', message.orderId === selectedRoom);
+      
       setMessages(prev => {
         // Check if message already exists to avoid duplicates
         const exists = prev.some(msg => msg.id === message.id);
@@ -186,7 +201,10 @@ export default function ChatPage() {
     socket.on('leave_chat', handleLeaveChat);
     socket.on('error', handleError);
 
+    console.log('WebSocket event listeners set up');
+
     return () => {
+      console.log('Cleaning up WebSocket event listeners');
       socket.off('new_message', handleNewMessage);
       socket.off('join_chat', handleJoinChat);
       socket.off('leave_chat', handleLeaveChat);
