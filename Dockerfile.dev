@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++ postgresql-client openssl libssl3 libcrypto3 bash
 
 # Ensure Prisma downloads correct engine for Alpine (musl, OpenSSL 3)
-ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x,linux-musl-arm64-openssl-3.0.x
 
 # Enable corepack and prepare yarn
 RUN corepack enable && corepack prepare yarn@4.10.3 --activate
