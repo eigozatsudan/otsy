@@ -36,10 +36,10 @@
   },
   "packageManager": "yarn@4.10.3",
   "resolutions": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "styled-components": "^5.3.11",
-    "react-is": "^18.2.0",
+    "react-is": "^19.1.0",
     "typescript": "^5.2.2"
   }
 }
