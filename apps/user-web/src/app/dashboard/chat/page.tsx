@@ -135,7 +135,11 @@ export default function ChatPage() {
 
     const handleError = (error: any) => {
       console.error('Socket error:', error);
-      toast.error('接続エラーが発生しました');
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('接続エラーが発生しました');
+      }
     };
 
     // Listen for new messages
@@ -171,7 +175,7 @@ export default function ChatPage() {
       
       // Mark messages as read
       await chatApi.markMessagesAsRead(orderId);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading messages:', error);
       console.error('Error details:', {
         message: error.message,
@@ -195,32 +199,40 @@ export default function ChatPage() {
       return;
     }
 
+    if (!socket) {
+      toast.error('WebSocket接続がありません');
+      return;
+    }
+
     try {
       setIsSending(true);
       
-      console.log('Sending message:', {
+      console.log('Sending message via WebSocket:', {
         orderId: selectedRoom,
         message: newMessage,
         attachments: attachments.length
       });
       
-      const message = await chatApi.sendMessage(
-        selectedRoom,
-        newMessage,
-        attachments.length > 0 ? attachments : undefined
-      );
-
-      console.log('Message sent successfully:', message);
-      
-      // Add message to local state immediately for better UX
-      setMessages(prev => [...prev, message]);
-      setNewMessage('');
-      setAttachments([]);
-      
-      // Note: WebSocket send_message is not needed here as the HTTP API already handles
-      // the message broadcasting via the ChatGateway.broadcastMessage method
-      
-      toast.success('メッセージを送信しました');
+      // Send message via WebSocket
+      socket.emit('send_message', {
+        chatId: selectedRoom,
+        message: {
+          content: newMessage,
+          type: 'text',
+          attachment_url: attachments.length > 0 ? URL.createObjectURL(attachments[0]) : undefined,
+          attachment_type: attachments.length > 0 ? attachments[0].type : undefined,
+        }
+      }, (response: any) => {
+        if (response && response.error) {
+          console.error('Message send error:', response.error);
+          toast.error(response.error);
+        } else {
+          // Clear form only on success
+          setNewMessage('');
+          setAttachments([]);
+          toast.success('メッセージを送信しました');
+        }
+      });
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('メッセージの送信に失敗しました');
@@ -356,23 +368,23 @@ export default function ChatPage() {
                   <div
                     key={message.id}
                     className={`flex ${
-                      message.sender_role === 'user' ? 'justify-end' : 'justify-start'
+                      message.senderRole === 'user' ? 'justify-end' : 'justify-start'
                     }`}
                   >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.sender_role === 'user'
+                        message.senderRole === 'user'
                           ? 'bg-primary-600 text-white'
                           : 'bg-gray-200 text-gray-900'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      <p className="text-sm">{message.message}</p>
                       
-                      {message.attachment_url && (
+                      {message.attachments && message.attachments.length > 0 && (
                         <div className="mt-2 space-y-1">
                           <div className="text-xs">
                             <a
-                              href={message.attachment_url}
+                              href={message.attachments[0]}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="underline"
@@ -384,9 +396,9 @@ export default function ChatPage() {
                       )}
                       
                       <p className={`text-xs mt-1 ${
-                        message.sender_role === 'user' ? 'text-primary-200' : 'text-gray-500'
+                        message.senderRole === 'user' ? 'text-primary-200' : 'text-gray-500'
                       }`}>
-                        {formatTime(message.created_at)}
+                        {formatTime(message.createdAt)}
                       </p>
                     </div>
                   </div>

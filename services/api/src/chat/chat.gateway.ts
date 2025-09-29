@@ -40,6 +40,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   private readonly logger = new Logger(ChatGateway.name);
   private connectedUsers = new Map<string, AuthenticatedSocket>();
+  private messageRateLimit = new Map<string, { count: number; resetTime: number }>();
 
   constructor(
     private chatService: ChatService,
@@ -104,6 +105,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       this.logger.log('Token found, verifying...');
       const payload = this.jwtService.verify(token);
+      
+      // Validate required fields
+      if (!payload.sub || !payload.role) {
+        this.logger.warn('Invalid token payload - missing required fields');
+        client.disconnect();
+        return;
+      }
+      
+      // Validate role
+      if (!['user', 'shopper', 'admin'].includes(payload.role)) {
+        this.logger.warn(`Invalid user role: ${payload.role}`);
+        client.disconnect();
+        return;
+      }
+      
       client.userId = payload.sub;
       client.userRole = payload.role;
       client.chatRooms = new Set();
@@ -254,11 +270,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           }
         }
         
-        // Final fallback: if still no access, allow access for any shopper to any order chat
-        // This is a temporary solution for debugging
+        // No fallback access - proper security check
         if (!hasAccess) {
-          this.logger.warn(`Allowing shopper access as fallback for debugging purposes`);
-          hasAccess = true;
+          this.logger.warn(`Shopper access denied - not assigned to this order`);
         }
       }
 
@@ -344,6 +358,27 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       this.logger.log(`User ${client.userId} attempting to send message to chat: ${data.chatId}`);
       
+      // Rate limiting check
+      if (!this.checkRateLimit(client.userId)) {
+        this.logger.warn(`Rate limit exceeded for user ${client.userId}`);
+        client.emit('error', { message: 'Rate limit exceeded. Please wait before sending another message.' });
+        return;
+      }
+
+      // Validate message content
+      if (!data.message || !data.message.content || data.message.content.trim().length === 0) {
+        this.logger.warn(`Empty message from user ${client.userId}`);
+        client.emit('error', { message: 'Message content cannot be empty.' });
+        return;
+      }
+
+      // Validate message length
+      if (data.message.content.length > 1000) {
+        this.logger.warn(`Message too long from user ${client.userId}`);
+        client.emit('error', { message: 'Message is too long. Maximum 1000 characters allowed.' });
+        return;
+      }
+      
       // First try to get chat by ID (in case it's already a chat ID)
       let chat;
       try {
@@ -389,10 +424,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           }
         }
         
-        // Final fallback: if still no access, allow access for any shopper to any order chat
+        // No fallback access - proper security check
         if (!hasAccess) {
-          this.logger.warn(`Allowing shopper access as fallback for debugging purposes`);
-          hasAccess = true;
+          this.logger.warn(`Shopper access denied - not assigned to this order`);
         }
       }
 
@@ -421,7 +455,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       );
 
       // Broadcast to all participants in the chat
+      this.logger.log(`Broadcasting message to chat:${chatId}`);
       this.server.to(`chat:${chatId}`).emit('new_message', message);
+
+      // Also send to individual user rooms for better reliability
+      const roomName = `chat:${chatId}`;
+      const room = this.server.sockets.adapter.rooms.get(roomName);
+      this.logger.log(`Room ${roomName} has ${room?.size || 0} connected clients`);
 
       // Send push notification to offline users
       const otherParticipantId = chat.user_id === client.userId ? chat.shopper_id : chat.user_id;
@@ -432,6 +472,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
 
       this.logger.log(`Message sent in chat ${chatId} by user ${client.userId}`);
+
+      // Send success response
+      client.emit('message_sent', { 
+        messageId: message.id, 
+        chatId: chatId,
+        timestamp: new Date().toISOString()
+      });
 
     } catch (error) {
       this.logger.error('Error sending message:', error);
@@ -547,5 +594,26 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       return true;
     }
     return false;
+  }
+
+  // Rate limiting method
+  private checkRateLimit(userId: string): boolean {
+    const now = Date.now();
+    const userLimit = this.messageRateLimit.get(userId);
+    
+    // Reset if it's been more than 1 minute
+    if (!userLimit || now - userLimit.resetTime > 60000) {
+      this.messageRateLimit.set(userId, { count: 1, resetTime: now });
+      return true;
+    }
+    
+    // Check if user has exceeded 30 messages per minute
+    if (userLimit.count >= 30) {
+      return false;
+    }
+    
+    // Increment count
+    userLimit.count++;
+    return true;
   }
 }
