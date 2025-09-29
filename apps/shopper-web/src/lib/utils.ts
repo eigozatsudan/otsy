@@ -13,33 +13,80 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(date: string | Date): string {
+  if (!date) {
+    return '--';
+  }
+  
+  const dateObj = new Date(date);
+  
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.warn('Invalid date provided to formatDate:', date);
+    return '--';
+  }
+  
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(new Date(date));
+  }).format(dateObj);
 }
 
 export function formatDateTime(date: string | Date): string {
+  if (!date) {
+    return '--';
+  }
+  
+  const dateObj = new Date(date);
+  
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.warn('Invalid date provided to formatDateTime:', date);
+    return '--';
+  }
+  
   return new Intl.DateTimeFormat('ja-JP', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(dateObj);
 }
 
 export function formatTime(date: string | Date): string {
+  if (!date) {
+    return '--:--';
+  }
+  
+  const dateObj = new Date(date);
+  
+  // Check if the date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.warn('Invalid date provided to formatTime:', date);
+    return '--:--';
+  }
+  
   return new Intl.DateTimeFormat('ja-JP', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(date));
+  }).format(dateObj);
 }
 
 export function formatRelativeTime(date: string | Date): string {
+  if (!date) {
+    return '--';
+  }
+  
   const now = new Date();
   const targetDate = new Date(date);
+  
+  // Check if the date is valid
+  if (isNaN(targetDate.getTime())) {
+    console.warn('Invalid date provided to formatRelativeTime:', date);
+    return '--';
+  }
+  
   const diffInSeconds = Math.floor((now.getTime() - targetDate.getTime()) / 1000);
 
   if (diffInSeconds < 60) {

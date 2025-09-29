@@ -231,46 +231,49 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         hasAccess = chat.user_id === client.userId;
       } else if (client.userRole === 'shopper') {
         // For shoppers, check if they are the shopper for this chat
-        hasAccess = chat.shopper_id === client.userId;
-        this.logger.log(`Shopper access check - direct comparison: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, client.userId: ${client.userId})`);
-        
-        // If not found by shopper_id, try to get shopper by user_id
-        if (!hasAccess) {
-          try {
-            const shopper = await this.chatService.getShopperByUserId(client.userId);
-            this.logger.log(`Shopper lookup result:`, shopper);
-            if (shopper && chat.shopper_id === shopper.id) {
-              hasAccess = true;
-              this.logger.log(`Shopper access granted via shopper lookup`);
-            } else {
-              this.logger.log(`Shopper access denied - shopper.id: ${shopper?.id}, chat.shopper_id: ${chat.shopper_id}`);
-            }
-          } catch (error) {
-            this.logger.warn(`Failed to get shopper info for user ${client.userId}:`, error);
-          }
-        }
-        
-        // Additional check: if still no access, check if the shopper is assigned to the order
-        if (!hasAccess) {
-          try {
-            const order = await this.chatService.getOrderById(data.chat_id);
-            this.logger.log(`Order-based access check:`, {
-              orderShopperId: order.shopper_id,
-              clientUserId: client.userId,
-              orderUserId: order.user_id
-            });
+        // JWT sub field contains shopper ID, so we use getShopperById
+        try {
+          const shopper = await this.chatService.getShopperById(client.userId);
+          this.logger.log(`Shopper lookup result:`, {
+            userId: client.userId,
+            shopper: shopper,
+            chatShopperId: chat.shopper_id
+          });
+          
+          if (shopper) {
+            // Check if the shopper is assigned to this chat
+            // chat.shopper_id contains the user_id, so we compare with shopper.user_id
+            hasAccess = chat.shopper_id === shopper.user_id;
+            this.logger.log(`Shopper access check - chat comparison: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, shopper.user_id: ${shopper.user_id})`);
             
-            // Check if the shopper is assigned to this order
-            if (order.shopper_id === client.userId) {
-              hasAccess = true;
-              this.logger.log(`Shopper access granted via order assignment`);
+            // If not found by chat.shopper_id, check if the shopper is assigned to the order
+            if (!hasAccess) {
+              try {
+                const order = await this.chatService.getOrderById(data.chat_id);
+                this.logger.log(`Order-based access check:`, {
+                  orderShopperId: order.shopper_id,
+                  clientUserId: client.userId,
+                  shopperId: shopper.id,
+                  shopperUserId: shopper.user_id
+                });
+                
+                // Check if the shopper is assigned to this order
+                // order.shopper_id contains the shopper's ID, so we compare with shopper.id
+                if (order.shopper_id === shopper.id) {
+                  hasAccess = true;
+                  this.logger.log(`Shopper access granted via order assignment`);
+                }
+              } catch (error) {
+                this.logger.warn(`Failed to check order-based access:`, error);
+              }
             }
-          } catch (error) {
-            this.logger.warn(`Failed to check order-based access:`, error);
+          } else {
+            this.logger.warn(`Shopper not found for user ${client.userId}`);
           }
+        } catch (error) {
+          this.logger.warn(`Failed to get shopper info for user ${client.userId}:`, error);
         }
         
-        // No fallback access - proper security check
         if (!hasAccess) {
           this.logger.warn(`Shopper access denied - not assigned to this order`);
         }
@@ -398,35 +401,51 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         hasAccess = chat.user_id === client.userId;
       } else if (client.userRole === 'shopper') {
         // For shoppers, check if they are the shopper for this chat
-        hasAccess = chat.shopper_id === client.userId;
-        
-        // If not found by shopper_id, try to get shopper by user_id
-        if (!hasAccess) {
-          try {
-            const shopper = await this.chatService.getShopperByUserId(client.userId);
-            if (shopper && chat.shopper_id === shopper.id) {
-              hasAccess = true;
+        // JWT sub field contains shopper ID, so we use getShopperById
+        try {
+          const shopper = await this.chatService.getShopperById(client.userId);
+          this.logger.log(`Send message - Shopper lookup result:`, {
+            userId: client.userId,
+            shopper: shopper,
+            chatShopperId: chat.shopper_id
+          });
+          
+          if (shopper) {
+            // Check if the shopper is assigned to this chat
+            // chat.shopper_id contains the user_id, so we compare with shopper.user_id
+            hasAccess = chat.shopper_id === shopper.user_id;
+            this.logger.log(`Send message - Shopper access check - chat comparison: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, shopper.user_id: ${shopper.user_id})`);
+            
+            // If not found by chat.shopper_id, check if the shopper is assigned to the order
+            if (!hasAccess) {
+              try {
+                const order = await this.chatService.getOrderById(data.chatId);
+                this.logger.log(`Send message - Order-based access check:`, {
+                  orderShopperId: order.shopper_id,
+                  clientUserId: client.userId,
+                  shopperId: shopper.id,
+                  shopperUserId: shopper.user_id
+                });
+                
+                // Check if the shopper is assigned to this order
+                // order.shopper_id contains the shopper's ID, so we compare with shopper.id
+                if (order.shopper_id === shopper.id) {
+                  hasAccess = true;
+                  this.logger.log(`Send message - Shopper access granted via order assignment`);
+                }
+              } catch (error) {
+                this.logger.warn(`Send message - Failed to check order-based access:`, error);
+              }
             }
-          } catch (error) {
-            this.logger.warn(`Failed to get shopper info for user ${client.userId}:`, error);
+          } else {
+            this.logger.warn(`Send message - Shopper not found for user ${client.userId}`);
           }
+        } catch (error) {
+          this.logger.warn(`Send message - Failed to get shopper info for user ${client.userId}:`, error);
         }
         
-        // Additional check: if still no access, check if the shopper is assigned to the order
         if (!hasAccess) {
-          try {
-            const order = await this.chatService.getOrderById(data.chatId);
-            if (order.shopper_id === client.userId) {
-              hasAccess = true;
-            }
-          } catch (error) {
-            this.logger.warn(`Failed to check order-based access:`, error);
-          }
-        }
-        
-        // No fallback access - proper security check
-        if (!hasAccess) {
-          this.logger.warn(`Shopper access denied - not assigned to this order`);
+          this.logger.warn(`Send message - Shopper access denied - not assigned to this order`);
         }
       }
 

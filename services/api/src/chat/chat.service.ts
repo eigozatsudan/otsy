@@ -251,9 +251,43 @@ export class ChatService {
     
     // If sender is a shopper, check if they are the shopper for this chat
     if (!hasAccess && senderRole === 'shopper') {
+      // JWT sub field contains shopper ID, so we use getShopperById
       const shopper = await this.getShopperById(senderId);
-      if (shopper && chat.shopper_id === shopper.user_id) {
-        hasAccess = true;
+      console.log('ChatService sendMessage - Shopper lookup result:', {
+        senderId: senderId,
+        shopper: shopper,
+        chatShopperId: chat.shopper_id
+      });
+      
+      if (shopper) {
+        // Check if the shopper is assigned to this chat
+        // chat.shopper_id contains the user_id, so we compare with shopper.user_id
+        hasAccess = chat.shopper_id === shopper.user_id;
+        console.log(`ChatService sendMessage - Shopper access check: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, shopper.user_id: ${shopper.user_id})`);
+        
+        // If not found by chat.shopper_id, check if the shopper is assigned to the order
+        if (!hasAccess) {
+          try {
+            const order = await this.getOrderById(chat.order_id);
+            console.log('ChatService sendMessage - Order-based access check:', {
+              orderShopperId: order.shopper_id,
+              senderId: senderId,
+              shopperId: shopper.id,
+              shopperUserId: shopper.user_id
+            });
+            
+            // Check if the shopper is assigned to this order
+            // order.shopper_id contains the shopper's ID, so we compare with shopper.id
+            if (order.shopper_id === shopper.id) {
+              hasAccess = true;
+              console.log('ChatService sendMessage - Shopper access granted via order assignment');
+            }
+          } catch (error) {
+            console.warn('ChatService sendMessage - Failed to check order-based access:', error);
+          }
+        }
+      } else {
+        console.warn(`ChatService sendMessage - Shopper not found for user ${senderId}`);
       }
     }
     
