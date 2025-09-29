@@ -18,6 +18,31 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ['@heroicons/react'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+  // Webpack最適化
+  webpack: (config, { dev, isServer }) => {
+    if (!dev && !isServer) {
+      // 本番ビルドでの最適化
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+        },
+      };
+    }
+    return config;
   },
   // 動的レンダリングを強制
   trailingSlash: false,
