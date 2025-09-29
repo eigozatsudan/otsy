@@ -301,13 +301,24 @@ export class ChatService {
 
     console.log('sendMessage - senderId:', senderId, 'senderRole:', senderRole);
 
+    // Determine the correct sender_id based on role
+    let actualSenderId = senderId;
+    if (senderRole === 'shopper') {
+      // For shoppers, we need to use the user_id, not the shopper ID
+      const shopper = await this.getShopperById(senderId);
+      if (shopper) {
+        actualSenderId = shopper.user_id;
+        console.log('Using shopper user_id for sender_id:', actualSenderId);
+      }
+    }
+
     // Create message with proper sender_id
     const message = await this.prisma.chatMessage.create({
       data: {
         order_id: chat.order_id,
         chat_id: chatId,
         sender: senderRole,
-        sender_id: senderId, // Use actual sender ID
+        sender_id: actualSenderId, // Use correct sender ID
         sender_role: senderRole,
         text: messageDto.content, // Use text field as it's required
         content: messageDto.content,
