@@ -112,10 +112,10 @@ export default function ActiveOrdersPage() {
                       <div className="flex items-center text-sm text-gray-600">
                         <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center mr-2">
                           <span className="text-xs font-medium text-primary-700">
-                            {order.user.firstName[0]}
+                            {order.user?.firstName?.[0] || '?'}
                           </span>
                         </div>
-                        <span>{order.user.lastName} {order.user.firstName}</span>
+                        <span>{order.user?.lastName || '不明'} {order.user?.firstName || '不明'}</span>
                       </div>
                     </div>
                   </div>

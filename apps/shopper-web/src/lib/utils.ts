@@ -418,3 +418,42 @@ export function compressImage(file: File, maxWidth: number = 800, quality: numbe
     img.src = URL.createObjectURL(file);
   });
 }
+
+// Order status utilities
+export function getOrderStatusColor(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'new':
+      return 'badge-gray';
+    case 'accepted':
+      return 'badge-primary';
+    case 'shopping':
+      return 'badge-warning';
+    case 'enroute':
+      return 'badge-warning';
+    case 'delivered':
+      return 'badge-success';
+    case 'cancelled':
+      return 'badge-error';
+    default:
+      return 'badge-gray';
+  }
+}
+
+export function getOrderStatusText(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'new':
+      return '新規';
+    case 'accepted':
+      return '受付済み';
+    case 'shopping':
+      return '買い物中';
+    case 'enroute':
+      return '配送中';
+    case 'delivered':
+      return '配送完了';
+    case 'cancelled':
+      return 'キャンセル';
+    default:
+      return status;
+  }
+}
