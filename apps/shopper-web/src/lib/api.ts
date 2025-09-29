@@ -509,7 +509,8 @@ export const kycApi = {
 
 // Chat API methods
 export const chatApi = {
-  getOrderMessages: (orderId: string) => apiClient.get<any>(`/chat/orders/${orderId}/messages`),
+  getOrderMessages: (orderId: string, page: number = 1, limit: number = 10) => 
+    apiClient.get<any>(`/chat/orders/${orderId}/messages?page=${page}&limit=${limit}`),
 
   sendMessage: (orderId: string, message: string, attachments?: File[]) => {
     const formData = new FormData();

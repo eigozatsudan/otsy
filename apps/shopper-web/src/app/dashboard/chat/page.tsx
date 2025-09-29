@@ -72,9 +72,15 @@ export default function ChatPage() {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingOldMessages, setIsLoadingOldMessages] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch orders with active chats
   useEffect(() => {
@@ -155,10 +161,15 @@ export default function ChatPage() {
     }
   }, [selectedRoom, socket, isConnected]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive (but not when loading old messages)
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > 0 && !isLoading && !isLoadingOldMessages && shouldAutoScroll) {
+      // 少し遅延を入れてDOMの更新を待つ
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [messages, isLoading, isLoadingOldMessages, shouldAutoScroll]);
 
   // WebSocket event listeners
   useEffect(() => {
@@ -199,6 +210,9 @@ export default function ChatPage() {
         console.log('Adding new message to chat');
         return [...prev, message];
       });
+      
+      // 新規メッセージが追加された時は自動スクロールを有効化
+      setShouldAutoScroll(true);
     };
 
     const handleJoinChat = (data: { chatId: string; userId: string }) => {
@@ -240,6 +254,8 @@ export default function ChatPage() {
           if (exists) return prev;
           return [...prev, message];
         });
+        // 送信したメッセージの場合は自動スクロールを有効化
+        setShouldAutoScroll(true);
       }
     };
 
@@ -262,11 +278,21 @@ export default function ChatPage() {
     };
   }, [socket]);
 
-  const loadMessages = async (orderId: string) => {
+  const loadMessages = async (orderId: string, page: number = 1, append: boolean = false) => {
     try {
-      setIsLoading(true);
-      console.log('Loading messages for order:', orderId);
-      const response = await chatApi.getOrderMessages(orderId);
+      if (append) {
+        setIsLoadingMore(true);
+        setIsLoadingOldMessages(true);
+        setShouldAutoScroll(false); // 過去のメッセージロード時は自動スクロールを無効化
+      } else {
+        setIsLoading(true);
+        setCurrentPage(1);
+        setHasMoreMessages(true);
+        setShouldAutoScroll(true); // 初期表示時は自動スクロールを有効化
+      }
+      
+      console.log('Loading messages for order:', orderId, 'page:', page);
+      const response = await chatApi.getOrderMessages(orderId, page, 10);
       
       console.log('Messages API response:', response);
       console.log('Response type:', typeof response);
@@ -274,8 +300,11 @@ export default function ChatPage() {
       
       // Handle both array format (legacy) and object format (new)
       const rawMessages = Array.isArray(response) ? response : response.messages || [];
+      const hasMore = response.hasMore || false;
+      
       console.log('Processed messages data:', rawMessages);
       console.log('Messages count:', rawMessages.length);
+      console.log('Has more:', hasMore);
       
       // Convert backend message format to frontend format
       const messagesData: Message[] = rawMessages.map((rawMessage: any) => ({
@@ -290,10 +319,23 @@ export default function ChatPage() {
       }));
       
       console.log('Converted messages:', messagesData);
-      setMessages(messagesData);
       
-      // Mark messages as read
-      await chatApi.markMessagesAsRead(orderId);
+      if (append) {
+        // 過去のメッセージを追加する際は、現在のスクロール位置を保持
+        preserveScrollPosition(() => {
+          setMessages(prev => [...messagesData, ...prev]);
+        });
+      } else {
+        setMessages(messagesData);
+      }
+      
+      setHasMoreMessages(hasMore);
+      setCurrentPage(page);
+      
+      // Mark messages as read (only for initial load)
+      if (!append) {
+        await chatApi.markMessagesAsRead(orderId);
+      }
     } catch (error: any) {
       console.error('Error loading messages:', error);
       console.error('Error details:', {
@@ -304,11 +346,77 @@ export default function ChatPage() {
       toast.error('メッセージの読み込みに失敗しました');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
+      setIsLoadingOldMessages(false);
+      // 過去のメッセージロード完了後も自動スクロールは無効のまま
     }
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  const scrollToBottomSmooth = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const preserveScrollPosition = (callback: () => void) => {
+    const container = messagesContainerRef.current;
+    if (!container) {
+      callback();
+      return;
+    }
+
+    const currentScrollTop = container.scrollTop;
+    const currentScrollHeight = container.scrollHeight;
+    
+    console.log('Preserving scroll position:', {
+      scrollTop: currentScrollTop,
+      scrollHeight: currentScrollHeight
+    });
+
+    callback();
+
+    // スクロール位置を復元
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        const newScrollHeight = messagesContainerRef.current.scrollHeight;
+        const heightDiff = newScrollHeight - currentScrollHeight;
+        const newScrollTop = currentScrollTop + heightDiff;
+        
+        console.log('Restoring scroll position:', {
+          newScrollHeight,
+          heightDiff,
+          newScrollTop
+        });
+        
+        messagesContainerRef.current.scrollTop = newScrollTop;
+      }
+    }, 100);
+  };
+
+  const loadMoreMessages = async () => {
+    if (!selectedRoom || isLoadingMore || !hasMoreMessages) return;
+    
+    const nextPage = currentPage + 1;
+    await loadMessages(selectedRoom, nextPage, true);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollTop = container.scrollTop;
+    
+    // Load more messages when scrolled to top
+    if (scrollTop === 0 && hasMoreMessages && !isLoadingMore) {
+      loadMoreMessages();
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -450,7 +558,7 @@ export default function ChatPage() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {selectedRoom ? (
             <>
               {/* Chat Header */}
@@ -473,12 +581,27 @@ export default function ChatPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div 
+                ref={messagesContainerRef}
+                className="overflow-y-auto p-6 space-y-4"
+                style={{ 
+                  height: '500px',
+                  overflowY: 'auto'
+                }}
+                onScroll={handleScroll}
+              >
                 {isLoading ? (
                   <div className="flex justify-center">
                     <LoadingSpinner />
                   </div>
-                ) : messages.length === 0 ? (
+                ) : (
+                  <>
+                    {isLoadingMore && (
+                      <div className="flex justify-center py-4">
+                        <LoadingSpinner />
+                      </div>
+                    )}
+                    {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">
@@ -522,6 +645,8 @@ export default function ChatPage() {
                       </div>
                     </div>
                   ))
+                    )}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>
