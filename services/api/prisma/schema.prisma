@@ -68,7 +68,6 @@ model Shopper {
   orders        Order[]
   chats         Chat[]
   receipts      Receipt[]
-  chat_messages ChatMessage[]
   kyc_documents KycDocument[]
   push_subscriptions PushSubscription[]
   preferences   ShopperPreferences?
@@ -185,8 +184,7 @@ model ChatMessage {
   // Relations
   order    Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
   chat     Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
-  user     User?    @relation(fields: [sender_id], references: [id], map: "chat_messages_user_fkey")
-  shopper  Shopper? @relation(fields: [sender_id], references: [id], map: "chat_messages_shopper_fkey")
+  user     User?    @relation(fields: [sender_id], references: [id])
 
   @@map("chat_messages")
 }
