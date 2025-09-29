@@ -12,6 +12,7 @@ services:
       - .:/app
       # - /app/node_modules
       - yarn_cache:/app/.yarn/cache
+    command: sh -c "yarn turbo run dev --parallel --continue"
     environment:
       - NODE_ENV=development
       - HOST=0.0.0.0
@@ -21,7 +22,7 @@ services:
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123
       - NEXT_PUBLIC_API_URL=http://localhost:4000/v1
-      - NEXT_PUBLIC_WS_URL=ws://localhost:4000
+      - NEXT_PUBLIC_WS_URL=http://localhost:4000
       # JWT Configuration
       - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
       - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-this-in-production

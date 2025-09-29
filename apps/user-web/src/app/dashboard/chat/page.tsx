@@ -102,7 +102,7 @@ export default function ChatPage() {
     if (selectedRoom && socket && isConnected) {
       loadMessages(selectedRoom);
       // Join the chat room for real-time updates
-      socket.emit('join_chat', { chatId: selectedRoom });
+      socket.emit('join_chat', { chat_id: selectedRoom });
     }
   }, [selectedRoom, socket, isConnected]);
 
@@ -211,9 +211,29 @@ export default function ChatPage() {
       );
 
       console.log('Message sent successfully:', message);
+      
+      // Add message to local state immediately for better UX
       setMessages(prev => [...prev, message]);
       setNewMessage('');
       setAttachments([]);
+      
+      // Also send via WebSocket for real-time updates
+      if (socket && isConnected) {
+        console.log('Sending message via WebSocket:', {
+          chatId: selectedRoom,
+          message: {
+            content: newMessage,
+            type: 'text'
+          }
+        });
+        socket.emit('send_message', {
+          chatId: selectedRoom,
+          message: {
+            content: newMessage,
+            type: 'text'
+          }
+        });
+      }
       
       toast.success('メッセージを送信しました');
     } catch (error) {

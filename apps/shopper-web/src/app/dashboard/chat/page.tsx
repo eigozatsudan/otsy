@@ -141,7 +141,7 @@ export default function ChatPage() {
             if (socket && isConnected) {
               console.log('Joining chat room for real-time updates:', selectedRoom);
               console.log('Socket ID:', socket.id);
-              socket.emit('join_chat', { chatId: selectedRoom });
+              socket.emit('join_chat', { chat_id: selectedRoom });
             } else {
               console.log('Socket not connected, skipping join_chat - socket:', !!socket, 'isConnected:', isConnected);
             }
@@ -264,9 +264,28 @@ export default function ChatPage() {
         attachments.length > 0 ? attachments : undefined
       );
 
+      // Add message to local state immediately for better UX
       setMessages(prev => [...prev, message]);
       setNewMessage('');
       setAttachments([]);
+      
+      // Also send via WebSocket for real-time updates
+      if (socket && isConnected) {
+        console.log('Sending message via WebSocket:', {
+          chatId: selectedRoom,
+          message: {
+            content: newMessage,
+            type: 'text'
+          }
+        });
+        socket.emit('send_message', {
+          chatId: selectedRoom,
+          message: {
+            content: newMessage,
+            type: 'text'
+          }
+        });
+      }
       
       toast.success('メッセージを送信しました');
     } catch (error) {

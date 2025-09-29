@@ -51,6 +51,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.logger.log('Server instance:', !!server);
     this.logger.log('Server sockets:', !!server?.sockets);
     this.logger.log('Server adapter:', !!server?.sockets?.adapter);
+    this.logger.log('WebSocket server is ready for connections');
   }
 
   // Method to broadcast message from HTTP API
@@ -85,6 +86,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
+      this.logger.log('New WebSocket connection attempt');
+      this.logger.log('Client handshake:', {
+        auth: client.handshake.auth,
+        headers: client.handshake.headers,
+        url: client.handshake.url,
+        query: client.handshake.query
+      });
+
       const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');
       
       if (!token) {
@@ -93,6 +102,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         return;
       }
 
+      this.logger.log('Token found, verifying...');
       const payload = this.jwtService.verify(token);
       client.userId = payload.sub;
       client.userRole = payload.role;
@@ -100,7 +110,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       this.connectedUsers.set(client.userId, client);
       
-      this.logger.log(`User ${client.userId} (${client.userRole}) connected`);
+      this.logger.log(`User ${client.userId} (${client.userRole}) connected successfully`);
 
       // Join user to their personal room for direct notifications
       client.join(`user:${client.userId}`);
@@ -112,8 +122,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         timestamp: new Date().toISOString(),
       });
 
+      this.logger.log(`Connection established for user ${client.userId}`);
+
     } catch (error) {
       this.logger.error('Authentication failed for WebSocket connection:', error);
+      this.logger.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
       client.disconnect();
     }
   }
@@ -131,43 +147,145 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: JoinChatDto,
   ) {
     try {
-      // Verify user has access to this chat
-      const chat = await this.chatService.getChatById(data.chat_id);
+      this.logger.log(`User ${client.userId} attempting to join chat: ${data.chat_id}`);
       
-      const hasAccess = 
-        chat.user_id === client.userId || 
-        chat.shopper_id === client.userId ||
-        client.userRole === 'admin';
+      // First try to get chat by ID (in case it's already a chat ID)
+      let chat;
+      try {
+        chat = await this.chatService.getChatById(data.chat_id);
+        this.logger.log(`Chat found by ID: ${chat.id}`);
+      } catch (error) {
+        // If not found by ID, try to get chat by order ID
+        this.logger.log(`Chat not found by ID, trying to get by order ID: ${data.chat_id}`);
+        chat = await this.chatService.getChatByOrderId(data.chat_id);
+        
+        if (!chat) {
+          this.logger.warn(`No chat found for order ID: ${data.chat_id}, attempting to create one`);
+          
+          // Try to create a chat for this order
+          try {
+            // Get order details to create chat
+            const order = await this.chatService.getOrderById(data.chat_id);
+            if (!order) {
+              this.logger.error(`Order not found: ${data.chat_id}`);
+              client.emit('error', { message: 'Order not found' });
+              return;
+            }
+            
+            // Create chat for the order
+            const createChatDto = {
+              order_id: data.chat_id,
+              user_id: order.user_id,
+              shopper_id: order.shopper_id,
+            };
+            
+            this.logger.log(`Creating chat with data:`, createChatDto);
+            chat = await this.chatService.createChat(createChatDto);
+            this.logger.log(`Created new chat: ${chat.id} for order: ${data.chat_id}`);
+          } catch (createError) {
+            this.logger.error(`Failed to create chat for order ${data.chat_id}:`, createError);
+            client.emit('error', { message: 'Failed to create chat for this order' });
+            return;
+          }
+        }
+        
+        this.logger.log(`Chat found by order ID: ${chat.id}`);
+        
+        // Also log order information for debugging
+        try {
+          const order = await this.chatService.getOrderById(data.chat_id);
+          this.logger.log(`Order information:`, {
+            orderId: order.id,
+            orderUserId: order.user_id,
+            orderShopperId: order.shopper_id,
+            clientUserId: client.userId,
+            clientUserRole: client.userRole
+          });
+        } catch (error) {
+          this.logger.warn(`Failed to get order info:`, error);
+        }
+      }
+      
+      // Check access based on user role
+      let hasAccess = false;
+      
+      if (client.userRole === 'admin') {
+        hasAccess = true;
+      } else if (client.userRole === 'user') {
+        hasAccess = chat.user_id === client.userId;
+      } else if (client.userRole === 'shopper') {
+        // For shoppers, check if they are the shopper for this chat
+        hasAccess = chat.shopper_id === client.userId;
+        this.logger.log(`Shopper access check - direct comparison: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, client.userId: ${client.userId})`);
+        
+        // If not found by shopper_id, try to get shopper by user_id
+        if (!hasAccess) {
+          try {
+            const shopper = await this.chatService.getShopperByUserId(client.userId);
+            this.logger.log(`Shopper lookup result:`, shopper);
+            if (shopper && chat.shopper_id === shopper.id) {
+              hasAccess = true;
+              this.logger.log(`Shopper access granted via shopper lookup`);
+            } else {
+              this.logger.log(`Shopper access denied - shopper.id: ${shopper?.id}, chat.shopper_id: ${chat.shopper_id}`);
+            }
+          } catch (error) {
+            this.logger.warn(`Failed to get shopper info for user ${client.userId}:`, error);
+          }
+        }
+      }
+
+      this.logger.log(`Access check for user ${client.userId} (${client.userRole}):`, {
+        hasAccess,
+        chatUserId: chat.user_id,
+        chatShopperId: chat.shopper_id,
+        clientUserId: client.userId,
+        chatId: chat.id,
+        orderId: chat.order_id
+      });
 
       if (!hasAccess) {
+        this.logger.warn(`Access denied for user ${client.userId} to chat ${data.chat_id}`);
         client.emit('error', { message: 'Access denied to chat' });
         return;
       }
 
-      // Join the chat room
-      client.join(`chat:${data.chat_id}`);
-      client.chatRooms?.add(data.chat_id);
+      // Join the chat room using the actual chat ID
+      const chatId = chat.id;
+      client.join(`chat:${chatId}`);
+      if (!client.chatRooms) {
+        client.chatRooms = new Set();
+      }
+      client.chatRooms.add(chatId);
 
-      this.logger.log(`User ${client.userId} joined chat ${data.chat_id}`);
+      this.logger.log(`User ${client.userId} joined chat ${chatId}`);
 
       // Notify other participants
-      client.to(`chat:${data.chat_id}`).emit('user_joined', {
+      client.to(`chat:${chatId}`).emit('user_joined', {
         userId: client.userId,
         role: client.userRole,
-        chatId: data.chat_id,
+        chatId: chatId,
         timestamp: new Date().toISOString(),
       });
 
       // Send recent messages
-      const recentMessages = await this.chatService.getChatMessages(data.chat_id, 1, 50);
+      const recentMessages = await this.chatService.getChatMessages(chatId, 1, 50);
       client.emit('chat_history', {
-        chatId: data.chat_id,
+        chatId: chatId,
         messages: recentMessages.messages,
         hasMore: recentMessages.hasMore,
       });
 
     } catch (error) {
       this.logger.error('Error joining chat:', error);
+      this.logger.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        chatId: data.chat_id,
+        userId: client.userId,
+        userRole: client.userRole
+      });
+      this.logger.error('Full error object:', error);
       client.emit('error', { message: 'Failed to join chat' });
     }
   }
@@ -197,28 +315,41 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { chatId: string; message: SendMessageDto },
   ) {
     try {
-      // Verify user has access to this chat
-      const chat = await this.chatService.getChatById(data.chatId);
+      this.logger.log(`User ${client.userId} attempting to send message to chat: ${data.chatId}`);
+      
+      // First try to get chat by ID (in case it's already a chat ID)
+      let chat;
+      try {
+        chat = await this.chatService.getChatById(data.chatId);
+      } catch (error) {
+        // If not found by ID, try to get chat by order ID
+        this.logger.log(`Chat not found by ID, trying to get by order ID: ${data.chatId}`);
+        chat = await this.chatService.getChatByOrderId(data.chatId);
+      }
       
       const hasAccess = 
         chat.user_id === client.userId || 
         chat.shopper_id === client.userId;
 
       if (!hasAccess) {
+        this.logger.warn(`Access denied for user ${client.userId} to send message to chat ${data.chatId}`);
         client.emit('error', { message: 'Access denied to chat' });
         return;
       }
 
+      // Use the actual chat ID for sending message
+      const chatId = chat.id;
+      
       // Save message to database
       const message = await this.chatService.sendMessage(
-        data.chatId,
+        chatId,
         client.userId,
         client.userRole as 'user' | 'shopper',
         data.message,
       );
 
       // Broadcast to all participants in the chat
-      this.server.to(`chat:${data.chatId}`).emit('new_message', message);
+      this.server.to(`chat:${chatId}`).emit('new_message', message);
 
       // Send push notification to offline users
       const otherParticipantId = chat.user_id === client.userId ? chat.shopper_id : chat.user_id;
@@ -228,10 +359,15 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         await this.chatService.sendMessageNotification(otherParticipantId, message, chat);
       }
 
-      this.logger.log(`Message sent in chat ${data.chatId} by user ${client.userId}`);
+      this.logger.log(`Message sent in chat ${chatId} by user ${client.userId}`);
 
     } catch (error) {
       this.logger.error('Error sending message:', error);
+      this.logger.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        chatId: data.chatId
+      });
       client.emit('error', { message: 'Failed to send message' });
     }
   }
