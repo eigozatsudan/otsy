@@ -217,23 +217,8 @@ export default function ChatPage() {
       setNewMessage('');
       setAttachments([]);
       
-      // Also send via WebSocket for real-time updates
-      if (socket && isConnected) {
-        console.log('Sending message via WebSocket:', {
-          chatId: selectedRoom,
-          message: {
-            content: newMessage,
-            type: 'text'
-          }
-        });
-        socket.emit('send_message', {
-          chatId: selectedRoom,
-          message: {
-            content: newMessage,
-            type: 'text'
-          }
-        });
-      }
+      // Note: WebSocket send_message is not needed here as the HTTP API already handles
+      // the message broadcasting via the ChatGateway.broadcastMessage method
       
       toast.success('メッセージを送信しました');
     } catch (error) {
