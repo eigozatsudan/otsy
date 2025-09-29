@@ -504,9 +504,25 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.logger.error('Error details:', {
         message: error.message,
         stack: error.stack,
-        chatId: data.chatId
+        chatId: data.chatId,
+        userId: client.userId,
+        userRole: client.userRole
       });
-      client.emit('error', { message: 'Failed to send message' });
+      
+      // Send more specific error message
+      let errorMessage = 'Failed to send message';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      client.emit('error', { 
+        message: errorMessage,
+        code: error.code || 'SEND_MESSAGE_ERROR',
+        details: {
+          chatId: data.chatId,
+          userId: client.userId
+        }
+      });
     }
   }
 

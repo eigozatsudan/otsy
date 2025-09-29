@@ -299,17 +299,15 @@ export class ChatService {
       throw new BadRequestException('Cannot send message to closed chat');
     }
 
-    // For now, set sender_id to null to avoid foreign key constraint issues
-    // The sender information is stored in the sender and sender_role fields
     console.log('sendMessage - senderId:', senderId, 'senderRole:', senderRole);
 
-
+    // Create message with proper sender_id
     const message = await this.prisma.chatMessage.create({
       data: {
         order_id: chat.order_id,
         chat_id: chatId,
         sender: senderRole,
-        sender_id: null, // Set to null to avoid foreign key constraint issues
+        sender_id: senderId, // Use actual sender ID
         sender_role: senderRole,
         text: messageDto.content, // Use text field as it's required
         content: messageDto.content,

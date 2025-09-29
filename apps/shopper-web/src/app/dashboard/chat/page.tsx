@@ -199,11 +199,17 @@ export default function ChatPage() {
       }
     };
 
+    const handleMessageSent = (data: any) => {
+      console.log('Message sent successfully:', data);
+      toast.success('メッセージを送信しました');
+    };
+
     // Listen for new messages
     socket.on('new_message', handleNewMessage);
     socket.on('join_chat', handleJoinChat);
     socket.on('leave_chat', handleLeaveChat);
     socket.on('error', handleError);
+    socket.on('message_sent', handleMessageSent);
 
     console.log('WebSocket event listeners set up');
 
@@ -213,6 +219,7 @@ export default function ChatPage() {
       socket.off('join_chat', handleJoinChat);
       socket.off('leave_chat', handleLeaveChat);
       socket.off('error', handleError);
+      socket.off('message_sent', handleMessageSent);
     };
   }, [socket]);
 
@@ -282,17 +289,11 @@ export default function ChatPage() {
           attachment_url: attachments.length > 0 ? URL.createObjectURL(attachments[0]) : undefined,
           attachment_type: attachments.length > 0 ? attachments[0].type : undefined,
         }
-      }, (response: any) => {
-        if (response && response.error) {
-          console.error('Message send error:', response.error);
-          toast.error(response.error);
-        } else {
-          // Clear form only on success
-          setNewMessage('');
-          setAttachments([]);
-          toast.success('メッセージを送信しました');
-        }
       });
+
+      // Clear form immediately for better UX
+      setNewMessage('');
+      setAttachments([]);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('メッセージの送信に失敗しました');
