@@ -8,6 +8,58 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // Golden Ratio and Silver Ratio Design System
+      spacing: {
+        // Fibonacci sequence for consistent spacing (8, 13, 21, 34, 55px)
+        'fib-1': '0.5rem',   // 8px
+        'fib-2': '0.8125rem', // 13px
+        'fib-3': '1.3125rem', // 21px
+        'fib-4': '2.125rem',  // 34px
+        'fib-5': '3.4375rem', // 55px
+        'fib-6': '5.5625rem', // 89px
+        'fib-7': '9rem',      // 144px
+        'fib-8': '14.5625rem', // 233px
+        
+        // Golden ratio proportions (1:1.618)
+        'golden-sm': '1rem',      // 16px
+        'golden-md': '1.618rem',  // ~26px
+        'golden-lg': '2.618rem',  // ~42px
+        'golden-xl': '4.236rem',  // ~68px
+        'golden-2xl': '6.854rem', // ~110px
+        
+        // Silver ratio proportions (1:1.414)
+        'silver-sm': '1rem',      // 16px
+        'silver-md': '1.414rem',  // ~23px
+        'silver-lg': '2.414rem',  // ~39px
+        'silver-xl': '3.828rem',  // ~61px
+        
+        // Touch-friendly minimum sizes (44px minimum)
+        'touch-sm': '2.75rem',    // 44px
+        'touch-md': '3rem',       // 48px
+        'touch-lg': '3.5rem',     // 56px
+        'touch-xl': '4rem',       // 64px
+      },
+      
+      // Golden ratio aspect ratios
+      aspectRatio: {
+        'golden': '1.618',
+        'golden-inverse': '0.618',
+        'silver': '1.414',
+        'silver-inverse': '0.707',
+      },
+      
+      // Mobile-optimized typography (14-16sp base)
+      fontSize: {
+        'mobile-xs': ['0.75rem', { lineHeight: '1rem' }],     // 12px
+        'mobile-sm': ['0.875rem', { lineHeight: '1.25rem' }], // 14px
+        'mobile-base': ['1rem', { lineHeight: '1.5rem' }],    // 16px (base)
+        'mobile-lg': ['1.125rem', { lineHeight: '1.75rem' }], // 18px
+        'mobile-xl': ['1.25rem', { lineHeight: '1.75rem' }],  // 20px
+        'mobile-2xl': ['1.5rem', { lineHeight: '2rem' }],     // 24px
+        'mobile-3xl': ['1.875rem', { lineHeight: '2.25rem' }], // 30px
+        'mobile-4xl': ['2.25rem', { lineHeight: '2.5rem' }],  // 36px
+      },
+      
       colors: {
         primary: {
           50: '#f0f9ff',
@@ -74,35 +126,134 @@ module.exports = {
           900: '#7f1d1d',
           950: '#450a0a',
         },
+        // Neutral colors optimized for mobile readability
+        neutral: {
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+          950: '#0a0a0a',
+        },
       },
+      
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
+      
+      // Subtle animations under 200ms for responsiveness
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out',
-        'slide-down': 'slideDown 0.3s ease-out',
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 150ms ease-in-out',
+        'fade-out': 'fadeOut 150ms ease-in-out',
+        'slide-up': 'slideUp 180ms ease-out',
+        'slide-down': 'slideDown 180ms ease-out',
+        'slide-left': 'slideLeft 180ms ease-out',
+        'slide-right': 'slideRight 180ms ease-out',
+        'scale-in': 'scaleIn 150ms ease-out',
+        'scale-out': 'scaleOut 150ms ease-in',
+        'bounce-subtle': 'bounceSubtle 200ms ease-out',
+        'pulse-gentle': 'pulseGentle 2s ease-in-out infinite',
       },
+      
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
         slideUp: {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
         slideDown: {
-          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '0%': { transform: 'translateY(-8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        slideLeft: {
+          '0%': { transform: 'translateX(8px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        slideRight: {
+          '0%': { transform: 'translateX(-8px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        scaleOut: {
+          '0%': { transform: 'scale(1)', opacity: '1' },
+          '100%': { transform: 'scale(0.95)', opacity: '0' },
+        },
+        bounceSubtle: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-2px)' },
+        },
+        pulseGentle: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.8' },
+        },
+      },
+      
+      // Custom utilities for mobile optimization
+      screens: {
+        'xs': '375px',
+        'sm': '640px',
+        'md': '768px',
+        'lg': '1024px',
+        'xl': '1280px',
+        '2xl': '1536px',
+      },
+      
+      // Box shadows optimized for mobile
+      boxShadow: {
+        'mobile-sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        'mobile': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+        'mobile-md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        'mobile-lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+        'mobile-xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
       },
     },
   },
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
+    // Custom plugin for golden ratio utilities
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.aspect-golden': {
+          aspectRatio: '1.618',
+        },
+        '.aspect-golden-inverse': {
+          aspectRatio: '0.618',
+        },
+        '.aspect-silver': {
+          aspectRatio: '1.414',
+        },
+        '.aspect-silver-inverse': {
+          aspectRatio: '0.707',
+        },
+        '.touch-target': {
+          minHeight: '44px',
+          minWidth: '44px',
+        },
+        '.mobile-safe-area': {
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+          paddingRight: 'env(safe-area-inset-right)',
+        },
+      }
+      addUtilities(newUtilities)
+    }
   ],
 };
