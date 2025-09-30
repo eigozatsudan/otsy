@@ -111,7 +111,7 @@
   - Write tests for group navigation and management features
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-- [ ] 12. Build shopping list interface with golden ratio design
+- [x] 12. Build shopping list interface with golden ratio design
   - Create item list view with golden ratio card proportions (1:1.618)
   - Implement item addition form with category selection
   - Build item editing interface with status toggle functionality
@@ -121,7 +121,7 @@
   - Integrate ad slot component at list top with frequency control
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 7.1, 7.2_
 
-- [ ] 13. Create purchase recording and cost splitting interface
+- [x] 13. Create purchase recording and cost splitting interface
   - Build purchase recording modal with item selection checkboxes
   - Implement receipt image upload with PII warning display
   - Create cost splitting interface with rule selection (equal/quantity/custom)
@@ -131,7 +131,7 @@
   - Integrate ad slot component at modal bottom
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 7.3, 7.4_
 
-- [ ] 14. Implement group chat and threaded discussions
+- [x] 14. Implement group chat and threaded discussions
   - Create group chat interface with message history
   - Build item-specific thread switching functionality
   - Implement @mention autocomplete and notification system
