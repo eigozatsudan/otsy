@@ -1,36 +1,57 @@
-// Accessibility components and utilities
-export { default as AccessibleButton } from './AccessibleButton';
-export { AccessibleInput, AccessibleTextArea } from './AccessibleForm';
+/**
+ * Accessibility components and utilities
+ * 
+ * This module provides comprehensive accessibility support including:
+ * - WCAG AA compliant components
+ * - Screen reader support
+ * - Keyboard navigation
+ * - Focus management
+ * - Color contrast validation
+ * - Touch target optimization
+ */
+
+// Hooks
 export { 
-  LiveRegion, 
-  StatusMessage, 
-  ProgressAnnouncer, 
+  useAccessibility, 
   useAnnouncer, 
-  announcer 
-} from './LiveRegion';
-export {
-  FocusTrap,
-  SkipLink,
-  NavigableList,
-  AccessibleTabs,
-  Breadcrumb,
-} from './KeyboardNavigation';
+  useKeyboardNavigation, 
+  useFocusTrap, 
+  useLiveRegion 
+} from '@/hooks/useAccessibility';
 
-// Accessibility hooks
-export {
-  useAccessibility,
-  useFocusTrap,
-  useKeyboardNavigation,
-  useScreenReaderAnnouncement,
-  useColorContrast,
-} from '../../hooks/useAccessibility';
+// Components
+export { default as AccessibleButton } from './AccessibleButton';
+export type { AccessibleButtonProps } from './AccessibleButton';
 
-// Accessibility utilities
+export { default as AccessibleForm } from './AccessibleForm';
+export type { FormField, FormError } from './AccessibleForm';
+
+export { default as AccessibleModal } from './AccessibleModal';
+
+export { default as AccessibleNavigation } from './AccessibleNavigation';
+export type { NavigationItem } from './AccessibleNavigation';
+
+export { default as LiveRegion, useLiveAnnouncements } from './LiveRegion';
+
+// Utilities
 export {
-  ColorContrast,
+  getContrastRatio,
+  meetsWCAGAA,
+  meetsWCAGAAA,
+  generateAccessiblePalette,
   FocusManager,
-  AriaUtils,
-  TouchAccessibility,
-  AccessibilityTester,
-  MotionUtils,
-} from '../../lib/accessibility-utils';
+  ScreenReaderUtils,
+  KeyboardNavigation,
+  TouchTargets,
+  initializeAccessibility,
+} from '@/utils/accessibility';
+
+export {
+  AccessibilityAuditor,
+  quickAccessibilityCheck,
+} from '@/utils/accessibilityTesting';
+
+export type {
+  AccessibilityIssue,
+  AccessibilityReport,
+} from '@/utils/accessibilityTesting';

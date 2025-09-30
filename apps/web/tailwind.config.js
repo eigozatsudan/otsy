@@ -227,9 +227,33 @@ module.exports = {
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
-    // Custom plugin for golden ratio utilities
-    function({ addUtilities }) {
+    // Custom plugin for golden ratio and accessibility utilities
+    function({ addUtilities, addBase, theme }) {
+      // Base accessibility styles
+      addBase({
+        // Focus visible styles for keyboard navigation
+        '.keyboard-navigation *:focus': {
+          outline: `2px solid ${theme('colors.primary.500')}`,
+          outlineOffset: '2px',
+        },
+        // High contrast mode support
+        '@media (prefers-contrast: high)': {
+          '*': {
+            borderColor: 'currentColor !important',
+          },
+        },
+        // Reduced motion support
+        '@media (prefers-reduced-motion: reduce)': {
+          '*': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            transitionDuration: '0.01ms !important',
+          },
+        },
+      });
+
       const newUtilities = {
+        // Golden ratio utilities
         '.aspect-golden': {
           aspectRatio: '1.618',
         },
@@ -242,6 +266,8 @@ module.exports = {
         '.aspect-silver-inverse': {
           aspectRatio: '0.707',
         },
+        
+        // Accessibility utilities
         '.touch-target': {
           minHeight: '44px',
           minWidth: '44px',
@@ -252,7 +278,129 @@ module.exports = {
           paddingLeft: 'env(safe-area-inset-left)',
           paddingRight: 'env(safe-area-inset-right)',
         },
+        
+        // Screen reader only content
+        '.sr-only': {
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: '0',
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: '0',
+        },
+        '.sr-only-focusable:focus': {
+          position: 'static',
+          width: 'auto',
+          height: 'auto',
+          padding: 'inherit',
+          margin: 'inherit',
+          overflow: 'visible',
+          clip: 'auto',
+          whiteSpace: 'normal',
+        },
+        
+        // Focus management
+        '.focus-visible-only:focus:not(:focus-visible)': {
+          outline: 'none',
+          boxShadow: 'none',
+        },
+        
+        // Skip link utility
+        '.skip-link': {
+          position: 'absolute',
+          top: '-40px',
+          left: '6px',
+          background: theme('colors.primary.600'),
+          color: 'white',
+          padding: '8px 16px',
+          textDecoration: 'none',
+          borderRadius: '4px',
+          zIndex: '100',
+          fontSize: theme('fontSize.mobile-sm')[0],
+          fontWeight: '500',
+          transition: 'top 0.3s ease',
+        },
+        '.skip-link:focus': {
+          top: '6px',
+        },
+        
+        // High contrast mode utilities
+        '@media (prefers-contrast: high)': {
+          '.high-contrast\\:border-2': {
+            borderWidth: '2px',
+          },
+          '.high-contrast\\:bg-white': {
+            backgroundColor: 'white !important',
+          },
+          '.high-contrast\\:text-black': {
+            color: 'black !important',
+          },
+          '.high-contrast\\:border-black': {
+            borderColor: 'black !important',
+          },
+        },
+        
+        // Reduced motion utilities
+        '@media (prefers-reduced-motion: reduce)': {
+          '.motion-reduce\\:animate-none': {
+            animation: 'none !important',
+          },
+          '.motion-reduce\\:transition-none': {
+            transition: 'none !important',
+          },
+          '.motion-reduce\\:transform-none': {
+            transform: 'none !important',
+          },
+        },
+        
+        // WCAG AA compliant focus indicators
+        '.focus-ring': {
+          '&:focus': {
+            outline: `2px solid ${theme('colors.primary.500')}`,
+            outlineOffset: '2px',
+          },
+        },
+        '.focus-ring-inset': {
+          '&:focus': {
+            outline: `2px solid ${theme('colors.primary.500')}`,
+            outlineOffset: '-2px',
+          },
+        },
+        
+        // Accessible color combinations (WCAG AA compliant)
+        '.text-accessible-primary': {
+          color: theme('colors.primary.700'),
+        },
+        '.bg-accessible-primary': {
+          backgroundColor: theme('colors.primary.50'),
+          color: theme('colors.primary.900'),
+        },
+        '.text-accessible-error': {
+          color: theme('colors.error.700'),
+        },
+        '.bg-accessible-error': {
+          backgroundColor: theme('colors.error.50'),
+          color: theme('colors.error.900'),
+        },
+        '.text-accessible-success': {
+          color: theme('colors.success.700'),
+        },
+        '.bg-accessible-success': {
+          backgroundColor: theme('colors.success.50'),
+          color: theme('colors.success.900'),
+        },
+        '.text-accessible-warning': {
+          color: theme('colors.warning.700'),
+        },
+        '.bg-accessible-warning': {
+          backgroundColor: theme('colors.warning.50'),
+          color: theme('colors.warning.900'),
+        },
       }
+      
       addUtilities(newUtilities)
     }
   ],
