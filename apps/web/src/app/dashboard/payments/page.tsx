@@ -190,7 +190,7 @@ export default function PaymentsPage() {
 
   const thisMonthAmount = filteredPayments
     .filter(p => {
-      const paymentDate = new Date(p.createdAt);
+      const paymentDate = new Date(p.created_at);
       const now = new Date();
       return p.status === 'captured' &&
         paymentDate.getMonth() === now.getMonth() &&

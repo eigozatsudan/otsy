@@ -38,7 +38,7 @@ export default function AccessibleModal({
   const overlayRef = useRef<HTMLDivElement>(null);
   
   // Enable focus trap when modal is open
-  useFocusTrap(modalRef, isOpen);
+  useFocusTrap(modalRef as unknown as React.RefObject<HTMLElement>, isOpen);
 
   // Handle escape key
   useEffect(() => {

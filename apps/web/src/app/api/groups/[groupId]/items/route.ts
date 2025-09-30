@@ -4,7 +4,7 @@ import { ItemSSEIntegration } from '@/lib/sse/integrations';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: any
 ) {
   try {
     // Verify authentication
@@ -70,7 +70,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: any
 ) {
   try {
     // Verify authentication

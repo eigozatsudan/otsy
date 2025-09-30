@@ -46,6 +46,11 @@ export interface ShoppingListItem {
   name: string;
   qty: string;
   estimatePrice: number;
+  // Optional fields used by the UI during order building
+  price_min?: number;
+  price_max?: number;
+  allow_subs?: boolean;
+  note?: string;
   category?: string;
   confidence?: number;
 }

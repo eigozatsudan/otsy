@@ -73,21 +73,9 @@ export default function AdminPage() {
   // Temporarily render a minimal placeholder to unblock build
   // The full Admin UI can be re-enabled after fixing component syntax
 
-  const handleResolveAlert = async (alertId: string) => {
+  const handleResolveAlert = async (_alertId: string) => {
     try {
       // In real app, this would be an API call
-      setSecurityAlerts(prev => 
-        prev.map(alert => 
-          alert.id === alertId 
-            ? { 
-                ...alert, 
-                resolved: true, 
-                resolvedBy: user?.id || 'current-admin',
-                resolvedAt: new Date().toISOString()
-              }
-            : alert
-        )
-      );
       announce('Security alert resolved successfully', 'polite');
     } catch (error) {
       announce('Failed to resolve security alert', 'assertive');

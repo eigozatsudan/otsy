@@ -74,7 +74,9 @@ export default function OrderPage() {
       setIsLoadingCategories(true);
       const response = await itemsApi.getCategories();
       // APIレスポンスが配列の場合は直接使用、オブジェクトの場合はdataプロパティを使用
-      const categoriesData = Array.isArray(response) ? response : response.data || [];
+      const categoriesData: any[] = Array.isArray(response)
+        ? (response as any[])
+        : ((response as any)?.data ?? []);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Failed to load categories:', error);
@@ -105,6 +107,7 @@ export default function OrderPage() {
       const newItem: ShoppingListItem = {
         name: item.name,
         qty: quantity,
+        estimatePrice: (item.price_max ?? item.price_min ?? 0),
         price_min: item.price_min,
         price_max: item.price_max,
         allow_subs: true,
@@ -172,6 +175,7 @@ export default function OrderPage() {
       const newItem: ShoppingListItem = {
         name: textInput.trim(),
         qty: '1',
+        estimatePrice: 0,
         price_min: undefined,
         price_max: undefined,
         allow_subs: true,
@@ -201,27 +205,16 @@ export default function OrderPage() {
 
     try {
       const orderData = {
-        mode: 'approve',
-        receipt_check: 'required',
-        estimate_amount: Math.max(100, shoppingList.reduce((total, item) => 
-          total + ((item.price_max || item.price_min || 0) * parseInt(item.qty) || 0), 0
-        )),
-        address_json: {
-          postal_code: '100-0001',
-          prefecture: 'Tokyo',
-          city: 'Chiyoda',
-          address_line: deliveryInfo.address || '住所を入力してください',
-          building: '',
-          delivery_notes: deliveryInfo.instructions || '',
-        },
-        items: shoppingList.map(item => ({
+        items: shoppingList.map((item) => ({
           name: item.name,
           qty: item.qty,
-          price_min: item.price_min,
-          price_max: item.price_max,
-          allow_subs: item.allow_subs,
-          note: item.note || '',
+          estimatePrice: (item.price_max ?? item.price_min ?? 0),
+          notes: item.note || '',
         })),
+        deliveryAddress: deliveryInfo.address,
+        deliveryDate: deliveryInfo.date,
+        deliveryTimeSlot: deliveryInfo.timeSlot || undefined,
+        specialInstructions: deliveryInfo.instructions || undefined,
       };
 
       await createOrder(orderData);

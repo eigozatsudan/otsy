@@ -4,7 +4,7 @@ import { ItemSSEIntegration } from '@/lib/sse/integrations';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { groupId: string; itemId: string } }
+  { params }: any
 ) {
   try {
     // Verify authentication
@@ -108,7 +108,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { groupId: string; itemId: string } }
+  { params }: any
 ) {
   try {
     // Verify authentication
@@ -162,7 +162,7 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { groupId: string; itemId: string } }
+  { params }: any
 ) {
   try {
     // Verify authentication

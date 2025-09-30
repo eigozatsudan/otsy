@@ -4,7 +4,7 @@ import { SSEManager } from '@/lib/sse/SSEManager';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { groupId: string } }
+  { params }: any
 ) {
   try {
     // Verify authentication

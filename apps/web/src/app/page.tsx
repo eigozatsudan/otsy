@@ -73,8 +73,8 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
-          className="space-y-fib-3"
         >
+          <div className="space-y-fib-3">
           <div>
             <h2 className="text-mobile-2xl font-bold text-neutral-900">
               Welcome back! 👋
@@ -103,6 +103,7 @@ export default function HomePage() {
               Join Group
             </TouchButton>
           </div>
+          </div>
         </motion.section>
 
         {/* Search */}
@@ -124,8 +125,8 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, delay: 0.1 }}
-          className="space-y-fib-3"
         >
+          <div className="space-y-fib-3">
           <div className="flex items-center justify-between">
             <h3 className="text-mobile-lg font-semibold text-neutral-900">
               My Groups
@@ -154,6 +155,7 @@ export default function HomePage() {
               </motion.div>
             ))}
           </div>
+          </div>
         </motion.section>
 
         {/* Recent Activity */}
@@ -161,8 +163,8 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, delay: 0.2 }}
-          className="space-y-fib-3"
         >
+          <div className="space-y-fib-3">
           <div className="flex items-center justify-between">
             <h3 className="text-mobile-lg font-semibold text-neutral-900">
               Recent Activity
@@ -192,6 +194,7 @@ export default function HomePage() {
               </motion.div>
             ))}
           </div>
+          </div>
         </motion.section>
 
         {/* Stats Cards */}
@@ -199,8 +202,8 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18, delay: 0.3 }}
-          className="grid grid-cols-2 gap-fib-3"
         >
+          <div className="grid grid-cols-2 gap-fib-3">
           <div className="bg-primary-50 rounded-xl p-fib-3 border border-primary-200">
             <div className="text-primary-600 mb-fib-1">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,6 +222,7 @@ export default function HomePage() {
             </div>
             <p className="text-mobile-2xl font-bold text-success-900">12</p>
             <p className="text-mobile-sm text-success-700">Items Completed</p>
+          </div>
           </div>
         </motion.section>
 
