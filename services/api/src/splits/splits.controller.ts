@@ -2,7 +2,7 @@ import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SplitsService } from './splits.service';
 import { CalculateSplitDto, CreateSplitDto, SplitCalculationResponseDto, GroupSettlementResponseDto } from './dto/split.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('splits')
 @Controller('splits')

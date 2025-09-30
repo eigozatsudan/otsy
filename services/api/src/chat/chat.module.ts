@@ -4,12 +4,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 import { ChatGateway } from './chat.gateway';
+import { MessagesService } from './messages.service';
+import { MessagesController } from './messages.controller';
+import { RealtimeService } from './realtime.service';
+import { RealtimeController } from './realtime.controller';
 import { NotificationService } from '../notifications/notification.service';
 import { NotificationController } from '../notifications/notification.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule,
+    PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -19,8 +25,25 @@ import { NotificationController } from '../notifications/notification.controller
       inject: [ConfigService],
     }),
   ],
-  controllers: [ChatController, NotificationController],
-  providers: [ChatService, ChatGateway, NotificationService],
-  exports: [ChatService, NotificationService, ChatGateway],
+  controllers: [
+    ChatController, 
+    MessagesController, 
+    RealtimeController, 
+    NotificationController
+  ],
+  providers: [
+    ChatService, 
+    MessagesService, 
+    RealtimeService, 
+    ChatGateway, 
+    NotificationService
+  ],
+  exports: [
+    ChatService, 
+    MessagesService, 
+    RealtimeService, 
+    NotificationService, 
+    ChatGateway
+  ],
 })
 export class ChatModule {}

@@ -51,7 +51,7 @@
   - Write tests for purchase recording and receipt handling
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [-] 6. Build cost splitting calculation engine
+- [x] 6. Build cost splitting calculation engine
   - Implement equal split algorithm with proper remainder distribution
   - Create quantity-based split calculation with proportional distribution
   - Build custom split functionality with percentage or fixed amount input
@@ -61,7 +61,7 @@
   - Write comprehensive unit tests for all splitting algorithms including edge cases
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
 
-- [ ] 7. Create group communication system
+- [x] 7. Create group communication system
   - Implement group chat functionality with text and image messages
   - Build item-specific threaded discussions linked to shopping items
   - Create @mention functionality with notification triggers
@@ -71,7 +71,7 @@
   - Write tests for chat functionality and threading
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-- [ ] 8. Implement privacy-first user authentication
+- [-] 8. Implement privacy-first user authentication
   - Create simplified user registration with email and display_name only
   - Implement JWT-based authentication without PII collection
   - Build password reset functionality using email-only identification

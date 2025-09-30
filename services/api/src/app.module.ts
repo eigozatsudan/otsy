@@ -9,6 +9,7 @@ import { UsersModule } from './users/users.module';
 import { GroupsModule } from './groups/groups.module';
 import { ShoppingItemsModule } from './shopping-items/shopping-items.module';
 import { PurchasesModule } from './purchases/purchases.module';
+import { SplitsModule } from './splits/splits.module';
 import { OrdersModule } from './orders/orders.module';
 import { StorageModule } from './storage/storage.module';
 import { ReceiptsModule } from './receipts/receipts.module';
@@ -28,6 +29,7 @@ import { ItemsModule } from './items/items.module';
     GroupsModule,
     ShoppingItemsModule,
     PurchasesModule,
+    SplitsModule,
     OrdersModule,
     StorageModule,
     ReceiptsModule,

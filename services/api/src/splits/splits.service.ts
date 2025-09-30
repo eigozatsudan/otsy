@@ -50,12 +50,12 @@ export class SplitsService {
     return {
       purchase_id: purchaseId,
       total_amount: purchase.total_amount / 100, // 銭を円に変換
-      splits: splits.map(split => ({
+      splits: splits.map((split: { user_id: string; share_amount: number; rule: string }) => ({
         user_id: split.user_id,
         user_name: userMap.get(split.user_id) || 'Unknown',
         share_amount: split.share_amount / 100, // 銭を円に変換
         share_percentage: (split.share_amount / purchase.total_amount) * 100,
-        rule: split.rule,
+        rule: split.rule as 'equal' | 'quantity' | 'custom',
       })),
       rule: calculateSplitDto.rule,
       calculated_at: new Date(),
@@ -104,7 +104,7 @@ export class SplitsService {
 
       // 新しい分割を作成
       await tx.split.createMany({
-        data: splits.map(split => ({
+        data: splits.map((split: { user_id: string; share_amount: number; rule: string }) => ({
           purchase_id: purchaseId,
           user_id: split.user_id,
           share_amount: split.share_amount,

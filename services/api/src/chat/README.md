@@ -1,506 +1,181 @@
-# リアルタイム通信システム
+# Group Communication System
 
-Otsyプラットフォームのリアルタイム通信システムは、WebSocketとプッシュ通知を使用してユーザーとショッパー間のシームレスなコミュニケーションを提供します。
+This module implements a comprehensive group communication system for the Otsukai DX platform, supporting both general group chat and item-specific threaded discussions.
 
-## 機能概要
+## Features
 
-### チャットシステム
-- **リアルタイムメッセージング**: WebSocketによる即座のメッセージ配信
-- **マルチメディア対応**: テキスト、画像、システムメッセージ
-- **既読管理**: メッセージの既読状態追跡
-- **タイピングインジケーター**: リアルタイムタイピング状態表示
-- **オンライン状態**: ユーザーのオンライン/オフライン状態管理
+### ✅ Implemented Features
 
-### プッシュ通知
-- **Web Push API**: ブラウザネイティブ通知
-- **通知設定**: ユーザー個別の通知設定管理
-- **バッチ通知**: 複数ユーザーへの一括通知
-- **通知履歴**: 送信済み通知の履歴管理
+1. **Group Chat** - General communication within groups
+2. **Item Threads** - Discussions linked to specific shopping items
+3. **@Mentions** - Mention other group members with notifications
+4. **Real-time Messaging** - Server-Sent Events (SSE) for live updates
+5. **Message Search** - Search across group messages and item threads
+6. **Typing Indicators** - Show when users are typing
+7. **Message History** - Paginated message retrieval
+8. **Message Deletion** - Authors and group creators can delete messages
 
-## アーキテクチャ
+### 🔧 Core Components
 
-### WebSocket通信
+#### MessagesService
+- `sendMessage()` - Send messages to groups or item threads
+- `getGroupMessages()` - Retrieve general group chat messages
+- `getItemThread()` - Get messages for specific item discussions
+- `searchMessages()` - Search messages with filtering
+- `deleteMessage()` - Delete messages with permission checks
+- `processMentions()` - Extract and resolve @mentions
+
+#### RealtimeService
+- `subscribeToGroup()` - Subscribe to group events via SSE
+- `subscribeToItemThread()` - Subscribe to item thread events
+- `subscribeToMentions()` - Subscribe to mention notifications
+- `broadcastMessage()` - Broadcast new messages to subscribers
+- `broadcastTyping()` - Send typing indicators
+- `broadcastMention()` - Send mention notifications
+
+#### Controllers
+- **MessagesController** - REST API endpoints for messaging
+- **RealtimeController** - SSE endpoints for real-time features
+
+## API Endpoints
+
+### Messages API
+
 ```
-Client (Browser) ←→ Socket.IO ←→ NestJS Gateway ←→ Chat Service ←→ Database
+POST   /messages/groups/:groupId                    # Send message
+GET    /messages/groups/:groupId                    # Get group messages
+GET    /messages/groups/:groupId/items/:itemId/thread # Get item thread
+GET    /messages/groups/:groupId/threads            # Get all item threads
+GET    /messages/groups/:groupId/search             # Search messages
+DELETE /messages/:messageId                         # Delete message
+GET    /messages/groups/:groupId/stats              # Get message stats
 ```
 
-### プッシュ通知
+### Real-time API (Server-Sent Events)
+
 ```
-Server → Web Push Service → Browser → User
+GET /realtime/groups/:groupId/events               # Subscribe to group events
+GET /realtime/groups/:groupId/items/:itemId/events # Subscribe to item thread events
+GET /realtime/mentions                             # Subscribe to mentions
+POST /realtime/groups/:groupId/typing              # Send typing indicator
+GET /realtime/heartbeat                            # Keep connections alive
 ```
 
-## API エンドポイント
+## Usage Examples
 
-### チャット管理
+### Sending a Group Message
 
-#### チャット作成
-```http
-POST /v1/chat
-Authorization: Bearer <token>
-Content-Type: application/json
-
+```typescript
+POST /messages/groups/group123
 {
-  "order_id": "order-uuid",
-  "user_id": "user-uuid",
-  "shopper_id": "shopper-uuid",
-  "initial_message": "Hello! Ready to start shopping."
+  "body": "Hey everyone, should we add organic milk to the list?"
 }
 ```
 
-#### マイチャット一覧
-```http
-GET /v1/chat/my-chats?page=1&limit=20
-Authorization: Bearer <token>
-```
+### Sending an Item Thread Message
 
-**レスポンス:**
-```json
+```typescript
+POST /messages/groups/group123
 {
-  "chats": [
-    {
-      "id": "chat-uuid",
-      "order_id": "order-uuid",
-      "user_id": "user-uuid",
-      "shopper_id": "shopper-uuid",
-      "status": "active",
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T12:00:00Z",
-      "last_message": {
-        "id": "message-uuid",
-        "content": "Latest message",
-        "type": "text",
-        "sender_role": "user",
-        "created_at": "2024-01-01T12:00:00Z"
-      },
-      "unread_count": 2
-    }
-  ],
-  "total": 5
+  "body": "I think the organic version is worth the extra cost",
+  "item_id": "item456"
 }
 ```
 
-#### メッセージ送信
-```http
-POST /v1/chat/{chat_id}/messages
-Authorization: Bearer <token>
-Content-Type: application/json
+### Mentioning Users
 
+```typescript
+POST /messages/groups/group123
 {
-  "content": "Hello! How are you?",
-  "type": "text",
-  "attachment_url": "https://example.com/image.jpg",
-  "attachment_type": "image/jpeg",
-  "metadata": {
-    "custom_field": "value"
-  }
+  "body": "Hey @Alice, what do you think about this brand?"
 }
 ```
 
-#### メッセージ履歴取得
-```http
-GET /v1/chat/{chat_id}/messages?page=1&limit=50
-Authorization: Bearer <token>
-```
+### Real-time Subscription (JavaScript)
 
-#### 既読マーク
-```http
-PUT /v1/chat/{chat_id}/messages/read
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "message_ids": ["message-uuid-1", "message-uuid-2"]
-}
-```
-
-### プッシュ通知
-
-#### 通知購読
-```http
-POST /v1/notifications/subscribe
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "endpoint": "https://fcm.googleapis.com/fcm/send/...",
-  "keys": {
-    "p256dh": "p256dh-key",
-    "auth": "auth-key"
-  }
-}
-```
-
-#### 通知設定取得
-```http
-GET /v1/notifications/preferences
-Authorization: Bearer <token>
-```
-
-#### 通知設定更新
-```http
-PUT /v1/notifications/preferences
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "order_updates": true,
-  "chat_messages": true,
-  "promotional": false,
-  "system_alerts": true
-}
-```
-
-#### VAPID公開鍵取得
-```http
-GET /v1/notifications/vapid-public-key
-```
-
-## WebSocket イベント
-
-### 接続管理
-
-#### 接続
 ```javascript
-const socket = io('/chat', {
-  auth: { token: 'jwt-token' },
-  transports: ['websocket']
-});
+const eventSource = new EventSource('/realtime/groups/group123/events');
 
-socket.on('connected', (data) => {
-  console.log('Connected:', data);
-  // { userId: 'user-id', role: 'user', timestamp: '...' }
-});
-```
-
-#### チャット参加
-```javascript
-socket.emit('join_chat', { chat_id: 'chat-uuid' });
-
-socket.on('chat_history', (data) => {
-  console.log('Chat history:', data.messages);
-});
-
-socket.on('user_joined', (data) => {
-  console.log('User joined:', data.userId);
-});
-```
-
-### メッセージング
-
-#### メッセージ送信
-```javascript
-socket.emit('send_message', {
-  chatId: 'chat-uuid',
-  message: {
-    content: 'Hello!',
-    type: 'text'
-  }
-});
-```
-
-#### メッセージ受信
-```javascript
-socket.on('new_message', (message) => {
+eventSource.addEventListener('message', (event) => {
+  const message = JSON.parse(event.data);
   console.log('New message:', message);
-  // Display message in UI
+});
+
+eventSource.addEventListener('mention', (event) => {
+  const mention = JSON.parse(event.data);
+  console.log('You were mentioned:', mention);
+});
+
+eventSource.addEventListener('typing', (event) => {
+  const typing = JSON.parse(event.data);
+  console.log(`${typing.user_name} is typing...`);
 });
 ```
 
-#### タイピングインジケーター
-```javascript
-// タイピング開始
-socket.emit('typing_indicator', {
-  chat_id: 'chat-uuid',
-  action: 'start'
-});
+### Sending Typing Indicators
 
-// タイピング停止
-socket.emit('typing_indicator', {
-  chat_id: 'chat-uuid',
-  action: 'stop'
-});
-
-// タイピング状態受信
-socket.on('typing_indicator', (data) => {
-  if (data.action === 'start') {
-    showTypingIndicator(data.userId);
-  } else {
-    hideTypingIndicator(data.userId);
-  }
-});
-```
-
-#### 既読状態
-```javascript
-socket.emit('mark_messages_read', {
-  chatId: 'chat-uuid',
-  messageIds: ['msg-1', 'msg-2']
-});
-
-socket.on('messages_read', (data) => {
-  updateMessageReadStatus(data.messageIds);
-});
-```
-
-### システムイベント
-
-#### 注文更新通知
-```javascript
-socket.on('order_update', (data) => {
-  console.log('Order updated:', data.update);
-  showOrderUpdateNotification(data.update);
-});
-```
-
-#### レシート共有
-```javascript
-socket.on('receipt_shared', (data) => {
-  console.log('Receipt shared:', data.receiptUrl);
-  displaySharedReceipt(data.receiptUrl);
-});
-```
-
-## プッシュ通知実装
-
-### クライアント側実装
-
-#### Service Worker登録
-```javascript
-// service-worker.js
-self.addEventListener('push', (event) => {
-  const data = event.data.json();
-  
-  const options = {
-    body: data.body,
-    icon: data.icon,
-    badge: data.badge,
-    tag: data.tag,
-    data: data.data,
-    actions: data.actions,
-    requireInteraction: data.requireInteraction
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  
-  const action = event.action;
-  const data = event.notification.data;
-  
-  if (action === 'reply') {
-    // Open chat interface
-    clients.openWindow(`/chat/${data.chatId}`);
-  } else if (action === 'view_order') {
-    // Open order details
-    clients.openWindow(`/orders/${data.orderId}`);
-  }
-});
-```
-
-#### 通知購読
-```javascript
-async function subscribeToNotifications() {
-  // Service Worker登録
-  const registration = await navigator.serviceWorker.register('/sw.js');
-  
-  // VAPID公開鍵取得
-  const response = await fetch('/v1/notifications/vapid-public-key');
-  const { publicKey } = await response.json();
-  
-  // プッシュ通知購読
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: publicKey
-  });
-  
-  // サーバーに購読情報送信
-  await fetch('/v1/notifications/subscribe', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(subscription)
-  });
-}
-```
-
-### 通知テンプレート
-
-#### 新着メッセージ
-```javascript
+```typescript
+POST /realtime/groups/group123/typing
 {
-  title: "New message from 田中さん",
-  body: "商品について質問があります",
-  icon: "/icons/chat-notification.png",
-  tag: "chat-123",
-  data: {
-    type: "chat_message",
-    chatId: "chat-123",
-    messageId: "msg-456"
-  },
-  actions: [
-    { action: "reply", title: "Reply", icon: "/icons/reply.png" },
-    { action: "view_order", title: "View Order", icon: "/icons/order.png" }
-  ]
+  "is_typing": true,
+  "item_id": "item456" // optional, for item threads
 }
 ```
 
-#### 注文更新
-```javascript
-{
-  title: "Order Update",
-  body: "Your order status has been updated to: Shopping",
-  icon: "/icons/order-update.png",
-  tag: "order-789",
-  data: {
-    type: "order_update",
-    orderId: "order-789",
-    status: "shopping"
-  },
-  actions: [
-    { action: "view_order", title: "View Order", icon: "/icons/view.png" }
-  ]
+## Database Schema
+
+The system uses the `Message` model from the Prisma schema:
+
+```prisma
+model Message {
+  id         String   @id @default(uuid())
+  group_id   String
+  item_id    String?  // nullable for threaded discussions
+  author_id  String
+  body       String
+  image_url  String?
+  created_at DateTime @default(now())
+
+  // Relations
+  group  Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  item   Item? @relation("ItemMessages", fields: [item_id], references: [id], onDelete: Cascade)
+  author User  @relation("MessageAuthor", fields: [author_id], references: [id], onDelete: Cascade)
 }
 ```
 
-## 設定
+## Security & Permissions
 
-### 環境変数
+- **Group Membership Required** - Users must be group members to send/view messages
+- **Message Deletion** - Only message authors or group creators can delete messages
+- **Item Validation** - Item threads are validated to ensure items belong to the group
+- **Real-time Filtering** - SSE events are filtered by group membership and permissions
+
+## Testing
+
+The system includes comprehensive unit tests:
+
+- **MessagesService** - 20 test cases covering all functionality
+- **RealtimeService** - 7 test cases for real-time features
+- **Edge Cases** - Permission checks, validation, error handling
+- **Integration** - Real-time event filtering and broadcasting
+
+Run tests with:
 ```bash
-# VAPID設定（Web Push用）
-VAPID_PUBLIC_KEY=your-vapid-public-key
-VAPID_PRIVATE_KEY=your-vapid-private-key
-VAPID_SUBJECT=mailto:support@otsy.app
-
-# JWT設定（WebSocket認証用）
-JWT_SECRET=your-jwt-secret
+npm test -- --testPathPattern=messages.service.spec.ts
+npm test -- --testPathPattern=realtime.service.spec.ts
 ```
 
-### VAPID鍵生成
-```bash
-# web-pushライブラリを使用
-npx web-push generate-vapid-keys
+## Performance Considerations
 
-# または
-node -e "console.log(require('web-push').generateVAPIDKeys())"
-```
+- **Pagination** - All message endpoints support pagination
+- **Filtering** - Real-time events are efficiently filtered by group/item
+- **Indexing** - Database queries are optimized with proper indexes
+- **Connection Management** - SSE connections include heartbeat for reliability
 
-## セキュリティ
+## Future Enhancements
 
-### WebSocket認証
-- JWT トークンによる接続時認証
-- チャットルームへのアクセス権限チェック
-- ロールベースアクセス制御
-
-### プッシュ通知セキュリティ
-- VAPID署名による送信者認証
-- エンドポイント検証
-- 無効な購読の自動削除
-
-### データ保護
-- メッセージの暗号化（HTTPS/WSS）
-- 個人情報の適切な匿名化
-- 監査ログによる操作追跡
-
-## パフォーマンス最適化
-
-### WebSocket最適化
-- 接続プール管理
-- 自動再接続機能
-- ハートビート機能
-
-### 通知最適化
-- バッチ処理による効率化
-- 重複通知の防止
-- TTL設定による配信保証
-
-### データベース最適化
-- メッセージのページネーション
-- インデックス最適化
-- 古いメッセージのアーカイブ
-
-## 監視・メトリクス
-
-### WebSocket メトリクス
-- 同時接続数
-- メッセージ送信レート
-- 接続エラー率
-- 平均応答時間
-
-### 通知メトリクス
-- 通知送信成功率
-- 配信遅延時間
-- 購読者数の推移
-- 通知タイプ別統計
-
-### アラート設定
-- WebSocket接続数異常
-- 通知送信失敗率上昇
-- メッセージ配信遅延
-- システムエラー発生
-
-## トラブルシューティング
-
-### よくある問題
-
-#### WebSocket接続エラー
-```
-Error: WebSocket connection failed
-```
-**解決方法**: 
-- JWT トークンの有効性確認
-- CORS設定の確認
-- ファイアウォール設定確認
-
-#### プッシュ通知が届かない
-```
-Error: Push subscription invalid
-```
-**解決方法**:
-- VAPID鍵の設定確認
-- Service Worker登録確認
-- ブラウザ通知許可確認
-
-#### メッセージが表示されない
-**解決方法**:
-- チャットルーム参加状態確認
-- WebSocketイベントリスナー確認
-- ネットワーク接続確認
-
-### ログ確認
-```bash
-# WebSocket関連ログ
-grep "WebSocket\|Socket.IO" logs/app.log
-
-# 通知関連ログ
-grep "notification\|push" logs/app.log
-
-# チャット関連ログ
-grep "chat\|message" logs/app.log
-```
-
-## 今後の拡張予定
-
-### 機能拡張
-- [ ] 音声メッセージ対応
-- [ ] ビデオ通話機能
-- [ ] ファイル共有機能
-- [ ] メッセージ検索機能
-- [ ] チャットボット統合
-
-### パフォーマンス改善
-- [ ] Redis による WebSocket スケーリング
-- [ ] メッセージキューイング
-- [ ] CDN による画像配信最適化
-- [ ] プッシュ通知のバッチ処理改善
-
-### 分析機能
-- [ ] チャット分析ダッシュボード
-- [ ] ユーザーエンゲージメント分析
-- [ ] 通知効果測定
-- [ ] A/Bテスト機能
+- **Message Reactions** - Add emoji reactions to messages
+- **File Attachments** - Support for file uploads in messages
+- **Message Threading** - Reply chains within item discussions
+- **Push Notifications** - Mobile push notifications for mentions
+- **Message Encryption** - End-to-end encryption for sensitive discussions
