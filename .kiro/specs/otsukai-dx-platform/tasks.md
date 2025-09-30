@@ -71,7 +71,7 @@
   - Write tests for chat functionality and threading
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-- [-] 8. Implement privacy-first user authentication
+- [x] 8. Implement privacy-first user authentication
   - Create simplified user registration with email and display_name only
   - Implement JWT-based authentication without PII collection
   - Build password reset functionality using email-only identification

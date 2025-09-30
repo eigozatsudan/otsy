@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { AuthModule } from './auth/auth.module';
+import { PrivacyAuthModule } from './auth/privacy-auth.module';
 import { UsersModule } from './users/users.module';
 import { GroupsModule } from './groups/groups.module';
 import { ShoppingItemsModule } from './shopping-items/shopping-items.module';
@@ -25,6 +26,7 @@ import { ItemsModule } from './items/items.module';
     }),
     PrismaModule,
     AuthModule,
+    PrivacyAuthModule,
     UsersModule,
     GroupsModule,
     ShoppingItemsModule,
