@@ -1,0 +1,430 @@
+/* Accessibility utility classes */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Show screen reader content when focused */
+.sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .high-contrast\:border-2 {
+    border-width: 2px;
+  }
+  
+  .high-contrast\:bg-black {
+    background-color: #000000;
+  }
+  
+  .high-contrast\:text-white {
+    color: #ffffff;
+  }
+  
+  .high-contrast\:border-white {
+    border-color: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .motion-reduce\:transition-none {
+    transition-property: none;
+  }
+  
+  .motion-reduce\:animate-none {
+    animation: none;
+  }
+  
+  .motion-reduce\:transform-none {
+    transform: none;
+  }
+}
+
+/* Focus indicators */
+.focus-visible\:ring-2:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--ring-color, theme('colors.primary.500'));
+}
+
+.focus-visible\:ring-offset-2:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring-offset-color, theme('colors.white')), 
+              0 0 0 4px var(--ring-color, theme('colors.primary.500'));
+}
+
+/* Skip links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: theme('colors.primary.600');
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  transition: top 0.3s;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Touch target minimum sizes */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.touch-target-large {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* Color contrast utilities */
+.contrast-aa {
+  /* Ensures 4.5:1 contrast ratio for normal text */
+}
+
+.contrast-aa-large {
+  /* Ensures 3:1 contrast ratio for large text */
+}
+
+.contrast-aaa {
+  /* Ensures 7:1 contrast ratio for normal text */
+}
+
+.contrast-aaa-large {
+  /* Ensures 4.5:1 contrast ratio for large text */
+}
+
+/* Live region styles */
+[aria-live] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Focus management */
+.focus-trap {
+  /* Container for focus trapping */
+}
+
+/* Keyboard navigation indicators */
+.keyboard-focused {
+  outline: 2px solid theme('colors.primary.500');
+  outline-offset: 2px;
+}
+
+/* Error states */
+[aria-invalid="true"] {
+  border-color: theme('colors.error.500');
+}
+
+[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 2px theme('colors.error.500');
+}
+
+/* Required field indicators */
+[aria-required="true"] + label::after,
+label[aria-required="true"]::after {
+  content: " *";
+  color: theme('colors.error.600');
+}
+
+/* Loading states */
+[aria-busy="true"] {
+  cursor: wait;
+}
+
+/* Disabled states */
+[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Expanded/collapsed states */
+[aria-expanded="true"] .expand-icon {
+  transform: rotate(180deg);
+}
+
+[aria-expanded="false"] .expand-icon {
+  transform: rotate(0deg);
+}
+
+/* Selection states */
+[aria-selected="true"] {
+  background-color: theme('colors.primary.50');
+  border-color: theme('colors.primary.500');
+}
+
+/* Progress indicators */
+[role="progressbar"] {
+  background-color: theme('colors.neutral.200');
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+[role="progressbar"]::before {
+  content: "";
+  display: block;
+  height: 100%;
+  background-color: theme('colors.primary.500');
+  width: var(--progress-width, 0%);
+  transition: width 0.3s ease;
+}
+
+/* Status indicators */
+[role="status"] {
+  /* Styles for status messages */
+}
+
+[role="alert"] {
+  /* Styles for alert messages */
+  border-left: 4px solid theme('colors.error.500');
+  padding-left: 12px;
+}
+
+/* Navigation landmarks */
+[role="navigation"] {
+  /* Navigation landmark styles */
+}
+
+[role="main"] {
+  /* Main content landmark styles */
+}
+
+[role="banner"] {
+  /* Header landmark styles */
+}
+
+[role="contentinfo"] {
+  /* Footer landmark styles */
+}
+
+/* Form field groups */
+[role="group"] {
+  border: 1px solid theme('colors.neutral.300');
+  border-radius: 8px;
+  padding: 16px;
+}
+
+[role="radiogroup"] {
+  /* Radio button group styles */
+}
+
+/* Table accessibility */
+[role="table"] {
+  /* Table styles */
+}
+
+[role="columnheader"],
+[role="rowheader"] {
+  font-weight: 600;
+  background-color: theme('colors.neutral.50');
+}
+
+/* Menu accessibility */
+[role="menu"] {
+  background: white;
+  border: 1px solid theme('colors.neutral.300');
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+[role="menuitem"] {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+[role="menuitem"]:hover,
+[role="menuitem"]:focus {
+  background-color: theme('colors.primary.50');
+}
+
+[role="menuitem"][aria-disabled="true"] {
+  color: theme('colors.neutral.400');
+  cursor: not-allowed;
+}
+
+/* Dialog accessibility */
+[role="dialog"] {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+/* Tooltip accessibility */
+[role="tooltip"] {
+  background: theme('colors.neutral.900');
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 200px;
+  z-index: 1000;
+}
+
+/* Listbox accessibility */
+[role="listbox"] {
+  border: 1px solid theme('colors.neutral.300');
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+[role="option"] {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+[role="option"]:hover,
+[role="option"]:focus {
+  background-color: theme('colors.primary.50');
+}
+
+[role="option"][aria-selected="true"] {
+  background-color: theme('colors.primary.100');
+  font-weight: 600;
+}
+
+/* Combobox accessibility */
+[role="combobox"] {
+  position: relative;
+}
+
+[role="combobox"][aria-expanded="true"] + [role="listbox"] {
+  display: block;
+}
+
+[role="combobox"][aria-expanded="false"] + [role="listbox"] {
+  display: none;
+}
+
+/* Tab accessibility */
+[role="tablist"] {
+  border-bottom: 1px solid theme('colors.neutral.300');
+}
+
+[role="tab"] {
+  padding: 8px 16px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+[role="tab"]:hover,
+[role="tab"]:focus {
+  background-color: theme('colors.neutral.50');
+}
+
+[role="tab"][aria-selected="true"] {
+  border-bottom-color: theme('colors.primary.500');
+  color: theme('colors.primary.600');
+}
+
+[role="tabpanel"] {
+  padding: 16px 0;
+}
+
+[role="tabpanel"]:focus {
+  outline: none;
+}
+
+/* Slider accessibility */
+[role="slider"] {
+  background: theme('colors.neutral.300');
+  border-radius: 4px;
+  height: 8px;
+  position: relative;
+}
+
+[role="slider"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: theme('colors.primary.500');
+  border-radius: 4px;
+  width: var(--slider-value, 50%);
+}
+
+[role="slider"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: var(--slider-value, 50%);
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 2px solid theme('colors.primary.500');
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+[role="slider"]:focus::after {
+  box-shadow: 0 0 0 2px theme('colors.primary.200');
+}
+
+/* Switch accessibility */
+[role="switch"] {
+  width: 44px;
+  height: 24px;
+  background: theme('colors.neutral.300');
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+[role="switch"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+[role="switch"][aria-checked="true"] {
+  background: theme('colors.primary.500');
+}
+
+[role="switch"][aria-checked="true"]::before {
+  transform: translateX(20px);
+}
+
+[role="switch"]:focus {
+  outline: 2px solid theme('colors.primary.500');
+  outline-offset: 2px;
+}
