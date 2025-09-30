@@ -12,7 +12,7 @@
 1. **Clone and install dependencies**
    ```bash
    git clone <repository>
-   cd otsukai-dx
+   cd otsy
    pnpm install
    ```
 
@@ -113,7 +113,7 @@ Key environment variables to configure:
 
 ```bash
 # Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/otsukai"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/otsy"
 
 # JWT Secrets (change in production)
 JWT_SECRET="your-jwt-secret"
@@ -125,7 +125,7 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 
 # S3 Storage (MinIO for local development)
 S3_ENDPOINT="http://localhost:9000"
-S3_BUCKET="otsukai-dev"
+S3_BUCKET="otsy-dev"
 S3_ACCESS_KEY="minio"
 S3_SECRET_KEY="minio123"
 

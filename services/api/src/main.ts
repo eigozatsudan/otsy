@@ -25,7 +25,7 @@ async function bootstrap() {
   // CORS configuration
   app.enableCors({
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://otsukai.app']
+      ? ['https://otsy.app']
       : ['http://localhost:3000'],
     credentials: true,
   });
@@ -35,7 +35,7 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Otsukai DX Pivot API')
+    .setTitle('Otsy API')
     .setDescription('家庭・友人グループ向け買い物共同管理アプリのAPI仕様書')
     .setVersion('1.0.0')
     .addBearerAuth(

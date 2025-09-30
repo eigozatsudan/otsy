@@ -14,39 +14,39 @@
 
 @layer components {
   /* Custom component styles */
-  .otsukai-card {
+  .otsy-card {
     @apply bg-white rounded-lg border border-gray-200 shadow-sm;
   }
   
-  .otsukai-card-hover {
+  .otsy-card-hover {
     @apply transition-all duration-200 hover:shadow-md hover:-translate-y-1;
   }
   
-  .otsukai-button-primary {
+  .otsy-button-primary {
     @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
   }
   
-  .otsukai-button-secondary {
+  .otsy-button-secondary {
     @apply bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500;
   }
   
-  .otsukai-input {
+  .otsy-input {
     @apply border-gray-300 focus:border-primary-500 focus:ring-primary-500;
   }
   
-  .otsukai-status-pending {
+  .otsy-status-pending {
     @apply bg-warning-100 text-warning-800;
   }
   
-  .otsukai-status-active {
+  .otsy-status-active {
     @apply bg-success-100 text-success-800;
   }
   
-  .otsukai-status-error {
+  .otsy-status-error {
     @apply bg-error-100 text-error-800;
   }
   
-  .otsukai-status-info {
+  .otsy-status-info {
     @apply bg-primary-100 text-primary-800;
   }
 }

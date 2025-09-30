@@ -1,4 +1,4 @@
-# Otsukai DX Pivot
+# Otsy
 
 Privacy-first household and friend group collaborative shopping management application. Groups of family members or friends can collectively manage shopping lists, coordinate purchases, and fairly split costs with minimal personal information collection.
 
@@ -118,7 +118,7 @@ npm run db:reset       # Reset database (development only)
 ## Project Structure
 
 ```
-otsukai-dx/
+otsy/
 ├── apps/
 │   └── web/               # Single PWA application
 ├── services/

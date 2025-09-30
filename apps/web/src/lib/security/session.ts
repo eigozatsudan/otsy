@@ -98,8 +98,8 @@ export class SessionManager {
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt(now)
       .setExpirationTime(now + this.options.maxAge)
-      .setIssuer('otsukai-app')
-      .setAudience('otsukai-users')
+      .setIssuer('otsy-app')
+      .setAudience('otsy-users')
       .sign(SessionManager.SECRET_KEY);
 
     return {
@@ -121,8 +121,8 @@ export class SessionManager {
     try {
       // Verify JWT token
       const { payload } = await jwtVerify(token, SessionManager.SECRET_KEY, {
-        issuer: 'otsukai-app',
-        audience: 'otsukai-users',
+        issuer: 'otsy-app',
+        audience: 'otsy-users',
       });
 
       const tokenPayload = payload as TokenPayload;
@@ -202,8 +202,8 @@ export class SessionManager {
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt(now)
       .setExpirationTime(now + this.options.maxAge)
-      .setIssuer('otsukai-app')
-      .setAudience('otsukai-users')
+      .setIssuer('otsy-app')
+      .setAudience('otsy-users')
       .sign(SessionManager.SECRET_KEY);
 
     return {

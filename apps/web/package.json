@@ -1,5 +1,5 @@
 {
-  "name": "@otsukai/web",
+  "name": "@otsy/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -33,42 +33,48 @@
     "playwright:install-deps": "playwright install-deps"
   },
   "dependencies": {
+    "@prisma/client": "^5.6.0",
+    "@tailwindcss/forms": "^0.5.7",
+    "@tailwindcss/typography": "^0.5.10",
+    "clsx": "^2.0.0",
+    "framer-motion": "^10.16.4",
     "next": "14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.2.2",
-    "@prisma/client": "^5.6.0",
-    "framer-motion": "^10.16.4",
-    "clsx": "^2.0.0",
     "tailwindcss": "^3.3.5",
-    "@tailwindcss/forms": "^0.5.7",
-    "@tailwindcss/typography": "^0.5.10"
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.5.1",
     "@types/node": "^20.8.7",
     "@types/react": "^18.2.31",
     "@types/react-dom": "^18.2.14",
-    "@playwright/test": "^1.40.0",
-    "@testing-library/react": "^14.0.0",
-    "@testing-library/jest-dom": "^6.1.4",
-    "@testing-library/user-event": "^14.5.1",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "jest-axe": "^8.0.0",
-    "prisma": "^5.6.0",
+    "autoprefixer": "^10.4.16",
     "dotenv-cli": "^7.3.0",
     "eslint": "^8.52.0",
     "eslint-config-next": "14.0.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31"
+    "jest": "^29.7.0",
+    "jest-axe": "^8.0.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "postcss": "^8.4.31",
+    "prisma": "^5.6.0"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
-    "testPathIgnorePatterns": ["<rootDir>/.next/", "<rootDir>/node_modules/", "<rootDir>/e2e/"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/.next/",
+      "<rootDir>/node_modules/",
+      "<rootDir>/e2e/"
+    ],
     "collectCoverageFrom": [
       "src/**/*.{js,jsx,ts,tsx}",
       "!src/**/*.d.ts",

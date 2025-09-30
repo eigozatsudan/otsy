@@ -28,7 +28,7 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://user.otsukai.app', 'https://shopper.otsukai.app', 'https://admin.otsukai.app']
+      ? ['https://user.otsy.app', 'https://shopper.otsy.app', 'https://admin.otsy.app']
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
     credentials: true,
   },

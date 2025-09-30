@@ -24,7 +24,7 @@ describe('AppController', () => {
     it('should return health status', () => {
       const health = appController.getHealth();
       expect(health.status).toBe('ok');
-      expect(health.service).toBe('otsukai-dx-api');
+      expect(health.service).toBe('otsy-api');
       expect(health.timestamp).toBeDefined();
     });
   });

@@ -40,7 +40,7 @@ export class CORSHandler {
   constructor(options: CORSOptions = {}) {
     this.options = {
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.NEXTAUTH_URL || 'https://otsukai.app']
+        ? [process.env.NEXTAUTH_URL || 'https://otsy.app']
         : true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: [
@@ -294,7 +294,7 @@ export const SecurityConfigs = {
   strict: {
     cors: new CORSHandler({
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.NEXTAUTH_URL || 'https://otsukai.app']
+        ? [process.env.NEXTAUTH_URL || 'https://otsy.app']
         : false,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -304,7 +304,7 @@ export const SecurityConfigs = {
         'default-src': ["'self'"],
         'script-src': ["'self'"],
         'style-src': ["'self'", "'unsafe-inline'"],
-        'img-src': ["'self'", 'data:', 'https://cdn.otsukai.app'],
+        'img-src': ["'self'", 'data:', 'https://cdn.otsy.app'],
         'font-src': ["'self'"],
         'connect-src': ["'self'"],
         'media-src': ["'self'"],
@@ -349,7 +349,7 @@ export const SecurityConfigs = {
   api: {
     cors: new CORSHandler({
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.NEXTAUTH_URL || 'https://otsukai.app']
+        ? [process.env.NEXTAUTH_URL || 'https://otsy.app']
         : true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

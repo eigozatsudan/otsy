@@ -32,7 +32,7 @@ const nextConfig = {
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000',
   },
   images: {
-    domains: ['localhost', 'otsukai.app'],
+    domains: ['localhost', 'otsy.app'],
     formats: ['image/webp', 'image/avif'],
     unoptimized: true,
   },
