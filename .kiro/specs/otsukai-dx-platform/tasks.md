@@ -81,7 +81,7 @@
   - Write tests for authentication flows and privacy compliance
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 9. Build non-intrusive advertising system
+- [x] 9. Build non-intrusive advertising system
   - Create ad slot components for list_top and detail_bottom placements
   - Implement one-ad-per-screen display logic with rotation
   - Build ad impression logging with minimal user tracking

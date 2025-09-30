@@ -171,6 +171,24 @@ model Message {
 }
 
 // Advertising (Minimal Tracking)
+model AdCreative {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  image_url   String
+  click_url   String
+  slot        String   // list_top, detail_bottom
+  priority    Int      @default(5) // 1-10 priority weight
+  status      String   @default("active") // active, paused, expired
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  impressions AdImpression[]
+
+  @@map("ad_creatives")
+}
+
 model AdImpression {
   id          String   @id @default(uuid())
   user_id     String?  // nullable for privacy
@@ -180,8 +198,9 @@ model AdImpression {
   shown_at    DateTime @default(now())
 
   // Relations (optional for privacy)
-  user  User?  @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  group Group? @relation("GroupAdImpressions", fields: [group_id], references: [id], onDelete: SetNull)
+  user     User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  group    Group?      @relation("GroupAdImpressions", fields: [group_id], references: [id], onDelete: SetNull)
+  creative AdCreative  @relation(fields: [creative_id], references: [id], onDelete: Cascade)
 
   @@map("ads_impressions")
 }
