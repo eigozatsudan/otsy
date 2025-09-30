@@ -15,12 +15,10 @@ RUN corepack enable && corepack prepare yarn@4.10.3 --activate
 COPY package.json yarn.lock .yarnrc.yml turbo.json ./
 
 # Create workspace directories
-RUN mkdir -p apps/user-web apps/shopper-web apps/admin-web services/api packages/ui packages/types
+RUN mkdir -p apps/web services/api packages/ui packages/types
 
 # Copy package.json files for all workspaces
-COPY apps/user-web/package.json ./apps/user-web/
-COPY apps/shopper-web/package.json ./apps/shopper-web/
-COPY apps/admin-web/package.json ./apps/admin-web/
+COPY apps/web/package.json ./apps/web/
 COPY services/api/package.json ./services/api/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/types/package.json ./packages/types/
