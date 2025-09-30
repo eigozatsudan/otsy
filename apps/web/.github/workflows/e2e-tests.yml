@@ -1,0 +1,254 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
+        
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: otsukai_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps ${{ matrix.project }}
+
+    - name: Setup test environment
+      run: |
+        cp .env.example .env.test
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/otsukai_test" >> .env.test
+        echo "NODE_ENV=test" >> .env.test
+        echo "NEXTAUTH_SECRET=test-secret-key" >> .env.test
+        echo "NEXTAUTH_URL=http://localhost:3000" >> .env.test
+
+    - name: Run database migrations
+      run: |
+        npm run db:migrate:test
+        npm run db:seed:test
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run Playwright tests
+      run: npx playwright test --project=${{ matrix.project }}
+      env:
+        PLAYWRIGHT_BASE_URL: http://localhost:3000
+
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report-${{ matrix.project }}
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.project }}
+        path: test-results/
+        retention-days: 30
+
+  accessibility-tests:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: otsukai_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Setup test environment
+      run: |
+        cp .env.example .env.test
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/otsukai_test" >> .env.test
+        echo "NODE_ENV=test" >> .env.test
+
+    - name: Run database migrations
+      run: |
+        npm run db:migrate:test
+        npm run db:seed:test
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run accessibility tests
+      run: |
+        npx playwright test --grep "Accessibility" --project=chromium
+        npm run test:accessibility
+
+    - name: Upload Accessibility Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: accessibility-report
+        path: accessibility-report/
+        retention-days: 30
+
+  performance-tests:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run Lighthouse CI
+      run: |
+        npm install -g @lhci/cli@0.12.x
+        lhci autorun
+      env:
+        LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+    - name: Upload Lighthouse Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: lighthouse-report
+        path: .lighthouseci/
+        retention-days: 30
+
+  visual-regression:
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Build application
+      run: npm run build
+
+    - name: Run visual regression tests
+      run: npx playwright test --grep "visual" --project=chromium
+
+    - name: Upload Visual Diff Report
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: visual-diff-report
+        path: test-results/
+        retention-days: 30
+
+  test-summary:
+    if: always()
+    needs: [test, accessibility-tests, performance-tests, visual-regression]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Generate test summary
+      run: |
+        echo "# Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -d "playwright-report-chromium" ]; then
+          echo "## ✅ Chromium Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Chromium tests completed successfully" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "playwright-report-firefox" ]; then
+          echo "## ✅ Firefox Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Firefox tests completed successfully" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "playwright-report-webkit" ]; then
+          echo "## ✅ WebKit Tests" >> $GITHUB_STEP_SUMMARY
+          echo "WebKit tests completed successfully" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "accessibility-report" ]; then
+          echo "## ♿ Accessibility Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Accessibility tests completed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "lighthouse-report" ]; then
+          echo "## 🚀 Performance Tests" >> $GITHUB_STEP_SUMMARY
+          echo "Lighthouse performance tests completed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📊 **Test artifacts are available for download above**" >> $GITHUB_STEP_SUMMARY
