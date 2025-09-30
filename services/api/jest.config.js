@@ -10,7 +10,7 @@ module.exports = {
   ],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@otsy/types$': '<rootDir>/../../packages/types/src',
   },
   setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],

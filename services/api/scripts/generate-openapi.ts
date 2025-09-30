@@ -8,8 +8,8 @@ async function generateOpenApiSpec() {
   const app = await NestFactory.create(AppModule);
   
   const config = new DocumentBuilder()
-    .setTitle('Otsy API')
-    .setDescription('OtsyプラットフォームのAPI仕様書')
+    .setTitle('Otsukai DX Pivot API')
+    .setDescription('家庭・友人グループ向け買い物共同管理アプリのAPI仕様書')
     .setVersion('1.0.0')
     .addBearerAuth(
       {
@@ -25,17 +25,14 @@ async function generateOpenApiSpec() {
     .addTag('Health', 'ヘルスチェック')
     .addTag('Auth', '認証・認可')
     .addTag('Users', 'ユーザー管理')
-    .addTag('Shoppers', '買い物代行者管理')
-    .addTag('Orders', '注文管理')
-    .addTag('KYC', '本人確認')
+    .addTag('Groups', 'グループ管理')
+    .addTag('Items', 'アイテム管理')
+    .addTag('Purchases', '購入記録')
     .addTag('Storage', 'ファイルストレージ')
-    .addTag('LLM', '音声・自然言語処理')
     .addTag('Receipts', 'レシート管理')
-    .addTag('Payments', '決済管理')
     .addTag('Chat', 'チャット・リアルタイム通信')
     .addTag('Notifications', 'プッシュ通知')
-    .addTag('Subscriptions', 'サブスクリプション管理')
-    .addTag('Matching', 'マッチングシステム')
+    .addTag('Ads', '広告管理')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

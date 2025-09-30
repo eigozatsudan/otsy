@@ -12,12 +12,7 @@ async function bootstrap() {
   // Configure WebSocket adapter
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  // Configure raw body for Stripe webhooks only
-  app.use('/v1/payments/webhook', json({ verify: (req: any, res, buf) => {
-    req.rawBody = buf;
-  }}));
-  
-  // Ensure JSON parsing for all other routes
+  // Configure JSON parsing
   app.use(json());
   
   // Global validation pipe
@@ -30,8 +25,8 @@ async function bootstrap() {
   // CORS configuration
   app.enableCors({
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://user.otsukai.app', 'https://shopper.otsukai.app', 'https://admin.otsukai.app']
-      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+      ? ['https://otsukai.app']
+      : ['http://localhost:3000'],
     credentials: true,
   });
 
@@ -40,8 +35,8 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Otsy API')
-    .setDescription('OtsyプラットフォームのAPI仕様書')
+    .setTitle('Otsukai DX Pivot API')
+    .setDescription('家庭・友人グループ向け買い物共同管理アプリのAPI仕様書')
     .setVersion('1.0.0')
     .addBearerAuth(
       {
@@ -57,17 +52,14 @@ async function bootstrap() {
     .addTag('Health', 'ヘルスチェック')
     .addTag('Auth', '認証・認可')
     .addTag('Users', 'ユーザー管理')
-    .addTag('Shoppers', '買い物代行者管理')
-    .addTag('Orders', '注文管理')
-    .addTag('KYC', '本人確認')
+    .addTag('Groups', 'グループ管理')
+    .addTag('Items', 'アイテム管理')
+    .addTag('Purchases', '購入記録')
     .addTag('Storage', 'ファイルストレージ')
-    .addTag('LLM', '音声・自然言語処理')
     .addTag('Receipts', 'レシート管理')
-    .addTag('Payments', '決済管理')
     .addTag('Chat', 'チャット・リアルタイム通信')
     .addTag('Notifications', 'プッシュ通知')
-    .addTag('Subscriptions', 'サブスクリプション管理')
-    .addTag('Matching', 'マッチングシステム')
+    .addTag('Ads', '広告管理')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -84,7 +76,6 @@ async function bootstrap() {
   await app.listen(port, host);
   console.log(`🚀 API server running on http://${host}:${port}/v1`);
   console.log(`📚 API Documentation: http://${host}:${port}/api`);
-  console.log(`💳 Stripe webhooks: http://${host}:${port}/v1/payments/webhook`);
 }
 
 bootstrap();

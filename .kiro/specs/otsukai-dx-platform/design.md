@@ -2,9 +2,9 @@
 
 ## Overview
 
-Otsukai DX is a multi-tenant platform built as a monorepo with three distinct web applications (User, Shopper, Admin) sharing a common backend API. The system leverages modern web technologies including NestJS for the backend, Next.js for the frontends, and integrates with external services like Stripe for payments, S3 for file storage, and uses LLM services for natural language processing.
+Otsukai DX Pivot is a privacy-first collaborative shopping management platform built as a monorepo with a single web application and backend API. The system enables household and friend groups to collectively manage shopping lists, coordinate purchases, and fairly split costs. The architecture eliminates all payment processing, KYC verification, and location tracking components, focusing instead on group collaboration and ad-supported revenue generation.
 
-The architecture follows a microservices-inspired approach within a monolith, with clear separation of concerns between user-facing applications while maintaining shared business logic in the backend API.
+The platform follows a simplified architecture with equal user roles (no service providers), minimal data collection (email and display name only), and non-intrusive advertising integration.
 
 ## Architecture
 
@@ -12,59 +12,53 @@ The architecture follows a microservices-inspired approach within a monolith, wi
 
 ```mermaid
 graph TB
-    subgraph "Client Applications"
-        UW[User Web App<br/>Next.js]
-        SW[Shopper Web App<br/>Next.js]
-        AW[Admin Web App<br/>Next.js]
+    subgraph "Client Application"
+        WEB[Web Application<br/>Next.js PWA]
     end
     
     subgraph "Backend Services"
         API[NestJS API<br/>services/api]
         DB[(PostgreSQL<br/>Prisma ORM)]
+        CACHE[(Redis<br/>Session & Cache)]
     end
     
     subgraph "External Services"
-        STRIPE[Stripe<br/>Payments]
-        S3[S3 Storage<br/>Images/Receipts]
-        LLM[LLM Service<br/>OpenAI/Anthropic]
+        S3[S3 Storage<br/>Images Only]
         PUSH[Web Push<br/>VAPID]
+        ADS[Ad Network<br/>Static/Programmatic]
     end
     
-    UW --> API
-    SW --> API
-    AW --> API
+    WEB --> API
     API --> DB
-    API --> STRIPE
+    API --> CACHE
     API --> S3
-    API --> LLM
     API --> PUSH
+    API --> ADS
 ```
 
 ### Technology Stack
 
-- **Monorepo Management**: pnpm + Turborepo
+- **Monorepo Management**: Yarn + Turborepo
 - **Backend**: NestJS with TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Frontend**: Next.js 14+ with TypeScript
-- **Styling**: Tailwind CSS
-- **Authentication**: JWT with refresh tokens
-- **Payments**: Stripe Payment Intents with manual capture
-- **File Storage**: S3-compatible storage (AWS S3 or Supabase)
+- **Frontend**: Next.js 14+ with TypeScript (PWA enabled)
+- **Styling**: Tailwind CSS with golden/silver ratio design system
+- **Authentication**: JWT with refresh tokens (email + password only)
+- **File Storage**: S3-compatible storage for receipt images only
 - **Push Notifications**: Web Push API with VAPID
+- **Real-time**: Server-Sent Events (SSE) for group updates
 - **Type Safety**: OpenAPI-generated TypeScript types
 
-### Monorepo Structure
+### Monorepo Structure (Simplified)
 
 ```
 /
 ├── apps/
-│   ├── user-web/          # User-facing application
-│   ├── shopper-web/       # Shopper application  
-│   └── admin-web/         # Administrative interface
+│   └── web/               # Single web application for all users
 ├── services/
 │   └── api/               # NestJS backend API
 ├── packages/
-│   ├── ui/                # Shared UI components
+│   ├── ui/                # Shared UI components with golden ratio design
 │   └── types/             # Shared TypeScript types
 └── tests/
     └── e2e/               # End-to-end tests
@@ -74,165 +68,307 @@ graph TB
 
 ### Core Domain Models
 
-#### User Management
-- **Users**: End customers who place orders
-- **Shoppers**: Service providers who fulfill orders
-- **Admins**: Platform operators with different permission levels
+#### User Management (Privacy-First)
+- **Users**: All participants are equal users with minimal data collection
+- **Groups**: Household or friend groups for collaborative shopping
+- **GroupMembers**: User membership in groups with simple owner/member roles
 
-#### Order Management
-- **Orders**: Central entity containing items, preferences, and status
-- **OrderItems**: Individual items within an order with price ranges and substitution rules
-- **OrderRuns**: Shopper's execution of an order with status tracking
+#### Shopping Management
+- **Items**: Shopping list items with status tracking
+- **Purchases**: Records of actual purchases with cost splitting
+- **PurchaseItems**: Links between purchases and shopping list items
 
 #### Communication
-- **ChatMessages**: Real-time communication between users and shoppers
-- **Notifications**: Push notifications for status updates
+- **Messages**: Group chat and item-specific threaded discussions
+- **Notifications**: Push notifications for group activities
 
-#### Financial
-- **Payments**: Stripe payment tracking with authorization/capture flow
-- **Receipts**: Shopper-submitted purchase verification
+#### Revenue Generation
+- **AdImpressions**: Minimal logging for ad display tracking (no personal profiling)
 
 ### API Design Patterns
 
 #### RESTful Endpoints
-- **Resource-based URLs**: `/orders`, `/shoppers`, `/users`
+- **Resource-based URLs**: `/groups`, `/items`, `/purchases`, `/messages`
 - **HTTP methods**: GET, POST, PATCH, DELETE
 - **Consistent response formats**: JSON with standardized error handling
-- **Pagination**: Cursor-based for large datasets
+- **Pagination**: Cursor-based for message history and item lists
 
-#### Authentication & Authorization
+#### Authentication & Authorization (Simplified)
 - **JWT Access Tokens**: Short-lived (15 minutes)
 - **Refresh Tokens**: Long-lived (7 days) for token renewal
-- **Role-based Access Control**: User, Shopper, Admin roles with granular permissions
+- **Group-based Access Control**: Owner/Member permissions within groups only
 
-#### File Upload Strategy
-- **Signed URLs**: S3 pre-signed URLs for direct client uploads
-- **Security**: EXIF data removal, file type validation
-- **Storage**: Organized by entity type and date (e.g., `/receipts/2024/01/`)
+#### File Upload Strategy (Minimal)
+- **Signed URLs**: S3 pre-signed URLs for receipt images only
+- **Security**: EXIF data removal, file type validation, PII warnings
+- **Storage**: Organized by group and date (e.g., `/receipts/{group_id}/2024/01/`)
 
 ### Frontend Architecture
 
-#### Shared Component Library (`packages/ui`)
-- **Design System**: Consistent Tailwind-based components
-- **Form Components**: Reusable form inputs with validation
-- **Layout Components**: Headers, navigation, modals
-- **Business Components**: Order cards, chat interfaces, status indicators
+#### Single Application Design
+- **Responsive Design**: Mobile-first with golden ratio proportions
+- **Progressive Web App**: Offline capability for cached data
+- **Component Library**: Tailwind-based design system with Fibonacci spacing
+- **State Management**: React Query for server state, React hooks for UI state
 
-#### State Management
-- **Server State**: React Query for API data fetching and caching
-- **Client State**: React hooks for local UI state
-- **Real-time Updates**: WebSocket connections for order status and chat
+#### Design System Principles
+- **Golden Ratio**: 1:1.618 for card dimensions and layout proportions
+- **Silver Ratio**: 1:1.414 for alternative proportions
+- **Fibonacci Spacing**: 8, 13, 21, 34, 55px for consistent spacing
+- **Typography**: 14-16sp base size for mobile readability
+- **Animations**: Subtle transitions under 200ms
 
-#### Routing Strategy
-- **User App**: Public marketing pages + authenticated order management
-- **Shopper App**: Fully authenticated with onboarding flow
-- **Admin App**: Role-based access with different permission levels
+#### Real-time Updates
+- **Server-Sent Events**: For group activity updates
+- **Optimistic Updates**: Immediate UI feedback with rollback on failure
+- **Offline Support**: Cached data viewing and draft synchronization
 
 ## Data Models
 
-### Core Entities
+### Core Entities (Privacy-Minimal)
 
 ```typescript
-// User Management
+// User Management (Minimal PII)
 interface User {
   id: string;
   email: string;
-  phone?: string;
-  subscription_tier?: 'basic' | 'premium';
+  display_name: string;
+  avatar_url?: string;
   created_at: Date;
 }
 
-interface Shopper {
+// Group Management
+interface Group {
   id: string;
-  email: string;
-  phone: string;
-  kyc_status: 'pending' | 'approved' | 'needs_review' | 'rejected';
-  risk_tier?: 'L0' | 'L1' | 'L2' | 'L-1';
-  rating_avg?: number;
-  status: 'active' | 'suspended';
-  created_at: Date;
-}
-
-// Order Management
-interface Order {
-  id: string;
-  user_id: string;
-  shopper_id?: string;
-  status: 'new' | 'accepted' | 'shopping' | 'await_receipt_ok' | 'enroute' | 'delivered' | 'cancelled';
-  mode: 'approve' | 'delegate';
-  receipt_check: 'required' | 'auto';
-  estimate_amount: number;
-  auth_amount?: number;
-  deadline_ts?: Date;
-  priority?: number;
-  address_json: object;
-  items: OrderItem[];
-  created_at: Date;
-}
-
-interface OrderItem {
-  id: string;
-  order_id: string;
   name: string;
-  qty: string;
-  price_min?: number;
-  price_max?: number;
-  allow_subs: boolean;
+  description?: string;
+  invite_code: string; // 12-character alphanumeric
+  created_by: string;
+  created_at: Date;
+}
+
+interface GroupMember {
+  user_id: string;
+  group_id: string;
+  role: 'owner' | 'member';
+  joined_at: Date;
+}
+
+// Shopping Management
+interface Item {
+  id: string;
+  group_id: string;
+  name: string;
+  category?: string;
+  quantity: string;
+  note?: string;
+  image_url?: string;
+  status: 'todo' | 'purchased' | 'cancelled';
+  created_by: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface Purchase {
+  id: string;
+  group_id: string;
+  purchased_by: string;
+  total_amount: number; // in cents (JPY)
+  currency: string; // 'JPY'
+  receipt_image_url?: string;
+  purchased_at: Date;
   note?: string;
 }
 
+interface PurchaseItem {
+  purchase_id: string;
+  item_id: string;
+  quantity: number;
+  unit_price?: number; // in cents
+}
+
+interface Split {
+  id: string;
+  purchase_id: string;
+  user_id: string;
+  share_amount: number; // in cents
+  rule: 'equal' | 'quantity' | 'custom';
+}
+
 // Communication
-interface ChatMessage {
+interface Message {
   id: string;
-  order_id: string;
-  sender: 'user' | 'shopper' | 'system';
-  text: string;
-  attachment_url?: string;
+  group_id: string;
+  item_id?: string; // for threaded discussions
+  author_id: string;
+  body: string;
+  image_url?: string;
   created_at: Date;
 }
 
-// Financial
-interface Payment {
+// Revenue (Minimal Tracking)
+interface AdImpression {
   id: string;
-  order_id: string;
-  stripe_pi: string;
-  status: 'authorized' | 'captured' | 'refunded' | 'failed';
-  amount: number;
-  created_at: Date;
-}
-
-interface Receipt {
-  id: string;
-  order_id: string;
-  shopper_id: string;
-  image_url: string;
-  submitted_at: Date;
+  user_id?: string; // optional for privacy
+  group_id?: string; // optional for privacy
+  slot: 'list_top' | 'detail_bottom';
+  creative_id: string;
+  shown_at: Date;
 }
 ```
 
-### Database Schema Considerations
+### Database Schema (New Design)
 
-#### Indexing Strategy
-- **Primary Keys**: UUIDs for all entities
-- **Foreign Keys**: Proper constraints with cascading rules
-- **Search Indexes**: Full-text search on order items, user/shopper names
-- **Performance Indexes**: Composite indexes on frequently queried combinations
+```sql
+-- Users: Minimal PII collection
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  display_name TEXT NOT NULL,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-#### Data Integrity
-- **Constraints**: Check constraints for enums and business rules
-- **Triggers**: Audit logging for sensitive operations
-- **Soft Deletes**: Retain data for compliance and analytics
+-- Groups: Household/Friend groups
+CREATE TABLE groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  description TEXT,
+  invite_code VARCHAR(12) UNIQUE NOT NULL,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Group membership
+CREATE TABLE group_members (
+  user_id UUID REFERENCES users(id),
+  group_id UUID REFERENCES groups(id),
+  role TEXT CHECK (role IN ('owner', 'member')) DEFAULT 'member',
+  joined_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, group_id)
+);
+
+-- Shopping items
+CREATE TABLE items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID REFERENCES groups(id),
+  name TEXT NOT NULL,
+  category TEXT,
+  quantity TEXT DEFAULT '1',
+  note TEXT,
+  image_url TEXT,
+  status TEXT CHECK (status IN ('todo', 'purchased', 'cancelled')) DEFAULT 'todo',
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Purchase records
+CREATE TABLE purchases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID REFERENCES groups(id),
+  purchased_by UUID REFERENCES users(id),
+  total_amount INTEGER NOT NULL, -- cents
+  currency CHAR(3) DEFAULT 'JPY',
+  receipt_image_url TEXT,
+  purchased_at TIMESTAMPTZ DEFAULT NOW(),
+  note TEXT
+);
+
+-- Purchase-item relationships
+CREATE TABLE purchase_items (
+  purchase_id UUID REFERENCES purchases(id),
+  item_id UUID REFERENCES items(id),
+  quantity NUMERIC DEFAULT 1,
+  unit_price INTEGER, -- cents
+  PRIMARY KEY (purchase_id, item_id)
+);
+
+-- Cost splitting results
+CREATE TABLE splits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  purchase_id UUID REFERENCES purchases(id),
+  user_id UUID REFERENCES users(id),
+  share_amount INTEGER NOT NULL, -- cents
+  rule TEXT CHECK (rule IN ('equal', 'quantity', 'custom')) NOT NULL
+);
+
+-- Group communication
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID REFERENCES groups(id),
+  item_id UUID REFERENCES items(id), -- nullable for threaded discussions
+  author_id UUID REFERENCES users(id),
+  body TEXT NOT NULL,
+  image_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Ad impression logging (minimal)
+CREATE TABLE ads_impressions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id), -- nullable for privacy
+  group_id UUID REFERENCES groups(id), -- nullable for privacy
+  slot TEXT CHECK (slot IN ('list_top', 'detail_bottom')),
+  creative_id TEXT,
+  shown_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## Cost Splitting Algorithms
+
+### Implementation Specifications
+
+#### Equal Split Algorithm
+```typescript
+function calculateEqualSplit(totalAmount: number, memberCount: number): Split[] {
+  const baseAmount = Math.floor(totalAmount / memberCount);
+  const remainder = totalAmount % memberCount;
+  
+  return members.map((member, index) => ({
+    user_id: member.id,
+    share_amount: baseAmount + (index < remainder ? 1 : 0),
+    rule: 'equal'
+  }));
+}
+```
+
+#### Quantity-Based Split Algorithm
+```typescript
+function calculateQuantitySplit(
+  totalAmount: number, 
+  purchaseItems: PurchaseItem[], 
+  members: User[]
+): Split[] {
+  const totalQuantity = purchaseItems.reduce((sum, item) => sum + item.quantity, 0);
+  
+  return members.map(member => {
+    const memberQuantity = purchaseItems
+      .filter(item => item.assignedTo === member.id)
+      .reduce((sum, item) => sum + item.quantity, 0);
+    
+    const shareRatio = memberQuantity / totalQuantity;
+    const shareAmount = Math.round(totalAmount * shareRatio);
+    
+    return {
+      user_id: member.id,
+      share_amount: shareAmount,
+      rule: 'quantity'
+    };
+  });
+}
+```
 
 ## Error Handling
 
-### API Error Standards
+### API Error Standards (Simplified)
 
 #### HTTP Status Codes
 - **400 Bad Request**: Invalid input data
 - **401 Unauthorized**: Missing or invalid authentication
-- **403 Forbidden**: Insufficient permissions
+- **403 Forbidden**: Insufficient group permissions
 - **404 Not Found**: Resource doesn't exist
-- **409 Conflict**: Business rule violation
+- **409 Conflict**: Business rule violation (e.g., duplicate invite code)
 - **422 Unprocessable Entity**: Validation errors
 - **500 Internal Server Error**: Unexpected server errors
 
@@ -253,98 +389,83 @@ interface ApiError {
 
 #### Error Boundaries
 - **Global Error Boundary**: Catch unexpected React errors
-- **Route-level Boundaries**: Handle page-specific errors
+- **Group-level Boundaries**: Handle group-specific errors
 - **Component Boundaries**: Isolate component failures
 
 #### User-Friendly Messages
 - **Network Errors**: "Connection problem, please try again"
 - **Validation Errors**: Field-specific error messages
-- **Business Logic Errors**: Contextual explanations with suggested actions
-
-### Payment Error Handling
-
-#### Stripe Integration
-- **Authorization Failures**: Clear messaging about payment method issues
-- **Capture Failures**: Automatic retry with exponential backoff
-- **Webhook Failures**: Dead letter queue for failed webhook processing
+- **Group Access Errors**: "You don't have permission to perform this action"
 
 ## Testing Strategy
 
 ### Backend Testing
 
 #### Unit Tests
-- **Service Layer**: Business logic validation
-- **Controller Layer**: Request/response handling
-- **Repository Layer**: Data access patterns
+- **Cost Splitting Logic**: Comprehensive testing of splitting algorithms
+- **Group Management**: Permission validation and invite code generation
+- **API Endpoints**: Request/response validation
 - **Utility Functions**: Pure function testing
 
 #### Integration Tests
 - **Database Integration**: Real database operations with test data
-- **External Service Mocking**: Stripe, S3, LLM service mocks
-- **API Endpoint Testing**: Full request/response cycle testing
+- **File Upload**: S3 integration testing with mocked services
+- **Real-time Updates**: SSE functionality testing
 
 ### Frontend Testing
 
 #### Component Testing
-- **Unit Tests**: Individual component behavior
-- **Integration Tests**: Component interaction testing
-- **Visual Regression**: Screenshot comparison testing
+- **UI Components**: Golden ratio layout validation
+- **Form Validation**: Input validation and error handling
+- **Real-time Updates**: SSE integration testing
 
 #### End-to-End Testing
-- **User Flows**: Complete order placement and fulfillment
-- **Cross-browser Testing**: Chrome, Firefox, Safari compatibility
-- **Mobile Testing**: Responsive design validation
+- **Group Workflows**: Complete group creation and management flows
+- **Shopping Flows**: Item creation, purchase recording, and cost splitting
+- **Communication**: Group chat and threaded discussions
 
 ### Test Data Management
 
 #### Fixtures and Factories
-- **User Factory**: Generate test users with various configurations
-- **Order Factory**: Create orders in different states
-- **Payment Factory**: Mock Stripe payment objects
-
-#### Test Environment
-- **Database**: Separate test database with migrations
-- **External Services**: Mock servers for Stripe, S3, LLM
-- **Seed Data**: Consistent test data for E2E tests
+- **User Factory**: Generate test users with minimal data
+- **Group Factory**: Create groups with various member configurations
+- **Purchase Factory**: Generate purchases with different splitting scenarios
 
 ## Security Considerations
 
-### Authentication Security
-- **JWT Security**: Short-lived tokens, secure signing algorithms
-- **Password Security**: bcrypt hashing with appropriate rounds
-- **Session Management**: Secure refresh token rotation
+### Privacy-First Security
+- **Minimal Data Collection**: Only email and display name required
+- **No PII Storage**: Explicit warnings about receipt image uploads
+- **Group Isolation**: Users can only access their own groups
+- **Invite Code Security**: Cryptographically secure 12-character codes
 
 ### Data Protection
-- **PII Handling**: Minimal collection, secure storage, GDPR compliance
-- **File Upload Security**: Virus scanning, file type validation, size limits
-- **Database Security**: Encrypted connections, parameterized queries
-
-### API Security
-- **Rate Limiting**: Prevent abuse with configurable limits
+- **EXIF Removal**: Automatic removal from uploaded images
 - **Input Validation**: Comprehensive validation at API boundaries
-- **CORS Configuration**: Restrictive CORS policies for production
+- **Rate Limiting**: Prevent abuse with configurable limits
 
-### Payment Security
-- **PCI Compliance**: Stripe handles card data, no PCI scope
-- **Webhook Security**: Signature verification for all webhooks
-- **Audit Logging**: Complete audit trail for financial operations
+### Authentication Security
+- **JWT Security**: Short-lived tokens with secure signing
+- **Password Security**: bcrypt hashing with appropriate rounds
+- **Session Management**: Secure refresh token rotation
 
 ## Performance Considerations
 
 ### Database Performance
-- **Query Optimization**: Efficient queries with proper indexing
-- **Connection Pooling**: Optimized database connection management
-- **Caching Strategy**: Redis for frequently accessed data
+- **Indexing Strategy**: Optimized indexes for group-based queries
+- **Connection Pooling**: Efficient database connection management
+- **Query Optimization**: Efficient queries for group data retrieval
 
 ### Frontend Performance
-- **Code Splitting**: Route-based and component-based splitting
-- **Image Optimization**: Next.js image optimization for receipts and photos
-- **Caching**: Aggressive caching for static assets and API responses
+- **Code Splitting**: Route-based splitting for optimal loading
+- **Image Optimization**: Next.js image optimization for receipts
+- **Caching**: Aggressive caching for group data and messages
+- **PWA Features**: Offline capability for cached data
 
-### Scalability Planning
-- **Horizontal Scaling**: Stateless API design for easy scaling
-- **Database Scaling**: Read replicas for reporting and analytics
-- **CDN Integration**: Global content delivery for static assets
+### Advertising Performance
+- **Lazy Loading**: Ad components loaded on demand
+- **Frequency Control**: Maximum one ad per screen view
+- **Non-blocking**: Ad loading doesn't block core functionality
 
 ## Deployment Architecture
 
@@ -354,9 +475,10 @@ interface ApiError {
 - **Production**: High-availability deployment with monitoring
 
 ### Infrastructure Components
-- **Application Servers**: Containerized Next.js and NestJS applications
+- **Application Servers**: Containerized Next.js application
+- **API Servers**: Containerized NestJS API
 - **Database**: Managed PostgreSQL with automated backups
-- **File Storage**: S3 with CDN for global distribution
+- **File Storage**: S3 with CDN for image distribution
 - **Monitoring**: Application performance monitoring and error tracking
 
-This design provides a solid foundation for implementing the Otsukai DX platform with proper separation of concerns, scalability considerations, and robust error handling throughout the system.
+This design provides a privacy-focused, simplified architecture that eliminates complex payment processing, KYC verification, and location tracking while maintaining robust group collaboration features and sustainable ad-based revenue generation.

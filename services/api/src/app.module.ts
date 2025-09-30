@@ -6,17 +6,14 @@ import { AppService } from './app.service';
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { ShoppersModule } from './shoppers/shoppers.module';
+import { GroupsModule } from './groups/groups.module';
+import { ShoppingItemsModule } from './shopping-items/shopping-items.module';
+import { PurchasesModule } from './purchases/purchases.module';
 import { OrdersModule } from './orders/orders.module';
-import { KycModule } from './kyc/kyc.module';
 import { StorageModule } from './storage/storage.module';
-import { LlmModule } from './llm/llm.module';
 import { ReceiptsModule } from './receipts/receipts.module';
-import { PaymentsModule } from './payments/payments.module';
 import { ChatModule } from './chat/chat.module';
 import { NotificationModule } from './notifications/notification.module';
-import { SubscriptionModule } from './subscriptions/subscription.module';
-import { MatchingModule } from './matching/matching.module';
 import { ItemsModule } from './items/items.module';
 
 @Module({
@@ -28,17 +25,14 @@ import { ItemsModule } from './items/items.module';
     PrismaModule,
     AuthModule,
     UsersModule,
-    ShoppersModule,
+    GroupsModule,
+    ShoppingItemsModule,
+    PurchasesModule,
     OrdersModule,
-    KycModule,
     StorageModule,
-    LlmModule,
     ReceiptsModule,
-    PaymentsModule,
     ChatModule,
     NotificationModule,
-    SubscriptionModule,
-    MatchingModule,
     ItemsModule,
   ],
   controllers: [AppController],

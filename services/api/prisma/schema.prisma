@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+// Otsukai DX Pivot - Privacy-First Group Shopping Schema
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -11,413 +11,203 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Management
+// User Management (Privacy-Minimal)
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  password_hash     String
-  phone             String?
-  subscription_tier String?  @default("basic") // basic, premium
-  first_name        String?
-  last_name         String?
-  referral_code     String?  @unique
-  referred_by       String?
-  role              String?  @default("user") // user, shopper, admin
-  last_active_at    DateTime?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password_hash String
+  display_name String
+  avatar_url   String?
+  created_at   DateTime @default(now())
 
   // Relations
-  orders            Order[]
-  chats             Chat[]
-  chat_messages     ChatMessage[]
+  created_groups   Group[]       @relation("GroupCreator")
+  group_memberships GroupMember[]
+  created_items    Item[]        @relation("ItemCreator")
+  purchases        Purchase[]    @relation("PurchaseCreator")
+  splits           Split[]
+  messages         Message[]     @relation("MessageAuthor")
   push_subscriptions PushSubscription[]
-  subscriptions     Subscription[]
-  service_credits   ServiceCredit[]
-  shopper_ratings   ShopperRating[]
   notification_logs NotificationLog[]
-  notification_preferences NotificationPreferences[]
-  shopper_profile   Shopper?
+  ad_impressions   AdImpression[]
 
   @@map("users")
 }
 
-model Shopper {
-  id          String   @id @default(uuid())
-  user_id     String   @unique
-  email       String   @unique
-  password_hash String
-  phone       String
-  first_name  String?
-  last_name   String?
-  kyc_status  String   @default("pending") // pending, approved, needs_review, rejected
-  risk_tier   String?  // L0, L1, L2, L-1
-  rating_avg  Float?
-  rating_count Int     @default(0)
-  status      String   @default("active") // active, suspended
-  is_online   Boolean  @default(false)
-  unavailable_until DateTime?
-  unavailability_reason String?
-  current_orders Int    @default(0)
-  subscription_tier String? @default("basic")
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  // Relations
-  user          User     @relation(fields: [user_id], references: [id])
-  orders        Order[]
-  chats         Chat[]
-  receipts      Receipt[]
-  kyc_documents KycDocument[]
-  push_subscriptions PushSubscription[]
-  preferences   ShopperPreferences?
-  ratings       ShopperRating[]
-  order_runs    OrderRun[]
-  notification_logs NotificationLog[]
-  notification_preferences NotificationPreferences[]
-
-  @@map("shoppers")
-}
-
+// Admin Management (Simplified)
 model Admin {
-  id         String   @id @default(uuid())
-  email      String   @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   password_hash String
-  role       String   @default("support") // support, manager, ops
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  // audit_logs relation removed - OrderAuditLog now supports multiple actor types
+  role         String   @default("support") // support, manager, ops
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
   @@map("admins")
 }
 
-// Order Management
-model Order {
-  id              String   @id @default(uuid())
-  user_id         String
-  shopper_id      String?
-  status          String   @default("new") // new, accepted, shopping, await_receipt_ok, enroute, delivered, cancelled
-  mode            String   // approve, delegate
-  receipt_check   String   // required, auto
-  estimate_amount Int      // JPY
-  auth_amount     Int?     // JPY
-  actual_amount   Int?     // JPY
-  deadline_ts     DateTime?
-  priority        Float?
-  address_json    Json
-  notes           String?
-  accepted_at     DateTime?
-  delivered_at    DateTime?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+// Group Management
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  invite_code String   @unique // 12-character alphanumeric
+  created_by  String
+  created_at  DateTime @default(now())
 
   // Relations
-  user          User           @relation(fields: [user_id], references: [id])
-  shopper       Shopper?       @relation(fields: [shopper_id], references: [id])
-  items         OrderItem[]
-  receipts      Receipt[]
-  payments      Payment[]
-  chats         Chat[]
-  chat_messages ChatMessage[]
-  audit_logs    OrderAuditLog[]
-  ratings       ShopperRating[]
-  order_runs    OrderRun[]
+  creator     User          @relation("GroupCreator", fields: [created_by], references: [id])
+  members     GroupMember[]
+  items       Item[]
+  purchases   Purchase[]
+  messages    Message[]
+  ad_impressions AdImpression[] @relation("GroupAdImpressions")
 
-  @@map("orders")
+  @@map("groups")
 }
 
-model OrderItem {
-  id         String  @id @default(uuid())
-  order_id   String
-  name       String
-  qty        String
-  price      Int?    // JPY
-  price_min  Int?    // JPY
-  price_max  Int?    // JPY
-  allow_subs Boolean @default(true)
-  notes      String?
-  created_at DateTime @default(now())
+model GroupMember {
+  user_id   String
+  group_id  String
+  role      String   @default("member") // owner, member
+  joined_at DateTime @default(now())
 
   // Relations
-  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
 
-  @@map("order_items")
+  @@id([user_id, group_id])
+  @@map("group_members")
+}
+
+// Shopping List Management
+model Item {
+  id         String   @id @default(uuid())
+  group_id   String
+  name       String
+  category   String?
+  quantity   String   @default("1")
+  note       String?
+  image_url  String?
+  status     String   @default("todo") // todo, purchased, cancelled
+  created_by String
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  // Relations
+  group         Group         @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  creator       User          @relation("ItemCreator", fields: [created_by], references: [id])
+  purchase_items PurchaseItem[]
+  messages      Message[]     @relation("ItemMessages")
+
+  @@map("items")
+}
+
+// Purchase Management
+model Purchase {
+  id               String   @id @default(uuid())
+  group_id         String
+  purchased_by     String
+  total_amount     Int      // in cents (JPY)
+  currency         String   @default("JPY")
+  receipt_image_url String?
+  purchased_at     DateTime @default(now())
+  note             String?
+
+  // Relations
+  group          Group         @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  purchaser      User          @relation("PurchaseCreator", fields: [purchased_by], references: [id])
+  purchase_items PurchaseItem[]
+  splits         Split[]
+
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  purchase_id String
+  item_id     String
+  quantity    Decimal @default(1)
+  unit_price  Int?    // in cents
+
+  // Relations
+  purchase Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
+  item     Item     @relation(fields: [item_id], references: [id], onDelete: Cascade)
+
+  @@id([purchase_id, item_id])
+  @@map("purchase_items")
+}
+
+// Cost Splitting
+model Split {
+  id           String @id @default(uuid())
+  purchase_id  String
+  user_id      String
+  share_amount Int    // in cents
+  rule         String // equal, quantity, custom
+
+  // Relations
+  purchase Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("splits")
 }
 
 // Communication
-model Chat {
+model Message {
   id         String   @id @default(uuid())
-  order_id   String   @unique
-  user_id    String?
-  shopper_id String?
-  status     String   @default("active") // active, closed
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  order    Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  user     User?         @relation(fields: [user_id], references: [id])
-  shopper  Shopper?      @relation(fields: [shopper_id], references: [user_id])
-  messages ChatMessage[]
-
-  @@map("chats")
-}
-
-model ChatMessage {
-  id             String   @id @default(uuid())
-  order_id       String
-  chat_id        String
-  sender         String   // user, shopper, system
-  sender_id      String?  // user_id or shopper_id
-  sender_role    String?  // user, shopper, admin
-  text           String
-  attachment_url String?
-  attachment_type String?
-  type           String   @default("text") // text, image, system
-  content        String?
-  metadata       Json?
-  read_at        DateTime?
-  created_at     DateTime @default(now())
-
-  // Relations
-  order    Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  chat     Chat     @relation(fields: [chat_id], references: [id], onDelete: Cascade)
-  user     User?    @relation(fields: [sender_id], references: [id])
-
-  @@map("chat_messages")
-}
-
-// Financial
-
-
-// KYC and Verification
-
-// Push Notifications
-
-// Audit and Logging
-model OrderAuditLog {
-  id         String   @id @default(uuid())
-  order_id   String
-  actor_id   String
-  actor_role String   // user, shopper, admin, system
-  action     String   // created, accepted, status_updated, payment_authorized, etc.
-  payload    Json?
+  group_id   String
+  item_id    String?  // nullable for threaded discussions
+  author_id  String
+  body       String
+  image_url  String?
   created_at DateTime @default(now())
 
   // Relations
-  order Order @relation(fields: [order_id], references: [id])
-  // Note: actor_id can reference different tables based on actor_role
-  // No foreign key constraint to allow flexibility
+  group  Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  item   Item? @relation("ItemMessages", fields: [item_id], references: [id], onDelete: Cascade)
+  author User  @relation("MessageAuthor", fields: [author_id], references: [id], onDelete: Cascade)
 
-  @@map("order_audit_logs")
+  @@map("messages")
 }
 
-// Service Credits
-model ServiceCredit {
-  id         String    @id @default(uuid())
-  user_id    String
-  amount     Int       // JPY
-  reason     String    // referral, promotion, refund, etc.
-  description String?
-  order_id   String?
-  metadata   Json?
-  used_at    DateTime?
-  used_for_order_id String?
-  expires_at DateTime?
-  created_at DateTime  @default(now())
-
-  // Relations
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  audit_logs ServiceCreditAuditLog[]
-
-  @@map("service_credits")
-}
-// Receipt Management
-model Receipt {
-  id         String   @id @default(uuid())
-  order_id   String
-  shopper_id String
-  image_url  String
-  status     String   @default("pending") // pending, approved, rejected
-  submitted_at DateTime @default(now())
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  shopper    Shopper  @relation(fields: [shopper_id], references: [id])
-
-  @@map("receipts")
-}
-
-// Payment Management
-model Payment {
-  id                    String   @id @default(uuid())
-  order_id              String
-  stripe_payment_intent_id String @unique
-  stripe_pi             String   @unique
-  amount                Int      // JPY
-  status                String   @default("pending") // pending, authorized, captured, refunded, failed
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
-
-  // Relations
-  order                 Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-
-  @@map("payments")
-}
-
-// Chat System
-
-// KYC Management
-model KycDocument {
+// Advertising (Minimal Tracking)
+model AdImpression {
   id          String   @id @default(uuid())
-  shopper_id  String
-  type        String   // identity, address, bank
-  kind        String   // id_front, id_back, selfie
-  file_url    String
-  image_url   String?
-  status      String   @default("pending") // pending, approved, rejected
-  uploaded_at DateTime @default(now())
+  user_id     String?  // nullable for privacy
+  group_id    String?  // nullable for privacy
+  slot        String   // list_top, detail_bottom
+  creative_id String
+  shown_at    DateTime @default(now())
+
+  // Relations (optional for privacy)
+  user  User?  @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  group Group? @relation("GroupAdImpressions", fields: [group_id], references: [id], onDelete: SetNull)
+
+  @@map("ads_impressions")
+}
+
+// Push Notifications (Simplified)
+model PushSubscription {
+  id          String   @id @default(uuid())
+  user_id     String
+  endpoint    String
+  p256dh      String
+  auth        String
+  device_info Json?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
   // Relations
-  shopper     Shopper  @relation(fields: [shopper_id], references: [id], onDelete: Cascade)
-
-  @@map("kyc_documents")
-}
-
-// Notification System
-model PushSubscription {
-  id         String   @id @default(uuid())
-  user_id    String?
-  shopper_id String?
-  endpoint   String
-  p256dh     String
-  auth       String
-  device_info Json?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  user       User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  shopper    Shopper? @relation(fields: [shopper_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("push_subscriptions")
 }
 
-// Audit Logging
-
-// Subscription Management
-model Subscription {
-  id              String    @id @default(uuid())
-  user_id         String
-  tier            String    // basic, premium, enterprise
-  status          String    // active, paused, cancelled
-  start_date      DateTime
-  end_date        DateTime?
-  pause_reason    String?
-  resume_date     DateTime?
-  current_period_start DateTime
-  current_period_end   DateTime
-  orders_limit         Int      @default(10)
-  priority_orders_limit Int     @default(1)
-  orders_this_period   Int      @default(0)
-  priority_orders_used Int      @default(0)
-  preferred_time_slots Json?
-  preferred_store_types Json?
-  max_delivery_distance Int? @default(10)
-  auto_accept_orders Boolean? @default(false)
-  metadata Json?
-  default_priority     String? @default("standard")
-  cancellation_reason  String?
-  cancellation_feedback String?
-  cancelled_at         DateTime?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-
-  // Relations
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  audit_logs SubscriptionAuditLog[]
-  usages     SubscriptionUsage[]
-
-  @@map("subscriptions")
-}
-
-// Shopper Preferences
-model ShopperPreferences {
-  id         String   @id @default(uuid())
-  shopper_id String   @unique
-  preferences Json?
-  available_time_slots Json?
-  preferred_store_types Json?
-  max_delivery_distance Int? @default(10)
-  max_concurrent_orders Int? @default(3)
-  accepts_urgent_orders Boolean? @default(true)
-  min_order_value Float? @default(0)
-  location_lat Float?
-  location_lng Float?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  shopper Shopper @relation(fields: [shopper_id], references: [user_id])
-
-  @@map("shopper_preferences")
-}
-
-// Shopper Ratings
-model ShopperRating {
-  id            String   @id @default(uuid())
-  shopper_id    String
-  order_id      String   @unique
-  user_id       String
-  overall_rating Float
-  quality_rating Float?
-  timeliness_rating Float?
-  communication_rating Float?
-  accuracy_rating Float?
-  comment       String?
-  tags          Json?
-  created_at    DateTime @default(now())
-
-  // Relations
-  shopper Shopper @relation(fields: [shopper_id], references: [user_id])
-  order   Order   @relation(fields: [order_id], references: [id])
-  user    User    @relation(fields: [user_id], references: [id])
-
-  @@map("shopper_ratings")
-}
-
-// Order Run (for matching service)
-model OrderRun {
-  id         String   @id @default(uuid())
-  order_id   String
-  shopper_id String
-  status     String   // active, completed, cancelled
-  rating     Float?
-  payment_amount Int?
-  total_orders Int?
-  started_at DateTime @default(now())
-  ended_at   DateTime?
-  created_at DateTime @default(now())
-
-  // Relations
-  order   Order   @relation(fields: [order_id], references: [id])
-  shopper Shopper @relation(fields: [shopper_id], references: [user_id])
-
-  @@map("order_runs")
-}
-
-// Notification Log
+// Notification Log (Simplified)
 model NotificationLog {
   id         String   @id @default(uuid())
-  user_id    String?
-  shopper_id String?
-  type       String   // push, email, sms
+  user_id    String
+  type       String   // push, email
   title      String
   body       String
   payload    Json?
@@ -426,122 +216,7 @@ model NotificationLog {
   created_at DateTime @default(now())
 
   // Relations
-  user    User?    @relation(fields: [user_id], references: [id])
-  shopper Shopper? @relation(fields: [shopper_id], references: [user_id])
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_logs")
-}
-
-// Notification Preferences
-model NotificationPreferences {
-  id         String   @id @default(uuid())
-  user_id    String?  @unique
-  shopper_id String?
-  preferences Json?
-  order_updates Boolean @default(true)
-  chat_messages Boolean @default(true)
-  promotional Boolean @default(false)
-  system_alerts Boolean @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  // Relations
-  user    User?    @relation(fields: [user_id], references: [id])
-  shopper Shopper? @relation(fields: [shopper_id], references: [user_id])
-
-  @@map("notification_preferences")
-}
-
-// Subscription Audit Log
-model SubscriptionAuditLog {
-  id              String   @id @default(uuid())
-  subscription_id String
-  user_id         String?
-  action          String
-  actor_id        String?
-  old_tier        String?
-  new_tier        String?
-  details         Json?
-  payload         Json?
-  created_at      DateTime @default(now())
-
-  // Relations
-  subscription Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
-
-  @@map("subscription_audit_logs")
-}
-
-// Service Credit Audit Log
-model ServiceCreditAuditLog {
-  id         String   @id @default(uuid())
-  credit_id  String?
-  service_credit_id String?
-  user_id    String?
-  action     String
-  actor_id   String?
-  amount     Int?
-  details    Json?
-  payload    Json?
-  created_at DateTime @default(now())
-
-  // Relations
-  credit ServiceCredit? @relation(fields: [credit_id], references: [id], onDelete: Cascade)
-
-  @@map("service_credit_audit_logs")
-}
-
-// Subscription Usage
-model SubscriptionUsage {
-  id              String   @id @default(uuid())
-  subscription_id String
-  user_id         String?
-  usage_type      String   // order, priority_order
-  usage_date      DateTime
-  amount          Int?
-  created_at      DateTime @default(now())
-
-  // Relations
-  subscription Subscription @relation(fields: [subscription_id], references: [id])
-
-  @@map("subscription_usages")
-}
-
-// Item Categories
-model ItemCategory {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  icon        String?  // Icon name or URL
-  color       String?  // Hex color code
-  sort_order  Int      @default(0)
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  // Relations
-  items       Item[]
-
-  @@map("item_categories")
-}
-
-// Items
-model Item {
-  id          String   @id @default(uuid())
-  category_id String
-  name        String
-  description String?
-  price_min   Int?     // JPY
-  price_max   Int?     // JPY
-  unit        String?  // 個, 本, パック, etc.
-  image_url   String?
-  is_active   Boolean  @default(true)
-  sort_order  Int      @default(0)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  // Relations
-  category    ItemCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
-
-  @@unique([name, category_id], name: "name_category")
-  @@map("items")
 }

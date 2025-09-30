@@ -1,27 +1,26 @@
-# Otsy
+# Otsukai DX Pivot
 
-Voice-enabled shopping service platform that connects users who need items purchased with shoppers who can fulfill those requests.
+Privacy-first household and friend group collaborative shopping management application. Groups of family members or friends can collectively manage shopping lists, coordinate purchases, and fairly split costs with minimal personal information collection.
 
 ## Architecture
 
 This is a monorepo containing:
 
-- **apps/user-web** - User-facing Next.js application (port 3000)
-- **apps/shopper-web** - Shopper Next.js application (port 3001)  
-- **apps/admin-web** - Admin Next.js application (port 3002)
+- **apps/web** - Single Next.js PWA application (port 3000)
 - **services/api** - NestJS backend API (port 4000)
-- **packages/ui** - Shared UI components with Tailwind CSS
+- **packages/ui** - Shared UI components with golden ratio design system
 - **packages/types** - Shared TypeScript types
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS (PWA enabled)
 - **Backend**: NestJS, TypeScript, Prisma ORM
 - **Database**: PostgreSQL
-- **Authentication**: JWT with refresh tokens
-- **Payments**: Stripe Payment Intents
-- **Storage**: S3-compatible storage
-- **Monorepo**: pnpm workspaces + Turborepo
+- **Authentication**: JWT with refresh tokens (email + display name only)
+- **Storage**: S3-compatible storage (receipt images only)
+- **Real-time**: Server-Sent Events (SSE)
+- **Revenue**: Non-intrusive advertising
+- **Monorepo**: Yarn workspaces + Turborepo
 
 ## Getting Started
 
@@ -119,33 +118,30 @@ npm run db:reset       # Reset database (development only)
 ## Project Structure
 
 ```
-otsy/
+otsukai-dx/
 ├── apps/
-│   ├── user-web/          # User application
-│   ├── shopper-web/       # Shopper application
-│   └── admin-web/         # Admin application
+│   └── web/               # Single PWA application
 ├── services/
 │   └── api/               # Backend API
 ├── packages/
-│   ├── ui/                # Shared components
+│   ├── ui/                # Shared components with golden ratio design
 │   └── types/             # Shared types
-├── tests/
-│   └── e2e/               # End-to-end tests
-└── docs/                  # Documentation
+└── tests/
+    └── e2e/               # End-to-end tests
 ```
 
 ## Features
 
-- 🎤 Voice-to-shopping list conversion using GPT-4o mini
-- 📱 Mobile-first responsive design
-- 💳 Secure payment processing with Stripe
-- 📸 Receipt verification system
-- 💬 Real-time chat between users and shoppers
-- 🔐 KYC verification for shoppers
-- 📊 Admin dashboard for platform management
-- 🔔 Push notifications for order updates
-- 🤖 Advanced AI-powered natural language processing
-- 🎯 High-accuracy Japanese voice transcription with Whisper
+- 👥 Group creation and management with invite codes
+- 🛒 Collaborative shopping lists with real-time updates
+- 💰 Sophisticated cost splitting (equal/quantity/custom)
+- 💬 Group chat with item-specific threaded discussions
+- 📸 Receipt image upload with PII warnings
+- 🔒 Privacy-first design (email + display name only)
+- 📱 Mobile-optimized with golden ratio design principles
+- 📊 Non-intrusive advertising revenue model
+- ♿ WCAG AA accessibility compliance
+- 🔔 Push notifications for group activities
 
 ## License
 
