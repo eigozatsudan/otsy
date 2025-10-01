@@ -84,17 +84,6 @@ export class ResetPasswordDto {
   new_password: string;
 }
 
-export class AuthResponseDto {
-  @ApiProperty({ description: 'JWT access token' })
-  access_token: string;
-
-  @ApiProperty({ description: 'JWT refresh token' })
-  refresh_token: string;
-
-  @ApiProperty({ description: 'User information' })
-  user: UserProfileDto;
-}
-
 export class UserProfileDto {
   @ApiProperty({ description: 'User ID' })
   id: string;
@@ -110,6 +99,17 @@ export class UserProfileDto {
 
   @ApiProperty({ description: 'Account creation date' })
   created_at: Date;
+}
+
+export class AuthResponseDto {
+  @ApiProperty({ description: 'JWT access token' })
+  access_token: string;
+
+  @ApiProperty({ description: 'JWT refresh token' })
+  refresh_token: string;
+
+  @ApiProperty({ description: 'User information' })
+  user: UserProfileDto;
 }
 
 export class RefreshTokenDto {
