@@ -3,13 +3,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
-import { ShoppersService } from '../../shoppers/shoppers.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface JwtPayload {
   sub: string;
   email: string;
-  role: 'user' | 'shopper' | 'admin';
+  role: 'user' | 'admin';
   iat?: number;
   exp?: number;
 }
@@ -19,7 +18,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
     private usersService: UsersService,
-    private shoppersService: ShoppersService,
     private prisma: PrismaService,
   ) {
     super({
@@ -37,9 +35,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       switch (role) {
         case 'user':
           user = await this.usersService.findOne(id);
-          break;
-        case 'shopper':
-          user = await this.shoppersService.findOne(id);
           break;
         case 'admin':
           user = await this.prisma.admin.findUnique({

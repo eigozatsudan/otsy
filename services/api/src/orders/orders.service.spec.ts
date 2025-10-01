@@ -254,7 +254,7 @@ describe('OrdersService', () => {
         });
       });
 
-      const result = await service.updateStatus('shopper-1', 'shopper', 'order-1', updateStatusDto);
+      const result = await service.updateStatus('user-1', 'user', 'order-1', updateStatusDto);
 
       expect(result).toBeDefined();
     });
@@ -269,7 +269,7 @@ describe('OrdersService', () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(acceptedOrder as any);
 
       await expect(
-        service.updateStatus('shopper-1', 'shopper', 'order-1', updateStatusDto)
+        service.updateStatus('user-1', 'user', 'order-1', updateStatusDto)
       ).rejects.toThrow(ForbiddenException);
     });
 
@@ -283,7 +283,7 @@ describe('OrdersService', () => {
       jest.spyOn(service, 'findOne').mockResolvedValue(deliveredOrder as any);
 
       await expect(
-        service.updateStatus('shopper-1', 'shopper', 'order-1', {
+        service.updateStatus('user-1', 'user', 'order-1', {
           status: OrderStatus.SHOPPING,
         })
       ).rejects.toThrow(BadRequestException);

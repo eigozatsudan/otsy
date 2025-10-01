@@ -28,7 +28,7 @@ interface AuthenticatedSocket extends Socket {
 @WebSocketGateway({
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ['https://user.otsy.app', 'https://shopper.otsy.app', 'https://admin.otsy.app']
+      ? ['https://user.otsy.app', 'https://admin.otsy.app']
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
     credentials: true,
   },
@@ -114,7 +114,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
       
       // Validate role
-      if (!['user', 'shopper', 'admin'].includes(payload.role)) {
+      if (!['user', 'admin'].includes(payload.role)) {
         this.logger.warn(`Invalid user role: ${payload.role}`);
         client.disconnect();
         return;
@@ -229,54 +229,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         hasAccess = true;
       } else if (client.userRole === 'user') {
         hasAccess = chat.user_id === client.userId;
-      } else if (client.userRole === 'shopper') {
-        // For shoppers, check if they are the shopper for this chat
-        // JWT sub field contains shopper ID, so we use getShopperById
-        try {
-          const shopper = await this.chatService.getShopperById(client.userId);
-          this.logger.log(`Shopper lookup result:`, {
-            userId: client.userId,
-            shopper: shopper,
-            chatShopperId: chat.shopper_id
-          });
-          
-          if (shopper) {
-            // Check if the shopper is assigned to this chat
-            // chat.shopper_id contains the user_id, so we compare with shopper.user_id
-            hasAccess = chat.shopper_id === shopper.user_id;
-            this.logger.log(`Shopper access check - chat comparison: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, shopper.user_id: ${shopper.user_id})`);
-            
-            // If not found by chat.shopper_id, check if the shopper is assigned to the order
-            if (!hasAccess) {
-              try {
-                const order = await this.chatService.getOrderById(data.chat_id);
-                this.logger.log(`Order-based access check:`, {
-                  orderShopperId: order.shopper_id,
-                  clientUserId: client.userId,
-                  shopperId: shopper.id,
-                  shopperUserId: shopper.user_id
-                });
-                
-                // Check if the shopper is assigned to this order
-                // order.shopper_id contains the shopper's ID, so we compare with shopper.id
-                if (order.shopper_id === shopper.id) {
-                  hasAccess = true;
-                  this.logger.log(`Shopper access granted via order assignment`);
-                }
-              } catch (error) {
-                this.logger.warn(`Failed to check order-based access:`, error);
-              }
-            }
-          } else {
-            this.logger.warn(`Shopper not found for user ${client.userId}`);
-          }
-        } catch (error) {
-          this.logger.warn(`Failed to get shopper info for user ${client.userId}:`, error);
-        }
-        
-        if (!hasAccess) {
-          this.logger.warn(`Shopper access denied - not assigned to this order`);
-        }
+      // Shopper functionality has been removed in the pivot
       }
 
       this.logger.log(`Access check for user ${client.userId} (${client.userRole}):`, {
@@ -399,54 +352,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         hasAccess = true;
       } else if (client.userRole === 'user') {
         hasAccess = chat.user_id === client.userId;
-      } else if (client.userRole === 'shopper') {
-        // For shoppers, check if they are the shopper for this chat
-        // JWT sub field contains shopper ID, so we use getShopperById
-        try {
-          const shopper = await this.chatService.getShopperById(client.userId);
-          this.logger.log(`Send message - Shopper lookup result:`, {
-            userId: client.userId,
-            shopper: shopper,
-            chatShopperId: chat.shopper_id
-          });
-          
-          if (shopper) {
-            // Check if the shopper is assigned to this chat
-            // chat.shopper_id contains the user_id, so we compare with shopper.user_id
-            hasAccess = chat.shopper_id === shopper.user_id;
-            this.logger.log(`Send message - Shopper access check - chat comparison: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, shopper.user_id: ${shopper.user_id})`);
-            
-            // If not found by chat.shopper_id, check if the shopper is assigned to the order
-            if (!hasAccess) {
-              try {
-                const order = await this.chatService.getOrderById(data.chatId);
-                this.logger.log(`Send message - Order-based access check:`, {
-                  orderShopperId: order.shopper_id,
-                  clientUserId: client.userId,
-                  shopperId: shopper.id,
-                  shopperUserId: shopper.user_id
-                });
-                
-                // Check if the shopper is assigned to this order
-                // order.shopper_id contains the shopper's ID, so we compare with shopper.id
-                if (order.shopper_id === shopper.id) {
-                  hasAccess = true;
-                  this.logger.log(`Send message - Shopper access granted via order assignment`);
-                }
-              } catch (error) {
-                this.logger.warn(`Send message - Failed to check order-based access:`, error);
-              }
-            }
-          } else {
-            this.logger.warn(`Send message - Shopper not found for user ${client.userId}`);
-          }
-        } catch (error) {
-          this.logger.warn(`Send message - Failed to get shopper info for user ${client.userId}:`, error);
-        }
-        
-        if (!hasAccess) {
-          this.logger.warn(`Send message - Shopper access denied - not assigned to this order`);
-        }
+      // Shopper functionality has been removed in the pivot
       }
 
       this.logger.log(`Send message access check for user ${client.userId} (${client.userRole}):`, {
@@ -469,7 +375,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       const message = await this.chatService.sendMessage(
         chatId,
         client.userId,
-        client.userRole as 'user' | 'shopper',
+        client.userRole as 'user',
         data.message,
       );
 
@@ -490,7 +396,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
 
       // Send push notification to offline users
-      const otherParticipantId = chat.user_id === client.userId ? chat.shopper_id : chat.user_id;
+      const otherParticipantId = chat.user_id; // Shopper functionality removed
       const isOtherUserOnline = this.connectedUsers.has(otherParticipantId);
 
       if (!isOtherUserOnline) {
@@ -593,7 +499,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     // Send push notifications
     await Promise.all([
       this.chatService.sendOrderUpdateNotification(chat.user_id, update),
-      this.chatService.sendOrderUpdateNotification(chat.shopper_id, update),
+      // Shopper functionality removed
     ]);
   }
 

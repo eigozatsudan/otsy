@@ -25,40 +25,7 @@ import {
 export class ReceiptsController {
   constructor(private readonly receiptsService: ReceiptsService) {}
 
-  // Shopper endpoints
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Post('upload-url')
-  async getUploadUrl(
-    @CurrentUser() user: any,
-    @Body() getUploadUrlDto: GetReceiptUploadUrlDto
-  ) {
-    return this.receiptsService.generateUploadUrl(user.id, getUploadUrlDto);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Post()
-  async submitReceipt(
-    @CurrentUser() user: any,
-    @Body() submitReceiptDto: SubmitReceiptDto
-  ) {
-    return this.receiptsService.submitReceipt(user.id, submitReceiptDto);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Get('my-receipts')
-  async getMyReceipts(@CurrentUser() user: any) {
-    return this.receiptsService.getReceiptsByShopper(user.id);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Delete(':id')
-  async deleteReceipt(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.receiptsService.deleteReceipt(id, user.id, 'shopper');
-  }
+  // Shopper endpoints have been removed in the pivot
 
   // User endpoints
   @UseGuards(RolesGuard)
@@ -88,7 +55,7 @@ export class ReceiptsController {
     const canView = 
       user.role === 'admin' ||
       (user.role === 'user' && receipt.order.user_id === user.id) ||
-      (user.role === 'shopper' && receipt.shopper_id === user.id);
+      // Shopper functionality removed
 
     if (!canView) {
       throw new Error('Access denied');

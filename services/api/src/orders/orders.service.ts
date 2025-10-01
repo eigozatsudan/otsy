@@ -179,64 +179,10 @@ export class OrdersService {
     };
   }
 
-  async acceptOrder(shopperId: string, orderId: string, acceptOrderDto: AcceptOrderDto) {
-    // Validate shopper can accept orders
-    const shopper = await this.prisma.shopper.findUnique({
-      where: { id: shopperId },
-    });
-
-    if (!shopper) {
-      throw new NotFoundException('Shopper not found');
-    }
-
-    if (shopper.status !== 'active' || shopper.kyc_status !== 'approved') {
-      throw new ForbiddenException('Shopper not eligible to accept orders');
-    }
-
-    // Get order and validate it can be accepted
-    const order = await this.findOne(orderId);
-
-    if (order.status !== OrderStatus.NEW) {
-      throw new BadRequestException('Order cannot be accepted in current status');
-    }
-
-    if (order.shopper_id) {
-      throw new BadRequestException('Order already has a shopper assigned');
-    }
-
-    // Update order status and assign shopper
-    const updatedOrder = await this.prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id: orderId },
-        data: {
-          shopper_id: shopperId,
-          status: OrderStatus.ACCEPTED,
-        },
-      });
-
-      // Create audit log
-      await tx.orderAuditLog.create({
-        data: {
-          order_id: orderId,
-          actor_id: shopperId,
-          actor_role: 'shopper',
-          action: 'order_accepted',
-          payload: {
-            note: acceptOrderDto.note,
-            estimated_completion: acceptOrderDto.estimated_completion,
-          },
-        },
-      });
-
-      return updated;
-    });
-
-    return this.findOne(updatedOrder.id);
-  }
 
   async updateStatus(
     actorId: string, 
-    actorRole: 'user' | 'shopper' | 'admin',
+    actorRole: 'user' | 'admin',
     orderId: string, 
     updateStatusDto: UpdateOrderStatusDto
   ) {
@@ -247,7 +193,7 @@ export class OrdersService {
       throw new ForbiddenException('Not authorized to update this order');
     }
 
-    if (actorRole === 'shopper' && order.shopper_id !== actorId) {
+    // Shopper functionality has been removed
       throw new ForbiddenException('Not authorized to update this order');
     }
 
@@ -404,7 +350,7 @@ export class OrdersService {
         data: {
           order_id: orderId,
           actor_id: shopperId,
-          actor_role: 'shopper',
+          actor_role: 'user', // Shopper functionality removed
           action: 'order_cancelled',
           payload: {
             reason,
@@ -419,58 +365,6 @@ export class OrdersService {
     return this.findOne(updatedOrder.id);
   }
 
-  async getAvailableOrders(shopperId: string, filterDto: Partial<OrderFilterDto> = {}) {
-    // Check if shopper can accept orders
-    const shopper = await this.prisma.shopper.findUnique({
-      where: { id: shopperId },
-    });
-
-    if (!shopper || shopper.status !== 'active' || shopper.kyc_status !== 'approved') {
-      return { orders: [], pagination: { page: 1, limit: 20, total: 0, pages: 0 } };
-    }
-
-    // Get available orders (new status, no shopper assigned)
-    const { page = 1, limit = 20 } = filterDto;
-    const skip = (page - 1) * limit;
-
-    const where = {
-      status: OrderStatus.NEW,
-      shopper_id: null,
-    };
-
-    const [orders, total] = await Promise.all([
-      this.prisma.order.findMany({
-        where,
-        include: {
-          items: true,
-          user: {
-            select: {
-              id: true,
-              email: true,
-              subscription_tier: true,
-            },
-          },
-        },
-        orderBy: [
-          { priority: 'desc' },
-          { created_at: 'asc' },
-        ],
-        skip,
-        take: limit,
-      }),
-      this.prisma.order.count({ where }),
-    ]);
-
-    return {
-      orders,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
-    };
-  }
 
   async getOrderHistory(userId: string, filterDto: Partial<OrderFilterDto> = {}) {
     const { page = 1, limit = 20, status } = filterDto;
@@ -668,9 +562,9 @@ export class OrdersService {
   private validateStatusTransition(
     currentStatus: OrderStatus, 
     newStatus: OrderStatus, 
-    actorRole: 'user' | 'shopper' | 'admin'
+    actorRole: 'user' | 'admin'
   ) {
-    const validTransitions: Record<OrderStatus, { [key in 'user' | 'shopper' | 'admin']?: OrderStatus[] }> = {
+    const validTransitions: Record<OrderStatus, { [key in 'user' | 'admin']?: OrderStatus[] }> = {
       [OrderStatus.NEW]: {
         user: [OrderStatus.CANCELLED],
         admin: [OrderStatus.CANCELLED],

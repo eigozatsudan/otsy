@@ -107,7 +107,7 @@ export class ReceiptsService {
         data: {
           order_id: submitReceiptDto.order_id,
           actor_id: shopperId,
-          actor_role: 'shopper',
+          actor_role: 'user', // Shopper functionality removed
           action: 'receipt_submitted',
           payload: {
             receipt_id: newReceipt.id,
@@ -296,7 +296,7 @@ export class ReceiptsService {
     const canView = 
       userRole === 'admin' ||
       (userRole === 'user' && receipt.order.user_id === userId) ||
-      (userRole === 'shopper' && receipt.shopper_id === userId);
+      // Shopper functionality removed
 
     if (!canView) {
       throw new ForbiddenException('Not authorized to view this receipt');
@@ -315,8 +315,7 @@ export class ReceiptsService {
     // Check permissions
     const canDelete = 
       actorRole === 'admin' ||
-      (actorRole === 'shopper' && receipt.shopper_id === actorId && 
-       receipt.order.status === OrderStatus.SHOPPING);
+      // Shopper functionality removed
 
     if (!canDelete) {
       throw new ForbiddenException('Not authorized to delete this receipt');
@@ -361,7 +360,7 @@ export class ReceiptsService {
     const canProcess = 
       actorRole === 'admin' ||
       (actorRole === 'user' && receipt.order.user_id === actorId) ||
-      (actorRole === 'shopper' && receipt.shopper_id === actorId);
+      // Shopper functionality removed
 
     if (!canProcess) {
       throw new ForbiddenException('Not authorized to process this receipt');

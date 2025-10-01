@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { RegisterUserDto, RegisterShopperDto, RegisterAdminDto } from './dto/register.dto';
+import { RegisterUserDto, RegisterAdminDto } from './dto/register.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 
 @Injectable()
@@ -22,11 +22,6 @@ export class AuthService {
       return { ...result, role: 'user' };
     }
 
-    const shopper = await this.prisma.shopper.findUnique({ where: { email } });
-    if (shopper && await bcrypt.compare(password, shopper.password_hash)) {
-      const { password_hash, ...result } = shopper;
-      return { ...result, role: 'shopper' };
-    }
 
     const admin = await this.prisma.admin.findUnique({ where: { email } });
     if (admin && await bcrypt.compare(password, admin.password_hash)) {
@@ -37,32 +32,6 @@ export class AuthService {
     return null;
   }
 
-  async validateShopper(email: string, password: string) {
-    const shopper = await this.prisma.shopper.findUnique({ 
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        phone: true,
-        kyc_status: true,
-        risk_tier: true,
-        rating_avg: true,
-        rating_count: true,
-        status: true,
-        is_online: true,
-        created_at: true,
-        updated_at: true,
-        password_hash: true,
-      }
-    });
-    if (shopper && await bcrypt.compare(password, shopper.password_hash)) {
-      const { password_hash, ...result } = shopper;
-      return result;
-    }
-    return null;
-  }
 
   async login(user: any) {
     const payload: JwtPayload = {
@@ -91,42 +60,6 @@ export class AuthService {
     };
   }
 
-  async loginShopper(shopper: any) {
-    const payload: JwtPayload = {
-      sub: shopper.id,
-      email: shopper.email,
-      role: 'shopper',
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m',
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
-    });
-
-    return {
-      shopper: {
-        id: shopper.id,
-        email: shopper.email,
-        firstName: shopper.first_name || '',
-        lastName: shopper.last_name || '',
-        phone: shopper.phone,
-        status: shopper.is_online ? 'available' : 'offline',
-        rating: shopper.rating_avg || 0,
-        totalOrders: shopper.rating_count || 0,
-        kycStatus: shopper.kyc_status || 'pending',
-        riskTier: shopper.risk_tier || 'L0',
-        isVerified: shopper.kyc_status === 'approved',
-        createdAt: shopper.created_at,
-        updatedAt: shopper.updated_at,
-      },
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
-  }
 
   async refreshToken(refreshToken: string) {
     try {
@@ -190,50 +123,6 @@ export class AuthService {
     return { ...user, role: 'user' };
   }
 
-  async registerShopper(registerDto: RegisterShopperDto) {
-    const existingUser = await this.findUserByEmail(registerDto.email);
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
-    // Create user first
-    const user = await this.prisma.user.create({
-      data: {
-        email: registerDto.email,
-        password_hash: hashedPassword,
-        phone: registerDto.phone,
-        role: 'shopper',
-      },
-    });
-
-    const shopper = await this.prisma.shopper.create({
-      data: {
-        user_id: user.id,
-        email: registerDto.email,
-        password_hash: hashedPassword,
-        phone: registerDto.phone,
-      },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        phone: true,
-        kyc_status: true,
-        risk_tier: true,
-        rating_avg: true,
-        rating_count: true,
-        status: true,
-        is_online: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
-
-    return { ...shopper, role: 'shopper' };
-  }
 
   async registerAdmin(registerDto: RegisterAdminDto) {
     const existingUser = await this.findUserByEmail(registerDto.email);
@@ -264,8 +153,6 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) return user;
 
-    const shopper = await this.prisma.shopper.findUnique({ where: { email } });
-    if (shopper) return shopper;
 
     const admin = await this.prisma.admin.findUnique({ where: { email } });
     if (admin) return admin;
@@ -277,8 +164,6 @@ export class AuthService {
     switch (role) {
       case 'user':
         return this.prisma.user.findUnique({ where: { id } });
-      case 'shopper':
-        return this.prisma.shopper.findUnique({ where: { id } });
       case 'admin':
         return this.prisma.admin.findUnique({ where: { id } });
       default:
@@ -322,45 +207,4 @@ export class AuthService {
     };
   }
 
-  async getShopperProfile(shopperId: string) {
-    const shopper = await this.prisma.shopper.findUnique({
-      where: { id: shopperId },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        phone: true,
-        status: true,
-        rating_avg: true,
-        rating_count: true,
-        current_orders: true,
-        kyc_status: true,
-        risk_tier: true,
-        is_online: true,
-        created_at: true,
-        updated_at: true,
-      },
-    });
-
-    if (!shopper) {
-      throw new UnauthorizedException('Shopper not found');
-    }
-
-    return {
-      id: shopper.id,
-      email: shopper.email,
-      firstName: shopper.first_name || '',
-      lastName: shopper.last_name || '',
-      phone: shopper.phone,
-      status: shopper.is_online ? 'available' : 'offline',
-      rating: shopper.rating_avg || 0,
-      totalOrders: shopper.rating_count || 0,
-      kycStatus: shopper.kyc_status || 'pending',
-      riskTier: shopper.risk_tier || 'L0',
-      isVerified: shopper.kyc_status === 'approved',
-      createdAt: shopper.created_at,
-      updatedAt: shopper.updated_at,
-    };
-  }
 }

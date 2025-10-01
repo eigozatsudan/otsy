@@ -8,7 +8,6 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { UsersModule } from '../users/users.module';
-import { ShoppersModule } from '../shoppers/shoppers.module';
 
 @Module({
   imports: [
@@ -22,7 +21,6 @@ import { ShoppersModule } from '../shoppers/shoppers.module';
       inject: [ConfigService],
     }),
     UsersModule,
-    ShoppersModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy, RolesGuard],

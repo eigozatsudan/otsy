@@ -41,7 +41,7 @@ export class ChatController {
   // Chat management endpoints
   @Post()
   @UseGuards(RolesGuard)
-  @Roles('user', 'shopper', 'admin')
+  @Roles('user', 'admin')
   async createChat(@CurrentUser() user: any, @Body() createChatDto: CreateChatDto) {
     return this.chatService.createChat(createChatDto);
   }
@@ -66,13 +66,7 @@ export class ChatController {
       chat.user_id === user.id || 
       user.role === 'admin';
 
-    // If user is a shopper, check if they are the shopper for this chat
-    if (!hasAccess && user.role === 'shopper') {
-      const shopper = await this.chatService.getShopperById(user.id);
-      if (shopper && chat.shopper_id === shopper.user_id) {
-        hasAccess = true;
-      }
-    }
+    // Shopper functionality has been removed
 
     if (!hasAccess) {
       throw new Error('Access denied');
@@ -94,13 +88,7 @@ export class ChatController {
       chat.user_id === user.id || 
       user.role === 'admin';
 
-    // If user is a shopper, check if they are the shopper for this chat
-    if (!hasAccess && user.role === 'shopper') {
-      const shopper = await this.chatService.getShopperById(user.id);
-      if (shopper && chat.shopper_id === shopper.user_id) {
-        hasAccess = true;
-      }
-    }
+    // Shopper functionality has been removed
 
     if (!hasAccess) {
       throw new Error('Access denied');
@@ -121,7 +109,7 @@ export class ChatController {
     return this.chatService.sendMessage(
       id,
       user.id,
-      user.role as 'user' | 'shopper',
+      user.role as 'user',
       messageDto,
     );
   }
@@ -137,7 +125,7 @@ export class ChatController {
 
   @Post(':id/close')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'user', 'shopper')
+  @Roles('admin', 'user')
   async closeChat(@CurrentUser() user: any, @Param('id') id: string) {
     return this.chatService.closeChat(id, user.id);
   }
@@ -328,12 +316,7 @@ export class ChatController {
         user.role === 'admin';
 
       // If user is a shopper, check if they are the shopper for this chat
-      if (!hasAccess && user.role === 'shopper') {
-        const shopper = await this.chatService.getShopperById(user.id);
-        if (shopper && chat.shopper_id === shopper.user_id) {
-          hasAccess = true;
-        }
-      }
+      // Shopper functionality has been removed
 
       if (!hasAccess) {
         throw new Error('Access denied');
@@ -419,21 +402,7 @@ export class ChatController {
         chat.user_id === user.id || 
         user.role === 'admin';
 
-      // If user is a shopper, check if they are the shopper for this chat
-      if (!hasAccess && user.role === 'shopper') {
-        // Get the shopper record by shopper ID to find the user_id
-        const shopper = await this.chatService.getShopperById(user.id);
-        console.log('Shopper lookup result:', {
-          userId: user.id,
-          shopper: shopper,
-          chatShopperId: chat.shopper_id
-        });
-        
-        if (shopper && chat.shopper_id === shopper.user_id) {
-          hasAccess = true;
-          console.log('Shopper access granted');
-        }
-      }
+      // Shopper functionality has been removed
 
       console.log('Access result:', hasAccess);
 
@@ -469,7 +438,7 @@ export class ChatController {
       const message = await this.chatService.sendMessage(
         chat.id,
         user.id,
-        user.role as 'user' | 'shopper',
+        user.role as 'user',
         messageDto,
       );
 
@@ -516,12 +485,7 @@ export class ChatController {
         chat.user_id === user.id || 
         user.role === 'admin';
 
-      if (!hasAccess && user.role === 'shopper') {
-        const shopper = await this.chatService.getShopperById(user.id);
-        if (shopper && chat.shopper_id === shopper.user_id) {
-          hasAccess = true;
-        }
-      }
+      // Shopper functionality has been removed
 
       if (!hasAccess) {
         throw new Error('Access denied');

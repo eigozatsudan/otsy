@@ -40,42 +40,20 @@ export class ChatService {
       throw new NotFoundException('Order not found');
     }
 
-    // Convert order's shopper_id to shopper's user_id for comparison
-    let orderShopperUserId = null;
-    if (order.shopper_id) {
-      const shopper = await this.prisma.shopper.findUnique({
-        where: { id: order.shopper_id },
-        select: { user_id: true },
-      });
-      orderShopperUserId = shopper?.user_id || null;
-    }
+    // Note: shopper functionality has been removed in the pivot
 
     // Validate user_id matches
     if (order.user_id !== createChatDto.user_id) {
       throw new BadRequestException('Invalid user for this order');
     }
     
-    // For shopper validation, compare the converted shopper user_ids
-    if (orderShopperUserId && createChatDto.shopper_id) {
-      // Both order and chat have shopper_id, they should match
-      if (orderShopperUserId !== createChatDto.shopper_id) {
-        throw new BadRequestException('Invalid shopper for this order');
-      }
-    } else if (orderShopperUserId && !createChatDto.shopper_id) {
-      // Order has shopper but chat creation doesn't specify shopper
-      console.log(`Order has shopper user_id ${orderShopperUserId} but chat creation requested without shopper_id`);
-      // Allow creation with null shopper_id - this might be a user-initiated chat
-    } else if (!orderShopperUserId && createChatDto.shopper_id) {
-      // Order doesn't have shopper but chat creation specifies one
-      throw new BadRequestException('Order does not have a shopper assigned');
-    }
-    // If both are null, that's also allowed (order without shopper)
+    // Shopper functionality has been removed in the pivot
 
     const chat = await this.prisma.chat.create({
       data: {
         order_id: createChatDto.order_id,
         user_id: createChatDto.user_id,
-        shopper_id: orderShopperUserId, // Use the converted shopper user_id
+        shopper_id: null, // Shopper functionality removed
         status: ChatStatus.ACTIVE,
       },
     });
@@ -147,45 +125,14 @@ export class ChatService {
       return null;
     }
 
-    // Convert shopper_id to shopper's user_id for chat creation
-    let shopperUserId = null;
-    if (order.shopper_id) {
-      const shopper = await this.prisma.shopper.findUnique({
-        where: { id: order.shopper_id },
-        select: { user_id: true },
-      });
-      shopperUserId = shopper?.user_id || null;
-    }
-
     return {
       ...order,
-      shopper_id: shopperUserId, // Return shopper's user_id instead of shopper's id
+      shopper_id: null, // Shopper functionality removed
     };
   }
 
-  async checkShopperExists(shopperUserId: string): Promise<boolean> {
-    const shopper = await this.prisma.shopper.findUnique({
-      where: { user_id: shopperUserId },
-      select: { id: true },
-    });
-    return !!shopper;
-  }
 
-  async getShopperByUserId(userId: string): Promise<any> {
-    const shopper = await this.prisma.shopper.findUnique({
-      where: { user_id: userId },
-      select: { id: true, user_id: true },
-    });
-    return shopper;
-  }
 
-  async getShopperById(shopperId: string): Promise<any> {
-    const shopper = await this.prisma.shopper.findUnique({
-      where: { id: shopperId },
-      select: { id: true, user_id: true },
-    });
-    return shopper;
-  }
 
   async getUserChats(userId: string, page = 1, limit = 20): Promise<{ chats: ChatResponseDto[]; total: number }> {
     const offset = (page - 1) * limit;
@@ -241,7 +188,7 @@ export class ChatService {
   async sendMessage(
     chatId: string,
     senderId: string,
-    senderRole: 'user' | 'shopper',
+    senderRole: 'user',
     messageDto: SendMessageDto,
   ): Promise<ChatMessageResponseDto> {
     // Verify chat exists and user has access
@@ -249,47 +196,7 @@ export class ChatService {
     
     let hasAccess = chat.user_id === senderId;
     
-    // If sender is a shopper, check if they are the shopper for this chat
-    if (!hasAccess && senderRole === 'shopper') {
-      // JWT sub field contains shopper ID, so we use getShopperById
-      const shopper = await this.getShopperById(senderId);
-      console.log('ChatService sendMessage - Shopper lookup result:', {
-        senderId: senderId,
-        shopper: shopper,
-        chatShopperId: chat.shopper_id
-      });
-      
-      if (shopper) {
-        // Check if the shopper is assigned to this chat
-        // chat.shopper_id contains the user_id, so we compare with shopper.user_id
-        hasAccess = chat.shopper_id === shopper.user_id;
-        console.log(`ChatService sendMessage - Shopper access check: ${hasAccess} (chat.shopper_id: ${chat.shopper_id}, shopper.user_id: ${shopper.user_id})`);
-        
-        // If not found by chat.shopper_id, check if the shopper is assigned to the order
-        if (!hasAccess) {
-          try {
-            const order = await this.getOrderById(chat.order_id);
-            console.log('ChatService sendMessage - Order-based access check:', {
-              orderShopperId: order.shopper_id,
-              senderId: senderId,
-              shopperId: shopper.id,
-              shopperUserId: shopper.user_id
-            });
-            
-            // Check if the shopper is assigned to this order
-            // order.shopper_id contains the shopper's ID, so we compare with shopper.id
-            if (order.shopper_id === shopper.id) {
-              hasAccess = true;
-              console.log('ChatService sendMessage - Shopper access granted via order assignment');
-            }
-          } catch (error) {
-            console.warn('ChatService sendMessage - Failed to check order-based access:', error);
-          }
-        }
-      } else {
-        console.warn(`ChatService sendMessage - Shopper not found for user ${senderId}`);
-      }
-    }
+    // Shopper functionality has been removed
     
     if (!hasAccess) {
       throw new ForbiddenException('Access denied to this chat');
@@ -303,14 +210,7 @@ export class ChatService {
 
     // Determine the correct sender_id based on role
     let actualSenderId = senderId;
-    if (senderRole === 'shopper') {
-      // For shoppers, we need to use the user_id, not the shopper ID
-      const shopper = await this.getShopperById(senderId);
-      if (shopper) {
-        actualSenderId = shopper.user_id;
-        console.log('Using shopper user_id for sender_id:', actualSenderId);
-      }
-    }
+    // Shopper functionality has been removed in the pivot
 
     // Create message with proper sender_id
     const message = await this.prisma.chatMessage.create({

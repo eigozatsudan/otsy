@@ -53,7 +53,7 @@ export class ChatMessageResponseDto {
   id: string;
   chat_id: string;
   sender_id: string;
-  sender_role: 'user' | 'shopper' | 'system';
+  sender_role: 'user' | 'system';
   content: string;
   type: MessageType;
   attachment_url?: string;

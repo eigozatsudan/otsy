@@ -139,35 +139,7 @@ export class OrdersController {
     };
   }
 
-  // Shopper endpoints
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Get('available')
-  async getAvailableOrders(@CurrentUser() shopper: any, @Query() filterDto: OrderFilterDto) {
-    return this.ordersService.getAvailableOrders(shopper.id, filterDto);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Post(':id/accept')
-  async acceptOrder(
-    @CurrentUser() shopper: any,
-    @Param('id') id: string,
-    @Body() acceptOrderDto: AcceptOrderDto
-  ) {
-    return this.ordersService.acceptOrder(shopper.id, id, acceptOrderDto);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles('shopper')
-  @Patch(':id/status')
-  async updateOrderStatus(
-    @CurrentUser() shopper: any,
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateOrderStatusDto
-  ) {
-    return this.ordersService.updateStatus(shopper.id, 'shopper', id, updateStatusDto);
-  }
+  // Shopper endpoints have been removed in the pivot
 
   // Shared endpoints (user can view their orders, shopper can view accepted orders)
   @Get(':id')
