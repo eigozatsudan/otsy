@@ -10,7 +10,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Configure WebSocket adapter
-  app.useWebSocketAdapter(new IoAdapter());
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Configure JSON parsing
   app.use(json());
