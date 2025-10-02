@@ -1,4 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
@@ -14,15 +13,16 @@ jest.mock('bcrypt', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prismaService: PrismaService;
-  let jwtService: JwtService;
-  let configService: ConfigService;
+  let prismaService: jest.Mocked<PrismaService>;
+  let jwtService: jest.Mocked<JwtService>;
+  let configService: jest.Mocked<ConfigService>;
 
   const mockUser = {
     id: '1',
     email: 'test@example.com',
     password_hash: 'hashedpassword',
     display_name: 'Test User',
+    avatar_url: null,
     first_name: 'Test',
     last_name: 'User',
     phone: '+81-90-1234-5678',
@@ -33,70 +33,39 @@ describe('AuthService', () => {
     updated_at: new Date(),
   };
 
-  const mockShopper = {
-    id: '2',
-    email: 'shopper@example.com',
-    password_hash: 'hashedpassword',
-    phone: '+81-90-8765-4321',
-    kyc_status: 'approved',
-    risk_tier: 'L1',
-    rating_avg: 4.5,
-    rating_count: 10,
-    status: 'active',
-    created_at: new Date(),
-    updated_at: new Date(),
-  };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        {
-          provide: PrismaService,
-          useValue: {
-            user: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
-              update: jest.fn(),
-            },
-            shopper: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
-            },
-            admin: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
-              update: jest.fn(),
-            },
-          },
-        },
-        {
-          provide: JwtService,
-          useValue: {
-            sign: jest.fn(),
-            verify: jest.fn(),
-          },
-        },
-        {
-          provide: ConfigService,
-          useValue: {
-            get: jest.fn(),
-          },
-        },
-      ],
-    }).compile();
 
-    service = module.get<AuthService>(AuthService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    jwtService = module.get<JwtService>(JwtService);
-    configService = module.get<ConfigService>(ConfigService);
+  beforeEach(() => {
+    prismaService = {
+      user: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+      },
+      admin: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+      },
+    } as any;
 
-    // Reset all mocks before each test
-    jest.clearAllMocks();
+    jwtService = {
+      sign: jest.fn(),
+      verify: jest.fn(),
+    } as any;
+
+    configService = {
+      get: jest.fn(),
+    } as any;
+
+    service = new AuthService(prismaService, jwtService, configService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+    expect(prismaService).toBeDefined();
+    expect(jwtService).toBeDefined();
+    expect(configService).toBeDefined();
   });
 
   describe('validateUser', () => {
@@ -116,6 +85,7 @@ describe('AuthService', () => {
         id: '1',
         email: 'test@example.com',
         display_name: 'Test User',
+        avatar_url: null,
         first_name: 'Test',
         last_name: 'User',
         phone: '+81-90-1234-5678',
@@ -138,7 +108,6 @@ describe('AuthService', () => {
 
     it('should return null when user does not exist', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
-      jest.spyOn(prismaService.shopper, 'findUnique').mockResolvedValue(null);
       jest.spyOn(prismaService.admin, 'findUnique').mockResolvedValue(null);
 
       const result = await service.validateUser('nonexistent@example.com', 'password');
@@ -149,14 +118,10 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return access and refresh tokens', async () => {
-      const mockTokens = {
-        access_token: 'access_token',
-        refresh_token: 'refresh_token',
-      };
-
       jest.spyOn(jwtService, 'sign')
         .mockReturnValueOnce('access_token')
         .mockReturnValueOnce('refresh_token');
+      jest.spyOn(configService, 'get').mockReturnValue('refresh-secret');
 
       const user = { ...mockUser, role: 'user' };
       const result = await service.login(user);
@@ -193,6 +158,7 @@ describe('AuthService', () => {
         first_name: registerDto.first_name,
         last_name: registerDto.last_name,
         phone: registerDto.phone,
+        avatar_url: null,
       });
 
       const result = await service.registerUser(registerDto);
