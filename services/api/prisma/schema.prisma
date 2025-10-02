@@ -31,6 +31,8 @@ model User {
   purchases          Purchase[]         @relation("PurchaseCreator")
   push_subscriptions PushSubscription[]
   splits             Split[]
+  orders             Order[]            @relation("UserOrders")
+  shopper_orders     Order[]            @relation("ShopperOrders")
 
   @@map("users")
 }
@@ -208,4 +210,81 @@ model NotificationLog {
   user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_logs")
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  user_id         String
+  shopper_id      String?
+  status          String      @default("new")
+  mode            String      // 'approve' or 'delegate'
+  receipt_check   String      // 'required' or 'auto'
+  estimate_amount Int
+  auth_amount     Int?
+  actual_amount   Int?
+  deadline_ts     DateTime?
+  priority        Int?        @default(5)
+  address_json    Json
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  user            User        @relation("UserOrders", fields: [user_id], references: [id], onDelete: Cascade)
+  shopper         User?       @relation("ShopperOrders", fields: [shopper_id], references: [id])
+  items           OrderItem[]
+  receipts        OrderReceipt[]
+  payments        OrderPayment[]
+  audit_logs      OrderAuditLog[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  order_id   String
+  name       String
+  qty        String
+  price_min  Int?
+  price_max  Int?
+  allow_subs Boolean @default(true)
+  notes      String?
+  order      Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model OrderReceipt {
+  id           String   @id @default(uuid())
+  order_id     String
+  image_url    String
+  submitted_at DateTime @default(now())
+  approved_at  DateTime?
+  order        Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_receipts")
+}
+
+model OrderPayment {
+  id               String   @id @default(uuid())
+  order_id         String
+  amount           Int
+  payment_method   String
+  transaction_id   String?
+  status           String   @default("pending")
+  created_at       DateTime @default(now())
+  processed_at     DateTime?
+  order            Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_payments")
+}
+
+model OrderAuditLog {
+  id         String   @id @default(uuid())
+  order_id   String
+  actor_id   String
+  actor_role String   // 'user', 'admin', 'shopper'
+  action     String
+  payload    Json?
+  created_at DateTime @default(now())
+  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  @@map("order_audit_logs")
 }

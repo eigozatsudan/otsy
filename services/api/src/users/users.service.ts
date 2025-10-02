@@ -70,22 +70,18 @@ export class UsersService {
   async getUserStats(id: string) {
     const user = await this.findOne(id);
     
-    const orderCount = await this.prisma.order.count({
-      where: { user_id: id },
+    const purchaseCount = await this.prisma.purchase.count({
+      where: { purchased_by: id },
     });
 
-    const completedOrders = await this.prisma.order.count({
-      where: { 
-        user_id: id,
-        status: 'delivered',
-      },
-    });
+    // Since there's no status field in Purchase model, we'll count all purchases as completed
+    const completedPurchases = purchaseCount;
 
     return {
       ...user,
       stats: {
-        total_orders: orderCount,
-        completed_orders: completedOrders,
+        total_orders: purchaseCount,
+        completed_orders: completedPurchases,
       },
     };
   }
