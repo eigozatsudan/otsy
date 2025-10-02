@@ -77,7 +77,7 @@ export class ReviewReceiptDto {
 export class ReceiptResponseDto {
   id: string;
   order_id: string;
-  shopper_id: string;
+  user_id: string;
   image_url: string;
   status: ReceiptStatus;
   total_amount?: number;

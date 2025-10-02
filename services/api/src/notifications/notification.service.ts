@@ -269,9 +269,9 @@ export class NotificationService {
   // Predefined notification templates
   async sendOrderStatusNotification(userId: string, orderId: string, status: string): Promise<void> {
     const statusMessages = {
-      accepted: 'Your order has been accepted by a shopper',
-      shopping: 'Your shopper is currently shopping for your items',
-      receipt_pending: 'Your shopper has submitted a receipt for review',
+      accepted: 'Your order has been accepted',
+      shopping: 'Your order is being processed',
+      receipt_pending: 'A receipt has been submitted for review',
       completed: 'Your order has been completed',
       cancelled: 'Your order has been cancelled',
     };
@@ -297,11 +297,11 @@ export class NotificationService {
     });
   }
 
-  async sendNewOrderNotification(shopperId: string, orderId: string): Promise<void> {
-    await this.sendNotification(shopperId, {
-      user_id: shopperId,
-      title: 'New Order Available',
-      body: 'A new order is available for you to accept',
+  async sendNewOrderNotification(userId: string, orderId: string): Promise<void> {
+    await this.sendNotification(userId, {
+      user_id: userId,
+      title: 'Order Update',
+      body: 'Your order status has been updated',
       icon: '/icons/new-order.png',
       tag: `new-order-${orderId}`,
       data: {

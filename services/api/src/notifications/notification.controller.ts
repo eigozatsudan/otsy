@@ -243,16 +243,16 @@ export class NotificationController {
   @UseGuards(RolesGuard)
   @Roles('system', 'admin')
   async notifyNewOrder(
-    @Body() body: { shopper_id: string; order_id: string },
+    @Body() body: { user_id: string; order_id: string },
   ) {
     await this.notificationService.sendNewOrderNotification(
-      body.shopper_id,
+      body.user_id,
       body.order_id,
     );
 
     return {
       success: true,
-      message: 'New order notification sent to shopper',
+      message: 'Order notification sent to user',
     };
   }
 

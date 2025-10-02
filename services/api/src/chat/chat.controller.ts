@@ -266,7 +266,6 @@ export class ChatController {
     // Check access
     const hasAccess = 
       chat.user_id === user.id || 
-      chat.shopper_id === user.id ||
       user.role === 'admin';
 
     if (!hasAccess) {
@@ -280,7 +279,7 @@ export class ChatController {
   async createChatForOrder(
     @CurrentUser() user: any,
     @Param('orderId') orderId: string,
-    @Body() body: { shopper_id?: string; initial_message?: string },
+    @Body() body: { initial_message?: string },
   ) {
     // This would typically be called automatically when an order is accepted
     // For manual creation, we need to verify the order details
@@ -288,7 +287,6 @@ export class ChatController {
     return this.chatService.createChat({
       order_id: orderId,
       user_id: user.id,
-      shopper_id: body.shopper_id || user.id, // Fallback for testing
       initial_message: body.initial_message,
     });
   }
@@ -370,20 +368,10 @@ export class ChatController {
           throw new Error('Order not found');
         }
         
-        // Use the shopper_id from order (which is already converted to user_id by getOrderById)
-        let validShopperId = order.shopper_id;
-        if (validShopperId) {
-          const shopperExists = await this.chatService.checkShopperExists(validShopperId);
-          if (!shopperExists) {
-            console.log(`Shopper ${validShopperId} does not exist, setting shopper_id to null`);
-            validShopperId = null;
-          }
-        }
-        
+        // Shopper functionality removed - create chat for user only
         chat = await this.chatService.createChat({
           order_id: orderId,
           user_id: order.user_id,
-          shopper_id: validShopperId,
           initial_message: messageContent,
         });
       }
@@ -391,7 +379,6 @@ export class ChatController {
       // Check access
       console.log('Access check:', {
         chatUserId: chat.user_id,
-        chatShopperId: chat.shopper_id,
         currentUserId: user.id,
         userRole: user.role,
         orderId: orderId
@@ -411,7 +398,6 @@ export class ChatController {
           userId: user.id,
           userRole: user.role,
           chatUserId: chat.user_id,
-          chatShopperId: chat.shopper_id
         });
         throw new Error('Access denied');
       }

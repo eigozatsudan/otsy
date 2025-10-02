@@ -362,7 +362,7 @@ export class ChatService {
   ): Promise<void> {
     const senderName = message.sender_role === 'system' 
       ? 'System'
-      : `${chat.user_id === message.sender_id ? chat.user.first_name : chat.shopper.first_name}`;
+      : chat.user.first_name;
 
     await this.notificationService.sendNotification(recipientId, {
       user_id: recipientId,

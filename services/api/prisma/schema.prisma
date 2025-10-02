@@ -90,13 +90,18 @@ model Item {
   created_at     DateTime       @default(now())
   updated_at     DateTime       @default(now())
   category       String?
+  category_id    String?
   created_by     String
   group_id       String
   note           String?
   quantity       String         @default("1")
   status         String         @default("todo")
+  description    String?
+  is_active      Boolean        @default(true)
+  sort_order     Int            @default(0)
   creator        User           @relation("ItemCreator", fields: [created_by], references: [id])
   group          Group          @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  item_category  ItemCategory?  @relation(fields: [category_id], references: [id])
   messages       Message[]      @relation("ItemMessages")
   purchase_items PurchaseItem[]
 
@@ -369,4 +374,17 @@ model NotificationPreferences {
   user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_preferences")
+}
+
+model ItemCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  is_active   Boolean  @default(true)
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  items       Item[]
+
+  @@map("item_categories")
 }

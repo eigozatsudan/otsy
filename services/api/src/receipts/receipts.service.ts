@@ -19,7 +19,7 @@ export class ReceiptsService {
   ) {}
 
   async generateUploadUrl(
-    shopperId: string, 
+    userId: string, 
     getUploadUrlDto: GetReceiptUploadUrlDto
   ): Promise<{ upload_url: string; file_url: string }> {
     // Validate order exists and user is authorized
@@ -31,8 +31,8 @@ export class ReceiptsService {
       throw new NotFoundException('Order not found');
     }
 
-    // Shopper functionality removed - only users can submit receipts
-    if (order.user_id !== shopperId) {
+    // Only users can submit receipts for their own orders
+    if (order.user_id !== userId) {
       throw new ForbiddenException('You are not authorized to submit receipts for this order');
     }
 

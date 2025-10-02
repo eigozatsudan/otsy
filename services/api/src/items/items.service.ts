@@ -23,7 +23,7 @@ export class ItemsService {
           where: { is_active: true },
           orderBy: { sort_order: 'asc' },
           include: {
-            category: true,
+            item_category: true,
           },
         },
       },
@@ -97,9 +97,18 @@ export class ItemsService {
     }
 
     return this.prisma.item.create({
-      data: createItemDto,
+      data: {
+        name: createItemDto.name,
+        description: createItemDto.description,
+        category_id: createItemDto.category_id,
+        is_active: createItemDto.is_active ?? true,
+        sort_order: createItemDto.sort_order ?? 0,
+        created_by: 'system', // TODO: Get from authenticated user
+        group_id: 'default', // TODO: Get from context
+        image_url: createItemDto.image_url,
+      },
       include: {
-        category: true,
+        item_category: true,
       },
     });
   }
@@ -109,7 +118,7 @@ export class ItemsService {
       where: { is_active: true },
       orderBy: { sort_order: 'asc' },
       include: {
-        category: true,
+        item_category: true,
       },
     });
   }
@@ -122,7 +131,7 @@ export class ItemsService {
       },
       orderBy: { sort_order: 'asc' },
       include: {
-        category: true,
+        item_category: true,
       },
     });
   }
@@ -131,7 +140,7 @@ export class ItemsService {
     const item = await this.prisma.item.findUnique({
       where: { id },
       include: {
-        category: true,
+        item_category: true,
       },
     });
 
@@ -166,7 +175,7 @@ export class ItemsService {
       where: { id },
       data: updateItemDto,
       include: {
-        category: true,
+        item_category: true,
       },
     });
   }
@@ -199,7 +208,7 @@ export class ItemsService {
       },
       orderBy: { sort_order: 'asc' },
       include: {
-        category: true,
+        item_category: true,
       },
     });
   }
