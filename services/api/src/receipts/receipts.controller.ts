@@ -54,8 +54,7 @@ export class ReceiptsController {
     // Check permissions
     const canView = 
       user.role === 'admin' ||
-      (user.role === 'user' && receipt.order.user_id === user.id) ||
-      // Shopper functionality removed
+      (user.role === 'user' && receipt.order.user_id === user.id);
 
     if (!canView) {
       throw new Error('Access denied');

@@ -148,10 +148,10 @@ export class OrdersController {
     
     // Check permissions
     const isOwner = order.user_id === user.id;
-    const isShopper = order.shopper_id === user.id;
+    // Shopper functionality removed
     const isAdmin = user.role === 'admin';
     
-    if (!isOwner && !isShopper && !isAdmin) {
+    if (!isOwner && !isAdmin) {
       throw new ForbiddenException('Not authorized to view this order');
     }
     

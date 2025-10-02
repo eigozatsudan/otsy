@@ -21,6 +21,8 @@ model User {
   phone              String?
   role               String             @default("user")
   subscription_tier  String             @default("free")
+  rating_avg         Float?
+  rating_count       Int?               @default(0)
   updated_at         DateTime           @updatedAt
   ad_impressions     AdImpression[]
   group_memberships  GroupMember[]
@@ -32,7 +34,11 @@ model User {
   push_subscriptions PushSubscription[]
   splits             Split[]
   orders             Order[]            @relation("UserOrders")
-  shopper_orders     Order[]            @relation("ShopperOrders")
+  user_receipts      Receipt[]          @relation("UserReceipts")
+  reviewed_receipts  Receipt[]          @relation("ReviewerReceipts")
+  chat_messages      ChatMessage[]      @relation("ChatMessages")
+  user_chats         Chat[]             @relation("UserChats")
+  notification_preferences NotificationPreferences?
 
   @@map("users")
 }
@@ -215,7 +221,6 @@ model NotificationLog {
 model Order {
   id              String      @id @default(uuid())
   user_id         String
-  shopper_id      String?
   status          String      @default("new")
   mode            String      // 'approve' or 'delegate'
   receipt_check   String      // 'required' or 'auto'
@@ -228,11 +233,13 @@ model Order {
   created_at      DateTime    @default(now())
   updated_at      DateTime    @updatedAt
   user            User        @relation("UserOrders", fields: [user_id], references: [id], onDelete: Cascade)
-  shopper         User?       @relation("ShopperOrders", fields: [shopper_id], references: [id])
   items           OrderItem[]
   receipts        OrderReceipt[]
   payments        OrderPayment[]
   audit_logs      OrderAuditLog[]
+  receipt_submissions Receipt[]
+  chat            Chat?
+  chat_messages   ChatMessage[]
 
   @@map("orders")
 }
@@ -287,4 +294,79 @@ model OrderAuditLog {
   order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
 
   @@map("order_audit_logs")
+}
+
+model Receipt {
+  id            String    @id @default(uuid())
+  order_id      String
+  user_id       String
+  image_url     String
+  status        String    @default("pending")
+  total_amount  Int?
+  store_name    String?
+  items         Json?
+  review_notes  String?
+  notes         String?
+  submitted_at  DateTime  @default(now())
+  reviewed_at   DateTime?
+  reviewer_id   String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  order         Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user          User      @relation("UserReceipts", fields: [user_id], references: [id])
+  reviewer      User?     @relation("ReviewerReceipts", fields: [reviewer_id], references: [id])
+
+  @@map("receipts")
+}
+
+model Chat {
+  id               String        @id @default(uuid())
+  order_id         String        @unique
+  user_id          String
+  status           String        @default("active")
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  last_message_at  DateTime?
+  order            Order         @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user             User          @relation("UserChats", fields: [user_id], references: [id])
+  messages         ChatMessage[]
+
+  @@map("chats")
+}
+
+model ChatMessage {
+  id              String    @id @default(uuid())
+  chat_id         String
+  order_id        String
+  sender          String    // 'user', 'admin', 'shopper'
+  sender_id       String
+  sender_role     String
+  text            String
+  content         String?
+  type            String    @default("text")
+  attachment_url  String?
+  attachment_type String?
+  metadata        Json?
+  read_at         DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  chat            Chat      @relation(fields: [chat_id], references: [id], onDelete: Cascade)
+  order           Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  user            User      @relation("ChatMessages", fields: [sender_id], references: [id])
+
+  @@map("chat_messages")
+}
+
+model NotificationPreferences {
+  id              String   @id @default(uuid())
+  user_id         String   @unique
+  order_updates   Boolean  @default(true)
+  chat_messages   Boolean  @default(true)
+  promotional     Boolean  @default(false)
+  system_alerts   Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }

@@ -104,15 +104,7 @@ export class OrdersService {
             subscription_tier: true,
           },
         },
-        shopper: {
-          select: {
-            id: true,
-            email: true,
-            phone: true,
-            rating_avg: true,
-            rating_count: true,
-          },
-        },
+        // Shopper functionality removed
         receipts: {
           orderBy: { submitted_at: 'desc' },
           take: 1,
@@ -132,13 +124,12 @@ export class OrdersService {
   }
 
   async findMany(filterDto: OrderFilterDto) {
-    const { status, user_id, shopper_id, page = 1, limit = 20 } = filterDto;
+    const { status, user_id, page = 1, limit = 20 } = filterDto;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status) where.status = status;
     if (user_id) where.user_id = user_id;
-    if (shopper_id) where.shopper_id = shopper_id;
 
     const [orders, total] = await Promise.all([
       this.prisma.order.findMany({
@@ -152,14 +143,7 @@ export class OrdersService {
               phone: true,
             },
           },
-          shopper: {
-            select: {
-              id: true,
-              email: true,
-              phone: true,
-              rating_avg: true,
-            },
-          },
+          // Shopper functionality removed
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -190,10 +174,6 @@ export class OrdersService {
 
     // Validate permissions
     if (actorRole === 'user' && order.user_id !== actorId) {
-      throw new ForbiddenException('Not authorized to update this order');
-    }
-
-    // Shopper functionality has been removed
       throw new ForbiddenException('Not authorized to update this order');
     }
 
@@ -289,10 +269,7 @@ export class OrdersService {
       throw new BadRequestException('Order cannot be cancelled in current status');
     }
 
-    // Check if shopper is already assigned
-    if (order.shopper_id) {
-      throw new BadRequestException('Cannot cancel order that has been assigned to a shopper');
-    }
+    // Shopper functionality removed - users can cancel their own orders
 
     // Update order status
     const updatedOrder = await this.prisma.$transaction(async (tx) => {
@@ -326,8 +303,8 @@ export class OrdersService {
   async cancelOrderByShopper(shopperId: string, orderId: string, reason?: string) {
     const order = await this.findOne(orderId);
 
-    // Validate permissions - only the assigned shopper can cancel
-    if (order.shopper_id !== shopperId) {
+    // Shopper functionality removed - only users can cancel orders
+    if (order.user_id !== shopperId) {
       throw new ForbiddenException('Not authorized to cancel this order');
     }
 
@@ -378,13 +355,7 @@ export class OrdersService {
         where,
         include: {
           items: true,
-          shopper: {
-            select: {
-              id: true,
-              email: true,
-              rating_avg: true,
-            },
-          },
+          // Shopper functionality removed
         },
         orderBy: { created_at: 'desc' },
         skip,
@@ -420,7 +391,7 @@ export class OrdersService {
     // Convert LLM items to order items
     const items = session.current_items.map(item => ({
       name: item.name,
-      qty: item.qty,
+      qty: item.qty.toString(),
       price_min: item.price_min,
       price_max: item.price_max,
       allow_subs: item.allow_subs || false,
@@ -479,7 +450,7 @@ export class OrdersService {
     // Convert LLM items to order items
     const orderItems = itemsToOrder.map(item => ({
       name: item.name,
-      qty: item.qty,
+      qty: item.qty.toString(),
       price_min: item.price_min,
       price_max: item.price_max,
       allow_subs: item.alternatives.length > 0,
@@ -570,12 +541,10 @@ export class OrdersService {
         admin: [OrderStatus.CANCELLED],
       },
       [OrderStatus.ACCEPTED]: {
-        shopper: [OrderStatus.SHOPPING],
         user: [OrderStatus.CANCELLED],
         admin: [OrderStatus.CANCELLED, OrderStatus.SHOPPING],
       },
       [OrderStatus.SHOPPING]: {
-        shopper: [OrderStatus.AWAIT_RECEIPT_OK],
         user: [OrderStatus.CANCELLED],
         admin: [OrderStatus.CANCELLED, OrderStatus.AWAIT_RECEIPT_OK],
       },
@@ -584,7 +553,6 @@ export class OrdersService {
         admin: [OrderStatus.ENROUTE, OrderStatus.SHOPPING, OrderStatus.CANCELLED],
       },
       [OrderStatus.ENROUTE]: {
-        shopper: [OrderStatus.DELIVERED],
         admin: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
       },
       [OrderStatus.DELIVERED]: {

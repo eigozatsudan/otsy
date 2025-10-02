@@ -22,7 +22,7 @@ export class ReceiptsService {
     shopperId: string, 
     getUploadUrlDto: GetReceiptUploadUrlDto
   ): Promise<{ upload_url: string; file_url: string }> {
-    // Validate order exists and shopper is assigned
+    // Validate order exists and user is authorized
     const order = await this.prisma.order.findUnique({
       where: { id: getUploadUrlDto.order_id },
     });
@@ -31,8 +31,9 @@ export class ReceiptsService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.shopper_id !== shopperId) {
-      throw new ForbiddenException('You are not assigned to this order');
+    // Shopper functionality removed - only users can submit receipts
+    if (order.user_id !== shopperId) {
+      throw new ForbiddenException('You are not authorized to submit receipts for this order');
     }
 
     if (order.status !== OrderStatus.SHOPPING && order.status !== OrderStatus.AWAIT_RECEIPT_OK) {
@@ -51,8 +52,8 @@ export class ReceiptsService {
     };
   }
 
-  async submitReceipt(shopperId: string, submitReceiptDto: SubmitReceiptDto) {
-    // Validate order and shopper
+  async submitReceipt(userId: string, submitReceiptDto: SubmitReceiptDto) {
+    // Validate order and user authorization
     const order = await this.prisma.order.findUnique({
       where: { id: submitReceiptDto.order_id },
       include: {
@@ -67,8 +68,9 @@ export class ReceiptsService {
       throw new NotFoundException('Order not found');
     }
 
-    if (order.shopper_id !== shopperId) {
-      throw new ForbiddenException('You are not assigned to this order');
+    // Shopper functionality removed - only users can submit receipts
+    if (order.user_id !== userId) {
+      throw new ForbiddenException('You are not authorized to submit receipts for this order');
     }
 
     if (order.status !== OrderStatus.SHOPPING) {
@@ -86,7 +88,7 @@ export class ReceiptsService {
       const newReceipt = await tx.receipt.create({
         data: {
           order_id: submitReceiptDto.order_id,
-          shopper_id: shopperId,
+          user_id: userId,
           image_url: submitReceiptDto.image_url,
           submitted_at: new Date(),
         },
@@ -106,7 +108,7 @@ export class ReceiptsService {
       await tx.orderAuditLog.create({
         data: {
           order_id: submitReceiptDto.order_id,
-          actor_id: shopperId,
+          actor_id: userId,
           actor_role: 'user', // Shopper functionality removed
           action: 'receipt_submitted',
           payload: {
@@ -137,9 +139,7 @@ export class ReceiptsService {
             user: {
               select: { id: true, email: true },
             },
-            shopper: {
-              select: { id: true, email: true },
-            },
+            // Shopper functionality removed
           },
         },
       },
@@ -157,9 +157,7 @@ export class ReceiptsService {
       where: { order_id: orderId },
       orderBy: { submitted_at: 'desc' },
       include: {
-        shopper: {
-          select: { id: true, email: true },
-        },
+        // Shopper functionality removed
       },
     });
   }
@@ -241,9 +239,7 @@ export class ReceiptsService {
             user: {
               select: { id: true, email: true },
             },
-            shopper: {
-              select: { id: true, email: true },
-            },
+            // Shopper functionality removed
           },
         },
       },
@@ -251,30 +247,11 @@ export class ReceiptsService {
     });
   }
 
+
+
   async getReceiptsByUser(userId: string) {
     return this.prisma.receipt.findMany({
-      where: {
-        order: {
-          user_id: userId,
-        },
-      },
-      include: {
-        order: {
-          include: {
-            items: true,
-          },
-        },
-        shopper: {
-          select: { id: true, email: true },
-        },
-      },
-      orderBy: { submitted_at: 'desc' },
-    });
-  }
-
-  async getReceiptsByShopper(shopperId: string) {
-    return this.prisma.receipt.findMany({
-      where: { shopper_id: shopperId },
+      where: { user_id: userId },
       include: {
         order: {
           include: {
@@ -295,8 +272,7 @@ export class ReceiptsService {
     // Check permissions
     const canView = 
       userRole === 'admin' ||
-      (userRole === 'user' && receipt.order.user_id === userId) ||
-      // Shopper functionality removed
+      (userRole === 'user' && receipt.order.user_id === userId);
 
     if (!canView) {
       throw new ForbiddenException('Not authorized to view this receipt');
@@ -313,9 +289,7 @@ export class ReceiptsService {
     const receipt = await this.findOne(receiptId);
     
     // Check permissions
-    const canDelete = 
-      actorRole === 'admin' ||
-      // Shopper functionality removed
+    const canDelete = actorRole === 'admin';
 
     if (!canDelete) {
       throw new ForbiddenException('Not authorized to delete this receipt');
@@ -359,8 +333,7 @@ export class ReceiptsService {
     // Check permissions
     const canProcess = 
       actorRole === 'admin' ||
-      (actorRole === 'user' && receipt.order.user_id === actorId) ||
-      // Shopper functionality removed
+      (actorRole === 'user' && receipt.order.user_id === actorId);
 
     if (!canProcess) {
       throw new ForbiddenException('Not authorized to process this receipt');

@@ -1,6 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
 
 export interface ProcessedReceiptData {
   store_name?: string;
@@ -17,107 +16,14 @@ export interface ProcessedReceiptData {
 
 @Injectable()
 export class ReceiptProcessorService {
-  private openai: OpenAI;
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
-    }
+    // Minimal implementation without OpenAI dependency
   }
 
   async processReceiptImage(imageUrl: string): Promise<ProcessedReceiptData> {
-    if (!this.openai) {
-      // Mock processing for development
-      return this.mockReceiptProcessing();
-    }
-
-    try {
-      // Use GPT-4o mini with vision to analyze receipt
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert at analyzing Japanese grocery store receipts. 
-Extract the following information from the receipt image:
-- Store name
-- Individual items with names, quantities, and prices
-- Total amount
-- Date (if visible)
-
-Respond in JSON format:
-{
-  "store_name": "店舗名",
-  "total_amount": 総額,
-  "items": [
-    {
-      "name": "商品名",
-      "qty": "数量",
-      "price": 価格
-    }
-  ],
-  "date": "YYYY-MM-DD",
-  "confidence_score": 0.0-1.0,
-  "raw_text": "認識したテキスト全体"
-}`
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Please analyze this Japanese grocery receipt and extract the information in the specified JSON format.'
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageUrl,
-                  detail: 'high'
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.1, // Low temperature for consistent extraction
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('No response from OpenAI Vision');
-      }
-
-      return this.parseReceiptResponse(content);
-    } catch (error) {
-      console.error('Error processing receipt image:', error);
-      throw new BadRequestException('Failed to process receipt image');
-    }
-  }
-
-  private parseReceiptResponse(response: string): ProcessedReceiptData {
-    try {
-      // Extract JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]);
-      
-      return {
-        store_name: parsed.store_name,
-        total_amount: parsed.total_amount,
-        items: parsed.items || [],
-        date: parsed.date,
-        confidence_score: parsed.confidence_score || 0.7,
-        raw_text: parsed.raw_text,
-      };
-    } catch (error) {
-      console.error('Failed to parse receipt response:', error);
-      // Return mock data if parsing fails
-      return this.mockReceiptProcessing();
-    }
+    // Mock processing for development - replace with actual OCR/AI service
+    return this.mockReceiptProcessing();
   }
 
   private mockReceiptProcessing(): ProcessedReceiptData {

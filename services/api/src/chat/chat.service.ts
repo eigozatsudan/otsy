@@ -32,7 +32,6 @@ export class ChatService {
       where: { id: createChatDto.order_id },
       include: {
         user: { select: { id: true, first_name: true, last_name: true } },
-        shopper: { select: { id: true, first_name: true, last_name: true } },
       },
     });
 
@@ -53,7 +52,7 @@ export class ChatService {
       data: {
         order_id: createChatDto.order_id,
         user_id: createChatDto.user_id,
-        shopper_id: null, // Shopper functionality removed
+        // Shopper functionality removed
         status: ChatStatus.ACTIVE,
       },
     });
@@ -68,7 +67,7 @@ export class ChatService {
     } else {
       await this.sendSystemMessage(
         chat.id,
-        `Chat created for order ${order.id}. ${order.user.first_name} and ${order.shopper?.first_name} can now communicate.`,
+        `Chat created for order ${order.id}. ${order.user.first_name} can now communicate with support.`,
         { type: 'chat_created' }
       );
     }
@@ -86,9 +85,7 @@ export class ChatService {
         user: {
           select: { id: true, first_name: true, last_name: true, email: true },
         },
-        shopper: {
-          select: { id: true, first_name: true, last_name: true, email: true },
-        },
+        // Shopper functionality removed
       },
     });
 
@@ -105,7 +102,7 @@ export class ChatService {
       include: {
         order: { select: { id: true, status: true } },
         user: { select: { id: true, first_name: true, last_name: true } },
-        shopper: { select: { id: true, first_name: true, last_name: true } },
+        // Shopper functionality removed
       },
     });
   }
@@ -116,7 +113,7 @@ export class ChatService {
       select: {
         id: true,
         user_id: true,
-        shopper_id: true,
+        // Shopper functionality removed
         status: true,
       },
     });
@@ -127,7 +124,7 @@ export class ChatService {
 
     return {
       ...order,
-      shopper_id: null, // Shopper functionality removed
+      // Shopper functionality removed
     };
   }
 
@@ -140,15 +137,12 @@ export class ChatService {
     const [chats, total] = await Promise.all([
       this.prisma.chat.findMany({
         where: {
-          OR: [
-            { user_id: userId },
-            { shopper_id: userId },
-          ],
+          user_id: userId,
         },
         include: {
           order: { select: { id: true, status: true, estimate_amount: true } },
           user: { select: { id: true, first_name: true, last_name: true } },
-          shopper: { select: { id: true, first_name: true, last_name: true } },
+          // Shopper functionality removed
           messages: {
             orderBy: { created_at: 'desc' },
             take: 1,
@@ -163,10 +157,7 @@ export class ChatService {
       }),
       this.prisma.chat.count({
         where: {
-          OR: [
-            { user_id: userId },
-            { shopper_id: userId },
-          ],
+          user_id: userId,
         },
       }),
     ]);
@@ -432,7 +423,7 @@ export class ChatService {
       id: chat.id,
       order_id: chat.order_id,
       user_id: chat.user_id,
-      shopper_id: chat.shopper_id,
+      // Shopper functionality removed
       status: chat.status,
       created_at: chat.created_at,
       updated_at: chat.updated_at,

@@ -41,9 +41,6 @@ export class CreateChatDto {
   @IsUUID()
   user_id: string;
 
-  @IsUUID()
-  shopper_id: string;
-
   @IsOptional()
   @IsString()
   initial_message?: string;
@@ -67,7 +64,6 @@ export class ChatResponseDto {
   id: string;
   order_id: string;
   user_id: string;
-  shopper_id: string;
   status: ChatStatus;
   created_at: Date;
   updated_at: Date;
