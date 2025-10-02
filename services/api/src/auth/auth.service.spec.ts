@@ -7,8 +7,10 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 // Mock bcrypt
-jest.mock('bcrypt');
-const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -20,8 +22,13 @@ describe('AuthService', () => {
     id: '1',
     email: 'test@example.com',
     password_hash: 'hashedpassword',
+    display_name: 'Test User',
+    first_name: 'Test',
+    last_name: 'User',
     phone: '+81-90-1234-5678',
-    subscription_tier: 'basic',
+    role: 'user',
+    subscription_tier: 'free',
+    last_active_at: new Date(),
     created_at: new Date(),
     updated_at: new Date(),
   };
@@ -50,6 +57,7 @@ describe('AuthService', () => {
             user: {
               findUnique: jest.fn(),
               create: jest.fn(),
+              update: jest.fn(),
             },
             shopper: {
               findUnique: jest.fn(),
@@ -58,6 +66,7 @@ describe('AuthService', () => {
             admin: {
               findUnique: jest.fn(),
               create: jest.fn(),
+              update: jest.fn(),
             },
           },
         },
@@ -81,6 +90,9 @@ describe('AuthService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
+
+    // Reset all mocks before each test
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -90,24 +102,34 @@ describe('AuthService', () => {
   describe('validateUser', () => {
     it('should return user data without password when credentials are valid', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      mockedBcrypt.compare.mockResolvedValue(true as never);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser('test@example.com', 'password');
+
+      expect(prismaService.user.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { last_active_at: expect.any(Date) },
+      });
 
       expect(result).toEqual({
         id: '1',
         email: 'test@example.com',
+        display_name: 'Test User',
+        first_name: 'Test',
+        last_name: 'User',
         phone: '+81-90-1234-5678',
-        subscription_tier: 'basic',
+        role: 'user',
+        subscription_tier: 'free',
+        last_active_at: mockUser.last_active_at,
         created_at: mockUser.created_at,
         updated_at: mockUser.updated_at,
-        role: 'user',
       });
     });
 
     it('should return null when credentials are invalid', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      mockedBcrypt.compare.mockResolvedValue(false as never);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser('test@example.com', 'wrongpassword');
 
@@ -152,41 +174,111 @@ describe('AuthService', () => {
   });
 
   describe('registerUser', () => {
-    it('should create a new user and return login tokens', async () => {
+    it('should create a new user with all fields', async () => {
       const registerDto = {
         email: 'newuser@example.com',
         password: 'password123',
+        display_name: 'New User',
+        first_name: 'New',
+        last_name: 'User',
         phone: '+81-90-1111-2222',
       };
 
       jest.spyOn(service as any, 'findUserByEmail').mockResolvedValue(null);
-      mockedBcrypt.hash.mockResolvedValue('hashedpassword' as never);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
       jest.spyOn(prismaService.user, 'create').mockResolvedValue({
         ...mockUser,
         email: registerDto.email,
+        display_name: registerDto.display_name,
+        first_name: registerDto.first_name,
+        last_name: registerDto.last_name,
         phone: registerDto.phone,
-      });
-      jest.spyOn(service, 'login').mockResolvedValue({
-        access_token: 'access_token',
-        refresh_token: 'refresh_token',
-        user: { id: '1', email: registerDto.email, role: 'user' },
       });
 
       const result = await service.registerUser(registerDto);
 
-      expect(result.access_token).toBeDefined();
-      expect(result.user.email).toBe(registerDto.email);
+      expect(prismaService.user.create).toHaveBeenCalledWith({
+        data: {
+          email: registerDto.email,
+          password_hash: 'hashedpassword',
+          display_name: registerDto.display_name,
+          first_name: registerDto.first_name,
+          last_name: registerDto.last_name,
+          phone: registerDto.phone,
+        },
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          first_name: true,
+          last_name: true,
+          phone: true,
+          role: true,
+          subscription_tier: true,
+          created_at: true,
+        },
+      });
+
+      expect(result.email).toBe(registerDto.email);
+      expect(result.display_name).toBe(registerDto.display_name);
     });
 
     it('should throw ConflictException when email already exists', async () => {
       const registerDto = {
         email: 'existing@example.com',
         password: 'password123',
+        display_name: 'Existing User',
       };
 
       jest.spyOn(service as any, 'findUserByEmail').mockResolvedValue(mockUser);
 
       await expect(service.registerUser(registerDto)).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('getUserProfile', () => {
+    it('should return user profile with all fields', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+
+      const result = await service.getUserProfile('1');
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { id: '1' },
+        select: {
+          id: true,
+          email: true,
+          display_name: true,
+          first_name: true,
+          last_name: true,
+          phone: true,
+          subscription_tier: true,
+          role: true,
+          last_active_at: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+
+      expect(result).toEqual({
+        id: '1',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '+81-90-1234-5678',
+        role: 'user',
+        subscriptionTier: 'free',
+        isVerified: true,
+        lastActiveAt: mockUser.last_active_at,
+        createdAt: mockUser.created_at,
+        updatedAt: mockUser.updated_at,
+      });
+    });
+
+    it('should throw UnauthorizedException when user not found', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+
+      await expect(service.getUserProfile('nonexistent')).rejects.toThrow(UnauthorizedException);
     });
   });
 });

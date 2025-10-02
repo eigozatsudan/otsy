@@ -18,13 +18,24 @@ export class AuthService {
     // Try to find user in all three tables
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user && await bcrypt.compare(password, user.password_hash)) {
+      // Update last_active_at timestamp on successful login
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { last_active_at: new Date() },
+      });
+      
       const { password_hash, ...result } = user;
       return { ...result, role: 'user' };
     }
 
-
     const admin = await this.prisma.admin.findUnique({ where: { email } });
     if (admin && await bcrypt.compare(password, admin.password_hash)) {
+      // Update last_active_at timestamp on successful admin login
+      await this.prisma.admin.update({
+        where: { id: admin.id },
+        data: { updated_at: new Date() }, // Admin model uses updated_at instead of last_active_at
+      });
+      
       const { password_hash, ...result } = admin;
       return { ...result, role: 'admin' };
     }
@@ -109,12 +120,19 @@ export class AuthService {
       data: {
         email: registerDto.email,
         password_hash: hashedPassword,
+        display_name: registerDto.display_name,
+        first_name: registerDto.first_name,
+        last_name: registerDto.last_name,
         phone: registerDto.phone,
       },
       select: {
         id: true,
         email: true,
+        display_name: true,
+        first_name: true,
+        last_name: true,
         phone: true,
+        role: true,
         subscription_tier: true,
         created_at: true,
       },
@@ -177,6 +195,7 @@ export class AuthService {
       select: {
         id: true,
         email: true,
+        display_name: true,
         first_name: true,
         last_name: true,
         phone: true,
@@ -195,6 +214,7 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
+      displayName: user.display_name,
       firstName: user.first_name || '',
       lastName: user.last_name || '',
       phone: user.phone,

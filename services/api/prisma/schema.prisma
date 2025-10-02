@@ -1,8 +1,5 @@
-// Otsukai DX Pivot - Privacy-First Group Shopping Schema
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 
@@ -11,57 +8,57 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Management (Privacy-Minimal)
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  password_hash String
-  display_name String
-  avatar_url   String?
-  created_at   DateTime @default(now())
-
-  // Relations
-  created_groups   Group[]       @relation("GroupCreator")
-  group_memberships GroupMember[]
-  created_items    Item[]        @relation("ItemCreator")
-  purchases        Purchase[]    @relation("PurchaseCreator")
-  splits           Split[]
-  messages         Message[]     @relation("MessageAuthor")
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  password_hash      String
+  created_at         DateTime           @default(now())
+  avatar_url         String?
+  display_name       String
+  first_name         String?
+  last_active_at     DateTime?
+  last_name          String?
+  phone              String?
+  role               String             @default("user")
+  subscription_tier  String             @default("free")
+  updated_at         DateTime           @updatedAt
+  ad_impressions     AdImpression[]
+  group_memberships  GroupMember[]
+  created_groups     Group[]            @relation("GroupCreator")
+  created_items      Item[]             @relation("ItemCreator")
+  messages           Message[]          @relation("MessageAuthor")
+  notification_logs  NotificationLog[]
+  purchases          Purchase[]         @relation("PurchaseCreator")
   push_subscriptions PushSubscription[]
-  notification_logs NotificationLog[]
-  ad_impressions   AdImpression[]
+  splits             Split[]
 
   @@map("users")
 }
 
-// Admin Management (Simplified)
 model Admin {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id            String   @id @default(uuid())
+  email         String   @unique
   password_hash String
-  role         String   @default("support") // support, manager, ops
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  role          String   @default("support")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   @@map("admins")
 }
 
-// Group Management
 model Group {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  invite_code String   @unique // 12-character alphanumeric
-  created_by  String
-  created_at  DateTime @default(now())
-
-  // Relations
-  creator     User          @relation("GroupCreator", fields: [created_by], references: [id])
-  members     GroupMember[]
-  items       Item[]
-  purchases   Purchase[]
-  messages    Message[]
+  id             String         @id @default(uuid())
+  name           String
+  description    String?
+  invite_code    String         @unique
+  created_by     String
+  created_at     DateTime       @default(now())
   ad_impressions AdImpression[] @relation("GroupAdImpressions")
+  members        GroupMember[]
+  creator        User           @relation("GroupCreator", fields: [created_by], references: [id])
+  items          Item[]
+  messages       Message[]
+  purchases      Purchase[]
 
   @@map("groups")
 }
@@ -69,56 +66,48 @@ model Group {
 model GroupMember {
   user_id   String
   group_id  String
-  role      String   @default("member") // owner, member
+  role      String   @default("member")
   joined_at DateTime @default(now())
-
-  // Relations
-  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@id([user_id, group_id])
   @@map("group_members")
 }
 
-// Shopping List Management
 model Item {
-  id         String   @id @default(uuid())
-  group_id   String
-  name       String
-  category   String?
-  quantity   String   @default("1")
-  note       String?
-  image_url  String?
-  status     String   @default("todo") // todo, purchased, cancelled
-  created_by String
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
-
-  // Relations
-  group         Group         @relation(fields: [group_id], references: [id], onDelete: Cascade)
-  creator       User          @relation("ItemCreator", fields: [created_by], references: [id])
+  id             String         @id @default(uuid())
+  name           String
+  image_url      String?
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @default(now())
+  category       String?
+  created_by     String
+  group_id       String
+  note           String?
+  quantity       String         @default("1")
+  status         String         @default("todo")
+  creator        User           @relation("ItemCreator", fields: [created_by], references: [id])
+  group          Group          @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  messages       Message[]      @relation("ItemMessages")
   purchase_items PurchaseItem[]
-  messages      Message[]     @relation("ItemMessages")
 
   @@map("items")
 }
 
-// Purchase Management
 model Purchase {
-  id               String   @id @default(uuid())
-  group_id         String
-  purchased_by     String
-  total_amount     Int      // in cents (JPY)
-  currency         String   @default("JPY")
+  id                String         @id @default(uuid())
+  group_id          String
+  purchased_by      String
+  total_amount      Int
+  currency          String         @default("JPY")
   receipt_image_url String?
-  purchased_at     DateTime @default(now())
-  note             String?
-
-  // Relations
-  group          Group         @relation(fields: [group_id], references: [id], onDelete: Cascade)
-  purchaser      User          @relation("PurchaseCreator", fields: [purchased_by], references: [id])
-  purchase_items PurchaseItem[]
-  splits         Split[]
+  purchased_at      DateTime       @default(now())
+  note              String?
+  purchase_items    PurchaseItem[]
+  group             Group          @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  purchaser         User           @relation("PurchaseCreator", fields: [purchased_by], references: [id])
+  splits            Split[]
 
   @@map("purchases")
 }
@@ -126,86 +115,72 @@ model Purchase {
 model PurchaseItem {
   purchase_id String
   item_id     String
-  quantity    Decimal @default(1)
-  unit_price  Int?    // in cents
-
-  // Relations
-  purchase Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
-  item     Item     @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  quantity    Decimal  @default(1)
+  unit_price  Int?
+  item        Item     @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  purchase    Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
 
   @@id([purchase_id, item_id])
   @@map("purchase_items")
 }
 
-// Cost Splitting
 model Split {
-  id           String @id @default(uuid())
+  id           String   @id @default(uuid())
   purchase_id  String
   user_id      String
-  share_amount Int    // in cents
-  rule         String // equal, quantity, custom
-
-  // Relations
-  purchase Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  share_amount Int
+  rule         String
+  purchase     Purchase @relation(fields: [purchase_id], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("splits")
 }
 
-// Communication
 model Message {
   id         String   @id @default(uuid())
   group_id   String
-  item_id    String?  // nullable for threaded discussions
+  item_id    String?
   author_id  String
   body       String
   image_url  String?
   created_at DateTime @default(now())
-
-  // Relations
-  group  Group @relation(fields: [group_id], references: [id], onDelete: Cascade)
-  item   Item? @relation("ItemMessages", fields: [item_id], references: [id], onDelete: Cascade)
-  author User  @relation("MessageAuthor", fields: [author_id], references: [id], onDelete: Cascade)
+  author     User     @relation("MessageAuthor", fields: [author_id], references: [id], onDelete: Cascade)
+  group      Group    @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  item       Item?    @relation("ItemMessages", fields: [item_id], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
 
-// Advertising (Minimal Tracking)
 model AdCreative {
-  id          String   @id @default(uuid())
+  id          String         @id @default(uuid())
   title       String
   description String
   image_url   String
   click_url   String
-  slot        String   // list_top, detail_bottom
-  priority    Int      @default(5) // 1-10 priority weight
-  status      String   @default("active") // active, paused, expired
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  // Relations
+  slot        String
+  priority    Int            @default(5)
+  status      String         @default("active")
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
   impressions AdImpression[]
 
   @@map("ad_creatives")
 }
 
 model AdImpression {
-  id          String   @id @default(uuid())
-  user_id     String?  // nullable for privacy
-  group_id    String?  // nullable for privacy
-  slot        String   // list_top, detail_bottom
+  id          String     @id @default(uuid())
+  user_id     String?
+  group_id    String?
+  slot        String
   creative_id String
-  shown_at    DateTime @default(now())
-
-  // Relations (optional for privacy)
-  user     User?       @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  group    Group?      @relation("GroupAdImpressions", fields: [group_id], references: [id], onDelete: SetNull)
-  creative AdCreative  @relation(fields: [creative_id], references: [id], onDelete: Cascade)
+  shown_at    DateTime   @default(now())
+  creative    AdCreative @relation(fields: [creative_id], references: [id], onDelete: Cascade)
+  group       Group?     @relation("GroupAdImpressions", fields: [group_id], references: [id])
+  user        User?      @relation(fields: [user_id], references: [id])
 
   @@map("ads_impressions")
 }
 
-// Push Notifications (Simplified)
 model PushSubscription {
   id          String   @id @default(uuid())
   user_id     String
@@ -215,27 +190,22 @@ model PushSubscription {
   device_info Json?
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("push_subscriptions")
 }
 
-// Notification Log (Simplified)
 model NotificationLog {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   user_id    String
-  type       String   // push, email
+  type       String
   title      String
   body       String
   payload    Json?
-  sent_at    DateTime @default(now())
+  sent_at    DateTime  @default(now())
   read_at    DateTime?
-  created_at DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime  @default(now())
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@map("notification_logs")
 }

@@ -1,15 +1,19 @@
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.ts$': 'ts-jest',
   },
   collectCoverageFrom: [
     '**/*.(t|j)s',
+    '!**/*.spec.ts',
+    '!**/*.test.ts',
   ],
   coverageDirectory: '../coverage',
-  testEnvironment: 'node',
   moduleNameMapper: {
     '^@otsy/types$': '<rootDir>/../../packages/types/src',
   },

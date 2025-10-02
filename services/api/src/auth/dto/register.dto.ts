@@ -8,6 +8,17 @@ export class RegisterUserDto {
   @MinLength(6)
   password: string;
 
+  @IsString()
+  display_name: string;
+
+  @IsOptional()
+  @IsString()
+  first_name?: string;
+
+  @IsOptional()
+  @IsString()
+  last_name?: string;
+
   @IsOptional()
   @IsPhoneNumber('JP')
   phone?: string;
@@ -20,6 +31,17 @@ export class RegisterShopperDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @IsString()
+  display_name: string;
+
+  @IsOptional()
+  @IsString()
+  first_name?: string;
+
+  @IsOptional()
+  @IsString()
+  last_name?: string;
 
   @IsPhoneNumber('JP')
   phone: string;
