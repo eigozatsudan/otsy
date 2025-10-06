@@ -3,6 +3,8 @@
 import React, { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -15,12 +17,14 @@ interface MobileLayoutProps {
 
 export default function MobileLayout({
   children,
-  title = 'Otsukai DX',
-  description = 'Privacy-first collaborative shopping management',
+  title = 'おつかいDX',
+  description = 'プライバシー重視の共同買い物管理アプリ',
   showHeader = true,
   showNavigation = true,
   className = '',
 }: MobileLayoutProps) {
+  const pathname = usePathname();
+  
   return (
     <>
       <Head>
@@ -94,11 +98,11 @@ export default function MobileLayout({
           >
             <div className="px-fib-2 py-fib-1">
               <div className="flex items-center justify-around">
-                <NavItem icon="home" label="Home" active={typeof window !== 'undefined' && window.location.pathname === '/'} />
-                <NavItem icon="list" label="Shopping" active={typeof window !== 'undefined' && window.location.pathname === '/shopping'} />
-                <NavItem icon="plus" label="Groups" active={typeof window !== 'undefined' && window.location.pathname === '/groups'} />
-                <NavItem icon="chart" label="Splits" active={typeof window !== 'undefined' && window.location.pathname === '/splits'} />
-                <NavItem icon="chat" label="Chat" active={typeof window !== 'undefined' && window.location.pathname === '/chat'} />
+                <NavItem icon="home" label="Home" active={pathname === '/'} />
+                <NavItem icon="list" label="Shopping" active={pathname === '/shopping'} />
+                <NavItem icon="plus" label="Groups" active={pathname === '/groups'} />
+                <NavItem icon="chart" label="Splits" active={pathname === '/splits'} />
+                <NavItem icon="chat" label="Chat" active={pathname === '/chat'} />
               </div>
             </div>
           </motion.nav>
@@ -136,32 +140,33 @@ function NavItem({ icon, label, active = false, onClick }: NavItemProps) {
   };
 
   return (
-    <motion.a
-      href={getHref()}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      className={`touch-target flex flex-col items-center justify-center space-y-1 rounded-lg transition-colors duration-150 ${
-        active 
-          ? 'text-primary-600' 
-          : 'text-neutral-500 hover:text-neutral-700'
-      }`}
-    >
-      <svg 
-        className={`w-5 h-5 ${active ? 'text-primary-600' : 'text-neutral-500'}`} 
-        fill="none" 
-        stroke="currentColor" 
-        viewBox="0 0 24 24"
+    <Link href={getHref()}>
+      <motion.div
+        whileTap={{ scale: 0.95 }}
+        onClick={onClick}
+        className={`touch-target flex flex-col items-center justify-center space-y-1 rounded-lg transition-colors duration-150 cursor-pointer ${
+          active 
+            ? 'text-primary-600' 
+            : 'text-neutral-500 hover:text-neutral-700'
+        }`}
       >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth={active ? 2.5 : 2} 
-          d={iconPaths[icon as keyof typeof iconPaths]} 
-        />
-      </svg>
-      <span className={`text-xs font-medium ${active ? 'text-primary-600' : 'text-neutral-500'}`}>
-        {label}
-      </span>
-    </motion.a>
+        <svg 
+          className={`w-5 h-5 ${active ? 'text-primary-600' : 'text-neutral-500'}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={active ? 2.5 : 2} 
+            d={iconPaths[icon as keyof typeof iconPaths]} 
+          />
+        </svg>
+        <span className={`text-xs font-medium ${active ? 'text-primary-600' : 'text-neutral-500'}`}>
+          {label}
+        </span>
+      </motion.div>
+    </Link>
   );
 }

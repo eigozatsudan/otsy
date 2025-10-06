@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import GoldenCard from '@/components/ui/GoldenCard';
 import TouchButton, { ButtonIcons, IconButton } from '@/components/ui/TouchButton';
@@ -41,6 +42,7 @@ interface Purchase {
 export default function SplitsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<PaymentStatus | 'all'>('all');
+  const router = useRouter();
 
   // Mock data - replace with actual API calls
   const purchases: Purchase[] = [

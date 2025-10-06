@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { ShoppingItemCard } from '@/components/ui/GoldenCard';
 import TouchButton, { FloatingActionButton, ButtonIcons, IconButton } from '@/components/ui/TouchButton';
@@ -31,6 +32,7 @@ export default function ShoppingPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<ItemStatus | 'all'>('all');
     const [sortBy, setSortBy] = useState<SortOption>('recent');
+    const router = useRouter();
 
     // Mock data - replace with actual API calls
     const items: ShoppingItem[] = [

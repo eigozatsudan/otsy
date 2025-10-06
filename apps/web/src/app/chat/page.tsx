@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import TouchButton, { IconButton, ButtonIcons } from '@/components/ui/TouchButton';
 import MobileInput from '@/components/ui/MobileInput';
@@ -45,6 +46,7 @@ export default function ChatPage() {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // Mock data
   const groups: ChatGroup[] = [

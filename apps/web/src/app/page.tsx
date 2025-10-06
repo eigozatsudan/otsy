@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { GroupCard, ShoppingItemCard } from '@/components/ui/GoldenCard';
 import TouchButton, { FloatingActionButton, ButtonIcons } from '@/components/ui/TouchButton';
@@ -9,6 +10,7 @@ import { SearchInput } from '@/components/ui/MobileInput';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const router = useRouter();
 
   // Mock data for demonstration
   const groups = [
@@ -91,7 +93,7 @@ export default function HomePage() {
               size="md"
               icon={ButtonIcons.Plus}
               className="flex-1"
-              onClick={() => window.location.href = '/groups'}
+              onClick={() => router.push('/groups')}
             >
               Create Group
             </TouchButton>
@@ -100,7 +102,7 @@ export default function HomePage() {
               size="md"
               icon={ButtonIcons.Share}
               className="flex-1"
-              onClick={() => window.location.href = '/groups'}
+              onClick={() => router.push('/groups')}
             >
               Join Group
             </TouchButton>
@@ -152,7 +154,7 @@ export default function HomePage() {
                   memberCount={group.memberCount}
                   recentActivity={group.recentActivity}
                   unreadCount={group.unreadCount}
-                  onClick={() => window.location.href = '/shopping'}
+                  onClick={() => router.push('/shopping')}
                 />
               </motion.div>
             ))}
@@ -191,7 +193,7 @@ export default function HomePage() {
                   status={item.status}
                   notes={item.notes}
                   purchasedBy={item.purchasedBy}
-                  onClick={() => window.location.href = '/shopping'}
+                  onClick={() => router.push('/shopping')}
                 />
               </motion.div>
             ))}
@@ -235,7 +237,7 @@ export default function HomePage() {
       {/* Floating Action Button */}
       <FloatingActionButton
         icon={ButtonIcons.Plus}
-        onClick={() => window.location.href = '/shopping'}
+        onClick={() => router.push('/shopping')}
       />
     </MobileLayout>
   );

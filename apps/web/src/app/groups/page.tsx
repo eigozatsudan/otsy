@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { GroupCard } from '@/components/ui/GoldenCard';
 import TouchButton, { FloatingActionButton, ButtonIcons } from '@/components/ui/TouchButton';
@@ -11,6 +12,7 @@ import toast from 'react-hot-toast';
 export default function GroupsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const router = useRouter();
 
   // Mock data - replace with actual API calls
   const groups = [
@@ -60,6 +62,7 @@ export default function GroupsPage() {
     // Navigate to group detail page
     console.log('Navigate to group:', groupId);
     toast.success(`Opening ${groups.find(g => g.id === groupId)?.name}`);
+    router.push('/shopping');
   };
 
   return (
