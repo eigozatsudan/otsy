@@ -18,28 +18,28 @@ export default function GroupsPage() {
   const groups = [
     {
       id: '1',
-      name: 'Family Shopping',
-      description: 'Weekly groceries and household items',
+      name: '家族の買い物',
+      description: '週次食料品と日用品',
       memberCount: 4,
-      recentActivity: 'Sarah added milk to the list',
+      recentActivity: 'さらさんが牛乳をリストに追加しました',
       unreadCount: 3,
       role: 'Owner' as const,
     },
     {
       id: '2',
-      name: 'Roommates',
-      description: 'Shared apartment supplies',
+      name: 'ルームメイト',
+      description: 'シェアアパートの備品',
       memberCount: 3,
-      recentActivity: 'Mike purchased cleaning supplies',
+      recentActivity: 'みけさんが掃除用品を購入しました',
       unreadCount: 0,
       role: 'Member' as const,
     },
     {
       id: '3',
-      name: 'Office Team',
-      description: 'Team snacks and coffee supplies',
+      name: 'オフィスチーム',
+      description: 'チームのお菓子とコーヒー用品',
       memberCount: 8,
-      recentActivity: 'Lisa suggested organic coffee',
+      recentActivity: 'りささんがオーガニックコーヒーを提案しました',
       unreadCount: 1,
       role: 'Member' as const,
     },
@@ -55,7 +55,7 @@ export default function GroupsPage() {
   };
 
   const handleJoinGroup = () => {
-    toast.success('Join group feature coming soon!');
+    toast.success('グループ参加機能は近日公開予定です！');
   };
 
   const handleGroupClick = (groupId: string) => {
@@ -66,7 +66,7 @@ export default function GroupsPage() {
   };
 
   return (
-    <MobileLayout title="My Groups" showHeader showNavigation>
+    <MobileLayout title="マイグループ" showHeader showNavigation>
       <div className="px-fib-3 py-fib-4 space-y-fib-5">
         {/* Header Actions */}
         <motion.section
@@ -82,7 +82,7 @@ export default function GroupsPage() {
               className="flex-1"
               onClick={handleCreateGroup}
             >
-              Create Group
+              グループ作成
             </TouchButton>
             <TouchButton
               variant="outline"
@@ -91,7 +91,7 @@ export default function GroupsPage() {
               className="flex-1"
               onClick={handleJoinGroup}
             >
-              Join Group
+              グループ参加
             </TouchButton>
           </div>
         </motion.section>
@@ -105,7 +105,7 @@ export default function GroupsPage() {
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search groups..."
+            placeholder="グループを検索..."
             onClear={() => setSearchQuery('')}
           />
         </motion.section>
@@ -119,7 +119,7 @@ export default function GroupsPage() {
           <div className="space-y-fib-3">
             <div className="flex items-center justify-between">
               <h2 className="text-mobile-lg font-semibold text-neutral-900">
-                Your Groups ({filteredGroups.length})
+                あなたのグループ ({filteredGroups.length})
               </h2>
             </div>
 
@@ -131,12 +131,12 @@ export default function GroupsPage() {
                   </svg>
                 </div>
                 <h3 className="text-mobile-lg font-medium text-neutral-900 mb-fib-1">
-                  {searchQuery ? 'No groups found' : 'No groups yet'}
+                  {searchQuery ? 'グループが見つかりません' : 'まだグループがありません'}
                 </h3>
                 <p className="text-mobile-sm text-neutral-600 mb-fib-4">
-                  {searchQuery 
-                    ? 'Try adjusting your search terms'
-                    : 'Create your first group to start collaborative shopping'
+                  {searchQuery
+                    ? '検索条件を調整してみてください'
+                    : '最初のグループを作成して共同買い物を始めましょう'
                   }
                 </p>
                 {!searchQuery && (
@@ -146,7 +146,7 @@ export default function GroupsPage() {
                     icon={ButtonIcons.Plus}
                     onClick={handleCreateGroup}
                   >
-                    Create Your First Group
+                    最初のグループを作成
                   </TouchButton>
                 )}
               </div>
@@ -170,12 +170,11 @@ export default function GroupsPage() {
                       />
                       {/* Role badge */}
                       <div className="absolute top-fib-2 right-fib-2">
-                        <span className={`px-fib-1 py-0.5 rounded-full text-xs font-medium ${
-                          group.role === 'Owner' 
-                            ? 'bg-primary-100 text-primary-700' 
-                            : 'bg-neutral-100 text-neutral-700'
-                        }`}>
-                          {group.role}
+                        <span className={`px-fib-1 py-0.5 rounded-full text-xs font-medium ${group.role === 'Owner'
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-neutral-100 text-neutral-700'
+                          }`}>
+                          {group.role === 'Owner' ? 'オーナー' : 'メンバー'}
                         </span>
                       </div>
                     </div>
@@ -200,7 +199,7 @@ export default function GroupsPage() {
                 </svg>
               </div>
               <p className="text-mobile-2xl font-bold text-primary-900">{groups.length}</p>
-              <p className="text-mobile-sm text-primary-700">Total Groups</p>
+              <p className="text-mobile-sm text-primary-700">総グループ数</p>
             </div>
 
             <div className="bg-success-50 rounded-xl p-fib-3 border border-success-200">
@@ -212,7 +211,7 @@ export default function GroupsPage() {
               <p className="text-mobile-2xl font-bold text-success-900">
                 {groups.filter(g => g.role === 'Owner').length}
               </p>
-              <p className="text-mobile-sm text-success-700">Owned Groups</p>
+              <p className="text-mobile-sm text-success-700">所有グループ</p>
             </div>
           </div>
         </motion.section>

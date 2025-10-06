@@ -16,26 +16,26 @@ export default function HomePage() {
   const groups = [
     {
       id: '1',
-      name: 'Family Shopping',
-      description: 'Weekly groceries and household items for the family',
+      name: '家族の買い物',
+      description: '家族の週次食料品と日用品',
       memberCount: 4,
-      recentActivity: 'Sarah added milk to the list',
+      recentActivity: 'さらさんが牛乳をリストに追加しました',
       unreadCount: 3,
     },
     {
       id: '2',
-      name: 'Roommates',
-      description: 'Shared apartment supplies and groceries',
+      name: 'ルームメイト',
+      description: 'シェアアパートの備品と食料品',
       memberCount: 3,
-      recentActivity: 'Mike purchased cleaning supplies',
+      recentActivity: 'みけさんが掃除用品を購入しました',
       unreadCount: 0,
     },
     {
       id: '3',
-      name: 'Office Snacks',
-      description: 'Team snacks and coffee supplies',
+      name: 'オフィスのお菓子',
+      description: 'チームのお菓子とコーヒー用品',
       memberCount: 8,
-      recentActivity: 'Lisa suggested organic coffee',
+      recentActivity: 'りささんがオーガニックコーヒーを提案しました',
       unreadCount: 1,
     },
   ];
@@ -43,27 +43,27 @@ export default function HomePage() {
   const recentItems = [
     {
       id: '1',
-      title: 'Organic Milk',
-      category: 'Dairy',
+      title: 'オーガニック牛乳',
+      category: '乳製品',
       quantity: 2,
       status: 'todo' as const,
-      notes: 'Get the 1L cartons, not the 500ml ones',
+      notes: '500mlではなく1Lパックを購入',
     },
     {
       id: '2',
-      title: 'Whole Wheat Bread',
-      category: 'Bakery',
+      title: '全粒粉パン',
+      category: 'パン',
       quantity: 1,
       status: 'purchased' as const,
-      purchasedBy: 'Sarah',
+      purchasedBy: 'さら',
     },
     {
       id: '3',
-      title: 'Cleaning Supplies',
-      category: 'Household',
+      title: '掃除用品',
+      category: '日用品',
       quantity: 1,
       status: 'cancelled' as const,
-      notes: 'Found some at home',
+      notes: '家にあることが判明',
     },
   ];
 
@@ -79,10 +79,10 @@ export default function HomePage() {
           <div className="space-y-fib-3">
           <div>
             <h2 className="text-mobile-2xl font-bold text-neutral-900">
-              Welcome back! 👋
+              おかえりなさい！ 👋
             </h2>
             <p className="text-mobile-base text-neutral-600 mt-fib-1">
-              Manage your collaborative shopping lists with family and friends
+              家族や友人と一緒に買い物リストを管理しましょう
             </p>
           </div>
 
@@ -95,7 +95,7 @@ export default function HomePage() {
               className="flex-1"
               onClick={() => router.push('/groups')}
             >
-              Create Group
+              グループ作成
             </TouchButton>
             <TouchButton
               variant="outline"
@@ -104,7 +104,7 @@ export default function HomePage() {
               className="flex-1"
               onClick={() => router.push('/groups')}
             >
-              Join Group
+              グループ参加
             </TouchButton>
           </div>
           </div>
@@ -119,7 +119,7 @@ export default function HomePage() {
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search groups, items, or members..."
+            placeholder="グループ、アイテム、メンバーを検索..."
             onClear={() => setSearchQuery('')}
           />
         </motion.section>
@@ -133,10 +133,10 @@ export default function HomePage() {
           <div className="space-y-fib-3">
           <div className="flex items-center justify-between">
             <h3 className="text-mobile-lg font-semibold text-neutral-900">
-              My Groups
+              マイグループ
             </h3>
             <TouchButton variant="ghost" size="sm">
-              View All
+              すべて表示
             </TouchButton>
           </div>
 
@@ -171,10 +171,10 @@ export default function HomePage() {
           <div className="space-y-fib-3">
           <div className="flex items-center justify-between">
             <h3 className="text-mobile-lg font-semibold text-neutral-900">
-              Recent Activity
+              最近のアクティビティ
             </h3>
             <TouchButton variant="ghost" size="sm">
-              View All
+              すべて表示
             </TouchButton>
           </div>
 
@@ -215,7 +215,7 @@ export default function HomePage() {
               </svg>
             </div>
             <p className="text-mobile-2xl font-bold text-primary-900">3</p>
-            <p className="text-mobile-sm text-primary-700">Active Groups</p>
+            <p className="text-mobile-sm text-primary-700">アクティブグループ</p>
           </div>
 
           <div className="bg-success-50 rounded-xl p-fib-3 border border-success-200">
@@ -225,7 +225,7 @@ export default function HomePage() {
               </svg>
             </div>
             <p className="text-mobile-2xl font-bold text-success-900">12</p>
-            <p className="text-mobile-sm text-success-700">Items Completed</p>
+            <p className="text-mobile-sm text-success-700">完了アイテム</p>
           </div>
           </div>
         </motion.section>

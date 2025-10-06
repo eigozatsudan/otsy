@@ -38,64 +38,64 @@ export default function ShoppingPage() {
     const items: ShoppingItem[] = [
         {
             id: '1',
-            title: 'Organic Milk',
-            category: 'Dairy',
+            title: 'オーガニック牛乳',
+            category: '乳製品',
             quantity: 2,
             status: 'todo',
-            notes: 'Get the 1L cartons, not the 500ml ones',
-            addedBy: 'You',
+            notes: '500mlではなく1Lパックを購入',
+            addedBy: 'あなた',
             addedAt: new Date('2025-01-06T10:00:00'),
             groupId: '1',
-            groupName: 'Family Shopping',
+            groupName: '家族の買い物',
         },
         {
             id: '2',
-            title: 'Whole Wheat Bread',
-            category: 'Bakery',
+            title: '全粒粉パン',
+            category: 'パン',
             quantity: 1,
             status: 'purchased',
-            purchasedBy: 'Sarah',
+            purchasedBy: 'さら',
             purchasedAt: new Date('2025-01-06T14:30:00'),
-            addedBy: 'Mike',
+            addedBy: 'みけ',
             addedAt: new Date('2025-01-06T09:00:00'),
             groupId: '1',
-            groupName: 'Family Shopping',
+            groupName: '家族の買い物',
         },
         {
             id: '3',
-            title: 'Cleaning Supplies',
-            category: 'Household',
+            title: '掃除用品',
+            category: '日用品',
             quantity: 1,
             status: 'cancelled',
-            notes: 'Found some at home',
-            addedBy: 'Lisa',
+            notes: '家にあることが判明',
+            addedBy: 'りさ',
             addedAt: new Date('2025-01-05T16:00:00'),
             groupId: '2',
-            groupName: 'Roommates',
+            groupName: 'ルームメイト',
         },
         {
             id: '4',
-            title: 'Coffee Beans',
-            category: 'Beverages',
+            title: 'コーヒー豆',
+            category: '飲み物',
             quantity: 2,
             status: 'todo',
-            notes: 'Medium roast, organic if possible',
-            addedBy: 'John',
+            notes: 'ミディアムロースト、できればオーガニック',
+            addedBy: 'じょん',
             addedAt: new Date('2025-01-06T11:00:00'),
             groupId: '3',
-            groupName: 'Office Team',
+            groupName: 'オフィスチーム',
         },
         {
             id: '5',
-            title: 'Fresh Vegetables',
-            category: 'Produce',
+            title: '新鮮な野菜',
+            category: '青果',
             quantity: 1,
             status: 'todo',
-            notes: 'Carrots, broccoli, bell peppers',
-            addedBy: 'You',
+            notes: 'にんじん、ブロッコリー、ピーマン',
+            addedBy: 'あなた',
             addedAt: new Date('2025-01-06T12:00:00'),
             groupId: '1',
-            groupName: 'Family Shopping',
+            groupName: '家族の買い物',
         },
     ];
 
@@ -134,12 +134,12 @@ export default function ShoppingPage() {
     };
 
     const handleAddItem = () => {
-        toast.success('Add item feature coming soon!');
+        toast.success('アイテム追加機能は近日公開予定です！');
     };
 
     const handleItemClick = (itemId: string) => {
         const item = items.find(i => i.id === itemId);
-        toast.success(`Opening ${item?.title}`);
+        toast.success(`${item?.title}を開いています`);
     };
 
     const handleStatusFilter = (status: ItemStatus | 'all') => {
@@ -151,7 +151,7 @@ export default function ShoppingPage() {
     };
 
     return (
-        <MobileLayout title="Shopping Lists" showHeader showNavigation>
+        <MobileLayout title="買い物リスト" showHeader showNavigation>
             <div className="px-fib-3 py-fib-4 space-y-fib-4">
                 {/* Search */}
                 <motion.section
@@ -162,7 +162,7 @@ export default function ShoppingPage() {
                     <SearchInput
                         value={searchQuery}
                         onChange={setSearchQuery}
-                        placeholder="Search items, categories, or groups..."
+                        placeholder="アイテム、カテゴリ、グループを検索..."
                         onClear={() => setSearchQuery('')}
                     />
                 </motion.section>
@@ -175,10 +175,10 @@ export default function ShoppingPage() {
                 >
                     <div className="flex space-x-fib-1 overflow-x-auto scrollbar-hide">
                         {[
-                            { key: 'all', label: 'All', count: statusCounts.all },
-                            { key: 'todo', label: 'To Buy', count: statusCounts.todo },
-                            { key: 'purchased', label: 'Purchased', count: statusCounts.purchased },
-                            { key: 'cancelled', label: 'Cancelled', count: statusCounts.cancelled },
+                            { key: 'all', label: 'すべて', count: statusCounts.all },
+                            { key: 'todo', label: '購入予定', count: statusCounts.todo },
+                            { key: 'purchased', label: '購入済み', count: statusCounts.purchased },
+                            { key: 'cancelled', label: 'キャンセル', count: statusCounts.cancelled },
                         ].map((tab) => (
                             <TouchButton
                                 key={tab.key}
@@ -201,16 +201,16 @@ export default function ShoppingPage() {
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-fib-2">
-                            <span className="text-mobile-sm text-neutral-600">Sort by:</span>
+                            <span className="text-mobile-sm text-neutral-600">並び順:</span>
                             <select
                                 value={sortBy}
                                 onChange={(e) => handleSort(e.target.value as SortOption)}
                                 className="text-mobile-sm bg-transparent border-none focus:outline-none text-primary-600 font-medium"
                             >
-                                <option value="recent">Recent</option>
-                                <option value="name">Name</option>
-                                <option value="category">Category</option>
-                                <option value="status">Status</option>
+                                <option value="recent">最新</option>
+                                <option value="name">名前</option>
+                                <option value="category">カテゴリ</option>
+                                <option value="status">ステータス</option>
                             </select>
                         </div>
 
@@ -221,7 +221,7 @@ export default function ShoppingPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
                                     </svg>
                                 }
-                                label="Filter"
+                                label="フィルター"
                                 variant="ghost"
                                 size="sm"
                             />
@@ -238,7 +238,7 @@ export default function ShoppingPage() {
                     <div className="space-y-fib-3">
                         <div className="flex items-center justify-between">
                             <h2 className="text-mobile-lg font-semibold text-neutral-900">
-                                Items ({filteredItems.length})
+                                アイテム ({filteredItems.length})
                             </h2>
                         </div>
 
@@ -250,12 +250,12 @@ export default function ShoppingPage() {
                                     </svg>
                                 </div>
                                 <h3 className="text-mobile-lg font-medium text-neutral-900 mb-fib-1">
-                                    {searchQuery ? 'No items found' : 'No items yet'}
+                                    {searchQuery ? 'アイテムが見つかりません' : 'まだアイテムがありません'}
                                 </h3>
                                 <p className="text-mobile-sm text-neutral-600 mb-fib-4">
                                     {searchQuery
-                                        ? 'Try adjusting your search terms or filters'
-                                        : 'Add your first item to start shopping'
+                                        ? '検索条件やフィルターを調整してみてください'
+                                        : '最初のアイテムを追加して買い物を始めましょう'
                                     }
                                 </p>
                                 {!searchQuery && (
@@ -265,7 +265,7 @@ export default function ShoppingPage() {
                                         icon={ButtonIcons.Plus}
                                         onClick={handleAddItem}
                                     >
-                                        Add Your First Item
+                                        最初のアイテムを追加
                                     </TouchButton>
                                 )}
                             </div>
@@ -311,15 +311,15 @@ export default function ShoppingPage() {
                     <div className="grid grid-cols-3 gap-fib-2">
                         <div className="bg-warning-50 rounded-lg p-fib-2 border border-warning-200 text-center">
                             <p className="text-mobile-lg font-bold text-warning-900">{statusCounts.todo}</p>
-                            <p className="text-mobile-xs text-warning-700">To Buy</p>
+                            <p className="text-mobile-xs text-warning-700">購入予定</p>
                         </div>
                         <div className="bg-success-50 rounded-lg p-fib-2 border border-success-200 text-center">
                             <p className="text-mobile-lg font-bold text-success-900">{statusCounts.purchased}</p>
-                            <p className="text-mobile-xs text-success-700">Purchased</p>
+                            <p className="text-mobile-xs text-success-700">購入済み</p>
                         </div>
                         <div className="bg-neutral-50 rounded-lg p-fib-2 border border-neutral-200 text-center">
                             <p className="text-mobile-lg font-bold text-neutral-900">{statusCounts.cancelled}</p>
-                            <p className="text-mobile-xs text-neutral-700">Cancelled</p>
+                            <p className="text-mobile-xs text-neutral-700">キャンセル</p>
                         </div>
                     </div>
                 </motion.section>

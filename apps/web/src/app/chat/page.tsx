@@ -52,31 +52,31 @@ export default function ChatPage() {
   const groups: ChatGroup[] = [
     {
       id: '1',
-      name: 'Family Shopping',
+      name: '家族の買い物',
       members: [
-        { id: '1', name: 'You', isOnline: true },
-        { id: '2', name: 'Sarah', avatar: '👩', isOnline: true },
-        { id: '3', name: 'Mike', avatar: '👨', isOnline: false },
-        { id: '4', name: 'Lisa', avatar: '👧', isOnline: true },
+        { id: '1', name: 'あなた', isOnline: true },
+        { id: '2', name: 'さら', avatar: '👩', isOnline: true },
+        { id: '3', name: 'みけ', avatar: '👨', isOnline: false },
+        { id: '4', name: 'りさ', avatar: '👧', isOnline: true },
       ],
     },
     {
       id: '2',
-      name: 'Roommates',
+      name: 'ルームメイト',
       members: [
-        { id: '1', name: 'You', isOnline: true },
-        { id: '3', name: 'Mike', avatar: '👨', isOnline: false },
-        { id: '8', name: 'Alex', avatar: '🧑', isOnline: true },
+        { id: '1', name: 'あなた', isOnline: true },
+        { id: '3', name: 'みけ', avatar: '👨', isOnline: false },
+        { id: '8', name: 'あれっくす', avatar: '🧑', isOnline: true },
       ],
     },
     {
       id: '3',
-      name: 'Office Team',
+      name: 'オフィスチーム',
       members: [
-        { id: '1', name: 'You', isOnline: true },
-        { id: '5', name: 'John', avatar: '👨‍💼', isOnline: true },
-        { id: '6', name: 'Emma', avatar: '👩‍💼', isOnline: false },
-        { id: '7', name: 'David', avatar: '👨‍💻', isOnline: true },
+        { id: '1', name: 'あなた', isOnline: true },
+        { id: '5', name: 'じょん', avatar: '👨‍💼', isOnline: true },
+        { id: '6', name: 'えま', avatar: '👩‍💼', isOnline: false },
+        { id: '7', name: 'でーびっど', avatar: '👨‍💻', isOnline: true },
       ],
     },
   ];
@@ -85,55 +85,55 @@ export default function ChatPage() {
     {
       id: '1',
       type: 'system',
-      content: 'Sarah added "Organic Milk" to the shopping list',
-      sender: { id: 'system', name: 'System' },
+      content: 'さらさんが「オーガニック牛乳」を買い物リストに追加しました',
+      sender: { id: 'system', name: 'システム' },
       timestamp: new Date('2025-01-06T10:00:00'),
     },
     {
       id: '2',
       type: 'text',
-      content: 'Hey everyone! I added milk to our list. Should I get the 1L or 2L cartons?',
-      sender: { id: '2', name: 'Sarah', avatar: '👩' },
+      content: 'みなさん、こんにちは！牛乳をリストに追加しました。1Lと2Lどちらがいいですか？',
+      sender: { id: '2', name: 'さら', avatar: '👩' },
       timestamp: new Date('2025-01-06T10:01:00'),
     },
     {
       id: '3',
       type: 'text',
-      content: '2L please! We go through it pretty quickly 😊',
-      sender: { id: '4', name: 'Lisa', avatar: '👧' },
+      content: '2Lでお願いします！結構早く消費するので 😊',
+      sender: { id: '4', name: 'りさ', avatar: '👧' },
       timestamp: new Date('2025-01-06T10:02:00'),
       replyTo: '2',
     },
     {
       id: '4',
       type: 'text',
-      content: '@Sarah can you also grab some bread while you\'re there?',
-      sender: { id: '1', name: 'You' },
+      content: '@さら ついでにパンも買ってもらえますか？',
+      sender: { id: '1', name: 'あなた' },
       timestamp: new Date('2025-01-06T10:05:00'),
-      mentions: ['Sarah'],
+      mentions: ['さら'],
     },
     {
       id: '5',
       type: 'item',
-      content: 'Added "Whole Wheat Bread" to the list',
+      content: '「全粒粉パン」をリストに追加しました',
       itemId: '2',
-      itemName: 'Whole Wheat Bread',
-      sender: { id: '2', name: 'Sarah', avatar: '👩' },
+      itemName: '全粒粉パン',
+      sender: { id: '2', name: 'さら', avatar: '👩' },
       timestamp: new Date('2025-01-06T10:06:00'),
     },
     {
       id: '6',
       type: 'text',
-      content: 'Perfect! I\'ll pick up both items this afternoon 👍',
-      sender: { id: '2', name: 'Sarah', avatar: '👩' },
+      content: '完璧です！午後に両方とも買ってきますね 👍',
+      sender: { id: '2', name: 'さら', avatar: '👩' },
       timestamp: new Date('2025-01-06T10:07:00'),
     },
     {
       id: '7',
       type: 'image',
-      content: 'Found these organic options, which one looks better?',
+      content: 'オーガニックの選択肢を見つけました。どちらが良さそうですか？',
       imageUrl: '/api/placeholder/300/200',
-      sender: { id: '2', name: 'Sarah', avatar: '👩' },
+      sender: { id: '2', name: 'さら', avatar: '👩' },
       timestamp: new Date('2025-01-06T14:30:00'),
     },
   ];
@@ -153,7 +153,7 @@ export default function ChatPage() {
     if (!message.trim()) return;
 
     // In real app, send message via API
-    toast.success('Message sent!');
+    toast.success('メッセージを送信しました！');
     setMessage('');
     setReplyingTo(null);
     
@@ -222,7 +222,7 @@ export default function ChatPage() {
             {/* Reply indicator */}
             {msg.replyTo && (
               <div className="text-mobile-xs text-neutral-500 mb-1 px-fib-2">
-                Replying to {groupMessages.find(m => m.id === msg.replyTo)?.sender.name}
+                {groupMessages.find(m => m.id === msg.replyTo)?.sender.name}への返信
               </div>
             )}
             
@@ -268,7 +268,7 @@ export default function ChatPage() {
                     <svg className="w-8 h-8 mx-auto text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-mobile-xs text-neutral-500 mt-1">Image placeholder</p>
+                    <p className="text-mobile-xs text-neutral-500 mt-1">画像プレースホルダー</p>
                   </div>
                 </div>
               )}
@@ -284,7 +284,7 @@ export default function ChatPage() {
                   onClick={() => handleReply(msg)}
                   className="text-mobile-xs text-neutral-400 hover:text-neutral-600"
                 >
-                  Reply
+                  返信
                 </button>
               )}
             </div>
@@ -295,7 +295,7 @@ export default function ChatPage() {
   };
 
   return (
-    <MobileLayout title={currentGroup?.name || 'Chat'} showHeader showNavigation>
+    <MobileLayout title={currentGroup?.name || 'チャット'} showHeader showNavigation>
       <div className="flex flex-col h-full">
         {/* Group selector */}
         <div className="px-fib-3 py-fib-2 border-b border-neutral-200 bg-white">
@@ -332,7 +332,7 @@ export default function ChatPage() {
               ))}
             </div>
             <span className="text-mobile-sm text-neutral-600">
-              {currentGroup?.members.length} members
+              {currentGroup?.members.length}人のメンバー
             </span>
             <div className="flex-1" />
             <IconButton
@@ -341,7 +341,7 @@ export default function ChatPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
               }
-              label="Group options"
+              label="グループオプション"
               variant="ghost"
               size="sm"
             />
@@ -366,7 +366,7 @@ export default function ChatPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-mobile-xs text-neutral-600">
-                    Replying to {replyingTo.sender.name}
+                    {replyingTo.sender.name}への返信
                   </p>
                   <p className="text-mobile-sm text-neutral-900 truncate">
                     {replyingTo.content}
@@ -378,7 +378,7 @@ export default function ChatPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   }
-                  label="Cancel reply"
+                  label="返信をキャンセル"
                   variant="ghost"
                   size="sm"
                   onClick={() => setReplyingTo(null)}
@@ -396,7 +396,7 @@ export default function ChatPage() {
                 ref={inputRef}
                 value={message}
                 onChange={setMessage}
-                placeholder="Type a message..."
+                placeholder="メッセージを入力..."
                 onKeyDown={handleKeyPress}
                 className="resize-none"
               />
@@ -409,10 +409,10 @@ export default function ChatPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
                 }
-                label="Attach image"
+                label="画像を添付"
                 variant="ghost"
                 size="sm"
-                onClick={() => toast.success('Image attachment coming soon!')}
+                onClick={() => toast.success('画像添付機能は近日公開予定です！')}
               />
               
               <TouchButton
@@ -426,14 +426,14 @@ export default function ChatPage() {
                 onClick={handleSendMessage}
                 disabled={!message.trim()}
               >
-                Send
+                送信
               </TouchButton>
             </div>
           </div>
           
           {/* Quick mentions */}
           <div className="flex items-center space-x-fib-1 mt-fib-1">
-            <span className="text-mobile-xs text-neutral-500">Quick mention:</span>
+            <span className="text-mobile-xs text-neutral-500">クイックメンション:</span>
             {currentGroup?.members.filter(m => m.id !== '1').map((member) => (
               <button
                 key={member.id}

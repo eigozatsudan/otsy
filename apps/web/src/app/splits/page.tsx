@@ -48,68 +48,68 @@ export default function SplitsPage() {
   const purchases: Purchase[] = [
     {
       id: '1',
-      title: 'Weekly Groceries',
+      title: '週次食料品',
       totalAmount: 12500, // ¥125.00
       tax: 1000, // ¥10.00
       shipping: 0,
-      purchasedBy: 'Sarah',
+      purchasedBy: 'さら',
       purchasedAt: new Date('2025-01-06T14:30:00'),
       groupId: '1',
-      groupName: 'Family Shopping',
+      groupName: '家族の買い物',
       items: [
-        { id: '1', name: 'Organic Milk', quantity: 2, price: 600 },
-        { id: '2', name: 'Whole Wheat Bread', quantity: 1, price: 300 },
-        { id: '3', name: 'Fresh Vegetables', quantity: 1, price: 800 },
+        { id: '1', name: 'オーガニック牛乳', quantity: 2, price: 600 },
+        { id: '2', name: '全粒粉パン', quantity: 1, price: 300 },
+        { id: '3', name: '新鮮な野菜', quantity: 1, price: 800 },
       ],
       splitMethod: 'equal',
       participants: [
-        { userId: '1', name: 'You', share: 25, amount: 3125, status: 'pending' },
-        { userId: '2', name: 'Sarah', share: 25, amount: 3125, status: 'completed' },
-        { userId: '3', name: 'Mike', share: 25, amount: 3125, status: 'completed' },
-        { userId: '4', name: 'Lisa', share: 25, amount: 3125, status: 'pending' },
+        { userId: '1', name: 'あなた', share: 25, amount: 3125, status: 'pending' },
+        { userId: '2', name: 'さら', share: 25, amount: 3125, status: 'completed' },
+        { userId: '3', name: 'みけ', share: 25, amount: 3125, status: 'completed' },
+        { userId: '4', name: 'りさ', share: 25, amount: 3125, status: 'pending' },
       ],
     },
     {
       id: '2',
-      title: 'Office Snacks',
+      title: 'オフィスのお菓子',
       totalAmount: 8000, // ¥80.00
       tax: 640, // ¥6.40
       shipping: 500, // ¥5.00
-      purchasedBy: 'John',
+      purchasedBy: 'じょん',
       purchasedAt: new Date('2025-01-05T16:00:00'),
       groupId: '3',
-      groupName: 'Office Team',
+      groupName: 'オフィスチーム',
       items: [
-        { id: '4', name: 'Coffee Beans', quantity: 2, price: 1200 },
-        { id: '5', name: 'Cookies', quantity: 3, price: 900 },
+        { id: '4', name: 'コーヒー豆', quantity: 2, price: 1200 },
+        { id: '5', name: 'クッキー', quantity: 3, price: 900 },
       ],
       splitMethod: 'quantity',
       participants: [
-        { userId: '1', name: 'You', share: 2, amount: 2000, status: 'completed' },
-        { userId: '5', name: 'John', share: 3, amount: 3000, status: 'completed' },
-        { userId: '6', name: 'Emma', share: 2, amount: 2000, status: 'pending' },
-        { userId: '7', name: 'David', share: 1, amount: 1000, status: 'pending' },
+        { userId: '1', name: 'あなた', share: 2, amount: 2000, status: 'completed' },
+        { userId: '5', name: 'じょん', share: 3, amount: 3000, status: 'completed' },
+        { userId: '6', name: 'えま', share: 2, amount: 2000, status: 'pending' },
+        { userId: '7', name: 'でーびっど', share: 1, amount: 1000, status: 'pending' },
       ],
     },
     {
       id: '3',
-      title: 'Cleaning Supplies',
+      title: '掃除用品',
       totalAmount: 4500, // ¥45.00
       tax: 360, // ¥3.60
       shipping: 0,
-      purchasedBy: 'Mike',
+      purchasedBy: 'みけ',
       purchasedAt: new Date('2025-01-04T12:00:00'),
       groupId: '2',
-      groupName: 'Roommates',
+      groupName: 'ルームメイト',
       items: [
-        { id: '6', name: 'All-purpose Cleaner', quantity: 1, price: 800 },
-        { id: '7', name: 'Laundry Detergent', quantity: 1, price: 1200 },
+        { id: '6', name: '万能クリーナー', quantity: 1, price: 800 },
+        { id: '7', name: '洗濯洗剤', quantity: 1, price: 1200 },
       ],
       splitMethod: 'custom',
       participants: [
-        { userId: '1', name: 'You', share: 40, amount: 1800, status: 'completed' },
-        { userId: '3', name: 'Mike', share: 35, amount: 1575, status: 'completed' },
-        { userId: '8', name: 'Alex', share: 25, amount: 1125, status: 'cancelled' },
+        { userId: '1', name: 'あなた', share: 40, amount: 1800, status: 'completed' },
+        { userId: '3', name: 'みけ', share: 35, amount: 1575, status: 'completed' },
+        { userId: '8', name: 'あれっくす', share: 25, amount: 1125, status: 'cancelled' },
       ],
     },
   ];
@@ -123,7 +123,7 @@ export default function SplitsPage() {
     if (selectedStatus === 'all') return matchesSearch;
     
     // Check if user has the selected status for this purchase
-    const userParticipant = purchase.participants.find(p => p.name === 'You');
+    const userParticipant = purchase.participants.find(p => p.name === 'あなた');
     return matchesSearch && userParticipant?.status === selectedStatus;
   });
 
@@ -133,9 +133,9 @@ export default function SplitsPage() {
 
   const getSplitMethodLabel = (method: SplitMethod) => {
     switch (method) {
-      case 'equal': return 'Equal Split';
-      case 'quantity': return 'By Quantity';
-      case 'custom': return 'Custom Split';
+      case 'equal': return '均等割り';
+      case 'quantity': return '数量比例';
+      case 'custom': return 'カスタム';
     }
   };
 
@@ -147,27 +147,35 @@ export default function SplitsPage() {
     }
   };
 
+  const getStatusLabel = (status: PaymentStatus) => {
+    switch (status) {
+      case 'pending': return '未払い';
+      case 'completed': return '支払済み';
+      case 'cancelled': return 'キャンセル';
+    }
+  };
+
   const handlePurchaseClick = (purchaseId: string) => {
     const purchase = purchases.find(p => p.id === purchaseId);
-    toast.success(`Opening ${purchase?.title} details`);
+    toast.success(`${purchase?.title}の詳細を開いています`);
   };
 
   const handlePayment = (purchaseId: string) => {
-    toast.success('Payment feature coming soon!');
+    toast.success('支払い機能は近日公開予定です！');
   };
 
   const totalOwed = purchases.reduce((sum, purchase) => {
-    const userParticipant = purchase.participants.find(p => p.name === 'You');
+    const userParticipant = purchase.participants.find(p => p.name === 'あなた');
     return sum + (userParticipant?.status === 'pending' ? userParticipant.amount : 0);
   }, 0);
 
   const totalPaid = purchases.reduce((sum, purchase) => {
-    const userParticipant = purchase.participants.find(p => p.name === 'You');
+    const userParticipant = purchase.participants.find(p => p.name === 'あなた');
     return sum + (userParticipant?.status === 'completed' ? userParticipant.amount : 0);
   }, 0);
 
   return (
-    <MobileLayout title="Bill Splits" showHeader showNavigation>
+    <MobileLayout title="割り勘" showHeader showNavigation>
       <div className="px-fib-3 py-fib-4 space-y-fib-4">
         {/* Summary Cards */}
         <motion.section
@@ -183,7 +191,7 @@ export default function SplitsPage() {
                 </svg>
               </div>
               <p className="text-mobile-2xl font-bold text-warning-900">{formatCurrency(totalOwed)}</p>
-              <p className="text-mobile-sm text-warning-700">You Owe</p>
+              <p className="text-mobile-sm text-warning-700">あなたの負担額</p>
             </div>
 
             <div className="bg-success-50 rounded-xl p-fib-3 border border-success-200">
@@ -193,7 +201,7 @@ export default function SplitsPage() {
                 </svg>
               </div>
               <p className="text-mobile-2xl font-bold text-success-900">{formatCurrency(totalPaid)}</p>
-              <p className="text-mobile-sm text-success-700">You Paid</p>
+              <p className="text-mobile-sm text-success-700">あなたの支払済額</p>
             </div>
           </div>
         </motion.section>
@@ -207,7 +215,7 @@ export default function SplitsPage() {
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search purchases or groups..."
+            placeholder="購入履歴やグループを検索..."
             onClear={() => setSearchQuery('')}
           />
         </motion.section>
@@ -220,10 +228,10 @@ export default function SplitsPage() {
         >
           <div className="flex space-x-fib-1 overflow-x-auto scrollbar-hide">
             {[
-              { key: 'all', label: 'All' },
-              { key: 'pending', label: 'Pending' },
-              { key: 'completed', label: 'Paid' },
-              { key: 'cancelled', label: 'Cancelled' },
+              { key: 'all', label: 'すべて' },
+              { key: 'pending', label: '未払い' },
+              { key: 'completed', label: '支払済み' },
+              { key: 'cancelled', label: 'キャンセル' },
             ].map((tab) => (
               <TouchButton
                 key={tab.key}
@@ -247,7 +255,7 @@ export default function SplitsPage() {
           <div className="space-y-fib-3">
             <div className="flex items-center justify-between">
               <h2 className="text-mobile-lg font-semibold text-neutral-900">
-                Recent Purchases ({filteredPurchases.length})
+                最近の購入履歴 ({filteredPurchases.length})
               </h2>
             </div>
 
@@ -259,19 +267,19 @@ export default function SplitsPage() {
                   </svg>
                 </div>
                 <h3 className="text-mobile-lg font-medium text-neutral-900 mb-fib-1">
-                  No purchases found
+                  購入履歴が見つかりません
                 </h3>
                 <p className="text-mobile-sm text-neutral-600">
                   {searchQuery 
-                    ? 'Try adjusting your search terms or filters'
-                    : 'Purchases will appear here when items are bought'
+                    ? '検索条件やフィルターを調整してみてください'
+                    : 'アイテムが購入されると、ここに履歴が表示されます'
                   }
                 </p>
               </div>
             ) : (
               <div className="space-y-fib-3">
                 {filteredPurchases.map((purchase, index) => {
-                  const userParticipant = purchase.participants.find(p => p.name === 'You');
+                  const userParticipant = purchase.participants.find(p => p.name === 'あなた');
                   
                   return (
                     <motion.div
@@ -317,10 +325,10 @@ export default function SplitsPage() {
                             <div className="flex items-center justify-between p-fib-2 bg-neutral-50 rounded-lg">
                               <div>
                                 <p className="text-mobile-sm font-medium text-neutral-900">
-                                  Your share: {formatCurrency(userParticipant.amount)}
+                                  あなたの負担額: {formatCurrency(userParticipant.amount)}
                                 </p>
                                 <span className={`text-mobile-xs px-fib-1 py-0.5 rounded-full ${getStatusColor(userParticipant.status)}`}>
-                                  {userParticipant.status.charAt(0).toUpperCase() + userParticipant.status.slice(1)}
+                                  {getStatusLabel(userParticipant.status)}
                                 </span>
                               </div>
                               
@@ -333,7 +341,7 @@ export default function SplitsPage() {
                                     handlePayment(purchase.id);
                                   }}
                                 >
-                                  Pay Now
+                                  今すぐ支払う
                                 </TouchButton>
                               )}
                             </div>
@@ -342,14 +350,14 @@ export default function SplitsPage() {
                           {/* Participants summary */}
                           <div className="flex items-center justify-between text-mobile-xs text-neutral-500">
                             <span>
-                              {purchase.participants.length} participants
+                              {purchase.participants.length}人の参加者
                             </span>
                             <div className="flex items-center space-x-fib-1">
                               <span className="text-success-600">
-                                {purchase.participants.filter(p => p.status === 'completed').length} paid
+                                {purchase.participants.filter(p => p.status === 'completed').length}人支払済み
                               </span>
                               <span className="text-warning-600">
-                                {purchase.participants.filter(p => p.status === 'pending').length} pending
+                                {purchase.participants.filter(p => p.status === 'pending').length}人未払い
                               </span>
                             </div>
                           </div>

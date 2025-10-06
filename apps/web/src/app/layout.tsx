@@ -6,12 +6,12 @@ import '@/styles/globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Otsy - あなたの買い物をお手伝い',
-  description: '音声で簡単に買い物を依頼できるサービス。プロのショッパーがあなたの代わりに買い物をお届けします。',
-  keywords: ['買い物代行', '音声注文', 'おつかい', 'デリバリー', '日本'],
-  authors: [{ name: 'Otsy' }],
-  creator: 'Otsy',
-  publisher: 'Otsy',
+  title: 'おつかいDX - 共同買い物管理アプリ',
+  description: 'プライバシー重視の共同買い物管理アプリ。家族や友人と一緒に買い物リストを管理し、割り勘計算も簡単に。',
+  keywords: ['買い物リスト', '共同買い物', '割り勘', 'グループ買い物', '家族', '友人', 'プライバシー', '日本'],
+  authors: [{ name: 'おつかいDX' }],
+  creator: 'おつかいDX',
+  publisher: 'おつかいDX',
   formatDetection: {
     email: false,
     address: false,
@@ -19,10 +19,10 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'Otsy - あなたの買い物をお手伝い',
-    description: '音声で簡単に買い物を依頼できるサービス。プロのショッパーがあなたの代わりに買い物をお届けします。',
+    title: 'おつかいDX - 共同買い物管理アプリ',
+    description: 'プライバシー重視の共同買い物管理アプリ。家族や友人と一緒に買い物リストを管理し、割り勘計算も簡単に。',
     url: '/',
-    siteName: 'Otsy',
+    siteName: 'おつかいDX',
     locale: 'ja_JP',
     type: 'website',
     images: [
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Otsy',
+        alt: 'おつかいDX',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Otsy - あなたの買い物をお手伝い',
-    description: '音声で簡単に買い物を依頼できるサービス。プロのショッパーがあなたの代わりに買い物をお届けします。',
+    title: 'おつかいDX - 共同買い物管理アプリ',
+    description: 'プライバシー重視の共同買い物管理アプリ。家族や友人と一緒に買い物リストを管理し、割り勘計算も簡単に。',
     images: ['/og-image.png'],
   },
   robots: {

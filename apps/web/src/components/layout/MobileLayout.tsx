@@ -34,7 +34,7 @@ export default function MobileLayout({
         <meta name="theme-color" content="#0ea5e9" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Otsukai DX" />
+        <meta name="apple-mobile-web-app-title" content="おつかいDX" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </Head>
@@ -98,11 +98,11 @@ export default function MobileLayout({
           >
             <div className="px-fib-2 py-fib-1">
               <div className="flex items-center justify-around">
-                <NavItem icon="home" label="Home" active={pathname === '/'} />
-                <NavItem icon="list" label="Shopping" active={pathname === '/shopping'} />
-                <NavItem icon="plus" label="Groups" active={pathname === '/groups'} />
-                <NavItem icon="chart" label="Splits" active={pathname === '/splits'} />
-                <NavItem icon="chat" label="Chat" active={pathname === '/chat'} />
+                <NavItem icon="home" label="ホーム" active={pathname === '/'} />
+                <NavItem icon="list" label="買い物" active={pathname === '/shopping'} />
+                <NavItem icon="plus" label="グループ" active={pathname === '/groups'} />
+                <NavItem icon="chart" label="割り勘" active={pathname === '/splits'} />
+                <NavItem icon="chat" label="チャット" active={pathname === '/chat'} />
               </div>
             </div>
           </motion.nav>
