@@ -1,10 +1,12 @@
 'use client';
 
-import React, { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import React, { ReactNode, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/components/AuthProvider';
+import { useLogout } from '@/hooks/useAuth';
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -66,11 +68,7 @@ export default function MobileLayout({
                   </button>
                   
                   {/* Profile menu */}
-                  <button className="touch-target p-fib-1 rounded-lg hover:bg-neutral-100 transition-colors duration-150">
-                    <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-white">U</span>
-                    </div>
-                  </button>
+                  <ProfileMenu />
                 </div>
               </div>
             </div>
@@ -168,5 +166,70 @@ function NavItem({ icon, label, active = false, onClick }: NavItemProps) {
         </span>
       </motion.div>
     </Link>
+  );
+}
+
+function ProfileMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const logout = useLogout();
+
+  const handleLogout = () => {
+    logout();
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative">
+      <button 
+        className="touch-target p-fib-1 rounded-lg hover:bg-neutral-100 transition-colors duration-150"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">
+          <span className="text-xs font-medium text-white">
+            {user?.display_name?.[0] || user?.email?.[0] || 'U'}
+          </span>
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 z-40"
+              onClick={() => setIsOpen(false)}
+            />
+            
+            {/* Menu */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-mobile-lg border border-neutral-200 py-fib-1 z-50"
+            >
+              <div className="px-fib-3 py-fib-2 border-b border-neutral-200">
+                <p className="text-mobile-sm font-medium text-neutral-900">
+                  {user?.display_name || 'ユーザー'}
+                </p>
+                <p className="text-mobile-xs text-neutral-500">
+                  {user?.email}
+                </p>
+              </div>
+              
+              <div className="py-fib-1">
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-fib-3 py-fib-2 text-left text-mobile-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                >
+                  ログアウト
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

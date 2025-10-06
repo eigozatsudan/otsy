@@ -2,73 +2,104 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import TouchButton, { IconButton, ButtonIcons } from '@/components/ui/TouchButton';
 import MobileInput, { MobileTextArea } from '@/components/ui/MobileInput';
+import { useGroups } from '@/hooks/useGroups';
+import { useCreateItem, useGroupCategories } from '@/hooks/useShoppingItems';
 import toast from 'react-hot-toast';
 
 interface AddItemForm {
-  title: string;
+  name: string;
   category: string;
-  quantity: number;
-  notes: string;
-  price: number;
+  quantity: string;
+  note: string;
   groupId: string;
 }
 
 export default function AddItemPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get groups and categories
+  const { data: groups = [], isLoading: groupsLoading } = useGroups();
+  const createItemMutation = useCreateItem();
+  
+  const defaultGroupId = searchParams.get('group') || (groups[0]?.id || '');
   
   const [form, setForm] = useState<AddItemForm>({
-    title: '',
+    name: '',
     category: '',
-    quantity: 1,
-    notes: '',
-    price: 0,
-    groupId: '1', // Default to first group
+    quantity: '1',
+    note: '',
+    groupId: defaultGroupId,
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Update groupId when groups load or URL param changes
+  React.useEffect(() => {
+    const groupParam = searchParams.get('group');
+    if (groupParam && groups.some(g => g.id === groupParam)) {
+      setForm(prev => ({ ...prev, groupId: groupParam }));
+    } else if (groups.length > 0 && !form.groupId) {
+      setForm(prev => ({ ...prev, groupId: groups[0].id }));
+    }
+  }, [groups, searchParams, form.groupId]);
 
-  // Mock groups data
-  const groups = [
-    { id: '1', name: '家族の買い物' },
-    { id: '2', name: 'ルームメイト' },
-    { id: '3', name: 'オフィスチーム' },
-  ];
-
-  // Common categories
-  const categories = [
+  // Get categories for selected group
+  const { data: groupCategories = [] } = useGroupCategories(form.groupId);
+  
+  // Common categories fallback
+  const commonCategories = [
     '乳製品', 'パン', '肉類', '魚介類', '野菜', '果物',
     '冷凍食品', '調味料', '飲み物', 'お菓子', '日用品',
     '掃除用品', 'その他'
   ];
+  
+  const categories = groupCategories.length > 0 ? groupCategories : commonCategories;
 
   const handleSubmit = async () => {
-    if (!form.title.trim()) {
+    if (!form.name.trim()) {
       toast.error('アイテム名を入力してください');
       return;
     }
 
-    setIsSubmitting(true);
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('アイテムを追加しました！');
-      router.back();
-    } catch (error) {
-      toast.error('アイテムの追加に失敗しました');
-    } finally {
-      setIsSubmitting(false);
+    if (!form.groupId) {
+      toast.error('グループを選択してください');
+      return;
     }
+
+    createItemMutation.mutate({
+      groupId: form.groupId,
+      data: {
+        name: form.name,
+        category: form.category || undefined,
+        quantity: form.quantity || '1',
+        note: form.note || undefined,
+      },
+    }, {
+      onSuccess: () => {
+        router.back();
+      },
+    });
   };
 
   const handleQuickAdd = (categoryName: string) => {
     setForm(prev => ({ ...prev, category: categoryName }));
   };
+
+  if (groupsLoading) {
+    return (
+      <MobileLayout title="アイテム追加" showHeader showNavigation>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-neutral-600">グループ情報を読み込んでいます...</p>
+          </div>
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout title="アイテム追加" showHeader showNavigation>
@@ -94,8 +125,8 @@ export default function AddItemPage() {
               variant="primary"
               size="sm"
               onClick={handleSubmit}
-              loading={isSubmitting}
-              disabled={!form.title.trim()}
+              loading={createItemMutation.isLoading}
+              disabled={!form.name.trim() || groupsLoading}
             >
               追加
             </TouchButton>
@@ -111,8 +142,8 @@ export default function AddItemPage() {
           <div className="bg-white rounded-xl p-fib-4 border border-neutral-200 space-y-fib-4">
             <MobileInput
               label="アイテム名"
-              value={form.title}
-              onChange={(value) => setForm(prev => ({ ...prev, title: value }))}
+              value={form.name}
+              onChange={(value) => setForm(prev => ({ ...prev, name: value }))}
               placeholder="例: オーガニック牛乳"
               required
               autoFocus
@@ -164,30 +195,20 @@ export default function AddItemPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-fib-3">
-              <MobileInput
-                label="数量"
-                type="number"
-                value={form.quantity.toString()}
-                onChange={(value) => setForm(prev => ({ ...prev, quantity: Math.max(1, parseInt(value) || 1) }))}
-              />
-              
-              <MobileInput
-                label="価格 (円)"
-                type="number"
-                value={form.price.toString()}
-                onChange={(value) => setForm(prev => ({ ...prev, price: Math.max(0, parseInt(value) || 0) }))}
-                placeholder="任意"
-              />
-            </div>
+            <MobileInput
+              label="数量"
+              value={form.quantity}
+              onChange={(value) => setForm(prev => ({ ...prev, quantity: value }))}
+              placeholder="例: 2個、1L"
+            />
 
             <MobileTextArea
               label="メモ"
-              value={form.notes}
-              onChange={(value) => setForm(prev => ({ ...prev, notes: value }))}
+              value={form.note}
+              onChange={(value) => setForm(prev => ({ ...prev, note: value }))}
               placeholder="例: 1Lパックを購入、有機栽培のものを選ぶ"
               rows={3}
-              maxLength={200}
+              maxLength={500}
             />
           </div>
         </motion.section>

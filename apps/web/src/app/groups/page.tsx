@@ -7,6 +7,7 @@ import MobileLayout from '@/components/layout/MobileLayout';
 import { GroupCard } from '@/components/ui/GoldenCard';
 import TouchButton, { FloatingActionButton, ButtonIcons } from '@/components/ui/TouchButton';
 import { SearchInput } from '@/components/ui/MobileInput';
+import { useGroups } from '@/hooks/useGroups';
 import toast from 'react-hot-toast';
 
 export default function GroupsPage() {
@@ -14,40 +15,12 @@ export default function GroupsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const router = useRouter();
 
-  // Mock data - replace with actual API calls
-  const groups = [
-    {
-      id: '1',
-      name: '家族の買い物',
-      description: '週次食料品と日用品',
-      memberCount: 4,
-      recentActivity: 'さらさんが牛乳をリストに追加しました',
-      unreadCount: 3,
-      role: 'Owner' as const,
-    },
-    {
-      id: '2',
-      name: 'ルームメイト',
-      description: 'シェアアパートの備品',
-      memberCount: 3,
-      recentActivity: 'みけさんが掃除用品を購入しました',
-      unreadCount: 0,
-      role: 'Member' as const,
-    },
-    {
-      id: '3',
-      name: 'オフィスチーム',
-      description: 'チームのお菓子とコーヒー用品',
-      memberCount: 8,
-      recentActivity: 'りささんがオーガニックコーヒーを提案しました',
-      unreadCount: 1,
-      role: 'Member' as const,
-    },
-  ];
+  // Fetch groups
+  const { data: groups = [], isLoading, error } = useGroups();
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (group.description && group.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleCreateGroup = () => {
@@ -64,6 +37,19 @@ export default function GroupsPage() {
     toast.success(`${group?.name}の買い物リストを開いています`);
     router.push(`/shopping?group=${groupId}`);
   };
+
+  if (isLoading) {
+    return (
+      <MobileLayout title="マイグループ" showHeader showNavigation>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-neutral-600">グループを読み込んでいます...</p>
+          </div>
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout title="マイグループ" showHeader showNavigation>
@@ -162,19 +148,19 @@ export default function GroupsPage() {
                     <div className="relative">
                       <GroupCard
                         name={group.name}
-                        description={group.description}
-                        memberCount={group.memberCount}
-                        recentActivity={group.recentActivity}
-                        unreadCount={group.unreadCount}
+                        description={group.description || ''}
+                        memberCount={group.member_count || 0}
+                        recentActivity="最近のアクティビティ"
+                        unreadCount={0}
                         onClick={() => handleGroupClick(group.id)}
                       />
                       {/* Role badge */}
                       <div className="absolute top-fib-2 right-fib-2">
-                        <span className={`px-fib-1 py-0.5 rounded-full text-xs font-medium ${group.role === 'Owner'
+                        <span className={`px-fib-1 py-0.5 rounded-full text-xs font-medium ${group.user_role === 'owner'
                           ? 'bg-primary-100 text-primary-700'
                           : 'bg-neutral-100 text-neutral-700'
                           }`}>
-                          {group.role === 'Owner' ? 'オーナー' : 'メンバー'}
+                          {group.user_role === 'owner' ? 'オーナー' : 'メンバー'}
                         </span>
                       </div>
                     </div>
@@ -209,7 +195,7 @@ export default function GroupsPage() {
                 </svg>
               </div>
               <p className="text-mobile-2xl font-bold text-success-900">
-                {groups.filter(g => g.role === 'Owner').length}
+                {groups.filter(g => g.user_role === 'owner').length}
               </p>
               <p className="text-mobile-sm text-success-700">所有グループ</p>
             </div>

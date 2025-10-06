@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { Toaster } from 'react-hot-toast';
+import AuthProvider from './AuthProvider';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -29,34 +30,36 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-            borderRadius: '12px',
-            fontSize: '14px',
-          },
-          success: {
-            duration: 3000,
-            iconTheme: {
-              primary: '#22c55e',
-              secondary: '#fff',
+      <AuthProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+              borderRadius: '12px',
+              fontSize: '14px',
             },
-          },
-          error: {
-            duration: 5000,
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#22c55e',
+                secondary: '#fff',
+              },
             },
-          },
-        }}
-      />
-      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+            error: {
+              duration: 5000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
+        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

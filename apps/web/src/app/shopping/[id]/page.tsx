@@ -6,145 +6,83 @@ import { useRouter, useParams } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import TouchButton, { IconButton, ButtonIcons } from '@/components/ui/TouchButton';
 import MobileInput, { MobileTextArea } from '@/components/ui/MobileInput';
+import { useItem, useUpdateItem, useUpdateItemStatus, useDeleteItem } from '@/hooks/useShoppingItems';
+import { useGroups } from '@/hooks/useGroups';
 import toast from 'react-hot-toast';
 
 type ItemStatus = 'todo' | 'purchased' | 'cancelled';
-
-interface ShoppingItem {
-    id: string;
-    title: string;
-    category: string;
-    quantity: number;
-    status: ItemStatus;
-    notes?: string;
-    image?: string;
-    purchasedBy?: string;
-    purchasedAt?: Date;
-    addedBy: string;
-    addedAt: Date;
-    groupId: string;
-    groupName: string;
-    price?: number;
-}
 
 export default function ShoppingItemDetailPage() {
     const router = useRouter();
     const params = useParams();
     const itemId = params.id as string;
 
-    // Mock data - replace with actual API call
-    const mockItems: ShoppingItem[] = [
-        {
-            id: '1',
-            title: 'オーガニック牛乳',
-            category: '乳製品',
-            quantity: 2,
-            status: 'todo',
-            notes: '500mlではなく1Lパックを購入',
-            addedBy: 'あなた',
-            addedAt: new Date('2025-01-06T10:00:00'),
-            groupId: '1',
-            groupName: '家族の買い物',
-            price: 600,
-        },
-        {
-            id: '2',
-            title: '全粒粉パン',
-            category: 'パン',
-            quantity: 1,
-            status: 'purchased',
-            purchasedBy: 'さら',
-            purchasedAt: new Date('2025-01-06T14:30:00'),
-            addedBy: 'みけ',
-            addedAt: new Date('2025-01-06T09:00:00'),
-            groupId: '1',
-            groupName: '家族の買い物',
-            price: 300,
-        },
-        {
-            id: '3',
-            title: '掃除用品',
-            category: '日用品',
-            quantity: 1,
-            status: 'cancelled',
-            notes: '家にあることが判明',
-            addedBy: 'りさ',
-            addedAt: new Date('2025-01-05T16:00:00'),
-            groupId: '2',
-            groupName: 'ルームメイト',
-            price: 800,
-        },
-    ];
+    // Fetch item data
+    const { data: item, isLoading, error } = useItem(itemId);
+    const { data: groups = [] } = useGroups();
 
-    const [item, setItem] = useState<ShoppingItem | null>(null);
-
-    React.useEffect(() => {
-        // Find item by ID
-        const foundItem = mockItems.find(i => i.id === itemId);
-        if (foundItem) {
-            setItem(foundItem);
-        } else {
-            toast.error('アイテムが見つかりません');
-            router.back();
-        }
-    }, [itemId, router]);
+    // Mutations
+    const updateItemMutation = useUpdateItem();
+    const updateStatusMutation = useUpdateItemStatus();
+    const deleteItemMutation = useDeleteItem();
 
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({
-        title: '',
+        name: '',
         category: '',
-        quantity: 1,
-        notes: '',
-        price: 0,
+        quantity: '',
+        note: '',
     });
 
     // Update edit form when item changes
     React.useEffect(() => {
         if (item) {
             setEditForm({
-                title: item.title,
-                category: item.category,
+                name: item.name,
+                category: item.category || '',
                 quantity: item.quantity,
-                notes: item.notes || '',
-                price: item.price || 0,
+                note: item.note || '',
             });
         }
     }, [item]);
 
+    // Handle error
+    React.useEffect(() => {
+        if (error) {
+            toast.error('アイテムが見つかりません');
+            router.back();
+        }
+    }, [error, router]);
+
     const handleStatusChange = (newStatus: ItemStatus) => {
         if (item) {
-            setItem(prev => prev ? ({
-                ...prev,
-                status: newStatus,
-                purchasedBy: newStatus === 'purchased' ? 'あなた' : undefined,
-                purchasedAt: newStatus === 'purchased' ? new Date() : undefined,
-            }) : null);
-
-            const statusLabels = {
-                todo: '購入予定',
-                purchased: '購入済み',
-                cancelled: 'キャンセル',
-            };
-
-            toast.success(`ステータスを「${statusLabels[newStatus]}」に変更しました`);
+            updateStatusMutation.mutate({
+                itemId: item.id,
+                data: { status: newStatus },
+            });
         }
     };
 
     const handleSave = () => {
         if (item) {
-            setItem(prev => prev ? ({
-                ...prev,
-                ...editForm,
-            }) : null);
-            setIsEditing(false);
-            toast.success('アイテムを更新しました');
+            updateItemMutation.mutate({
+                itemId: item.id,
+                data: editForm,
+            }, {
+                onSuccess: () => {
+                    setIsEditing(false);
+                },
+            });
         }
     };
 
     const handleDelete = () => {
         if (confirm('このアイテムを削除しますか？')) {
-            toast.success('アイテムを削除しました');
-            router.back();
+            deleteItemMutation.mutate(itemId, {
+                onSuccess: () => {
+                    router.back();
+                },
+            });
         }
     };
 
@@ -164,7 +102,7 @@ export default function ShoppingItemDetailPage() {
         }
     };
 
-    if (!item) {
+    if (isLoading) {
         return (
             <MobileLayout title="読み込み中..." showHeader showNavigation>
                 <div className="flex items-center justify-center h-64">
@@ -176,6 +114,28 @@ export default function ShoppingItemDetailPage() {
             </MobileLayout>
         );
     }
+
+    if (!item) {
+        return (
+            <MobileLayout title="エラー" showHeader showNavigation>
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                        <p className="text-neutral-600">アイテムが見つかりません</p>
+                        <TouchButton
+                            variant="primary"
+                            size="sm"
+                            onClick={() => router.back()}
+                            className="mt-4"
+                        >
+                            戻る
+                        </TouchButton>
+                    </div>
+                </div>
+            </MobileLayout>
+        );
+    }
+
+    const groupName = groups.find(g => g.id === item.group_id)?.name || 'Unknown Group';
 
     return (
         <MobileLayout
@@ -214,6 +174,7 @@ export default function ShoppingItemDetailPage() {
                                 label="削除"
                                 onClick={handleDelete}
                                 variant="ghost"
+                                disabled={deleteItemMutation.isLoading}
                             />
                         </div>
                     </div>
@@ -226,10 +187,10 @@ export default function ShoppingItemDetailPage() {
                     transition={{ duration: 0.18, delay: 0.05 }}
                 >
                     <div className="aspect-golden bg-neutral-200 rounded-xl overflow-hidden">
-                        {item.image ? (
+                        {item.image_url ? (
                             <img
-                                src={item.image}
-                                alt={item.title}
+                                src={item.image_url}
+                                alt={item.name}
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -253,8 +214,8 @@ export default function ShoppingItemDetailPage() {
                             <>
                                 <MobileInput
                                     label="アイテム名"
-                                    value={editForm.title}
-                                    onChange={(value) => setEditForm(prev => ({ ...prev, title: value }))}
+                                    value={editForm.name}
+                                    onChange={(value) => setEditForm(prev => ({ ...prev, name: value }))}
                                     required
                                 />
 
@@ -266,24 +227,16 @@ export default function ShoppingItemDetailPage() {
 
                                 <MobileInput
                                     label="数量"
-                                    type="number"
-                                    value={editForm.quantity.toString()}
-                                    onChange={(value) => setEditForm(prev => ({ ...prev, quantity: parseInt(value) || 1 }))}
-                                />
-
-                                <MobileInput
-                                    label="価格 (円)"
-                                    type="number"
-                                    value={editForm.price.toString()}
-                                    onChange={(value) => setEditForm(prev => ({ ...prev, price: parseInt(value) || 0 }))}
+                                    value={editForm.quantity}
+                                    onChange={(value) => setEditForm(prev => ({ ...prev, quantity: value }))}
                                 />
 
                                 <MobileTextArea
                                     label="メモ"
-                                    value={editForm.notes}
-                                    onChange={(value) => setEditForm(prev => ({ ...prev, notes: value }))}
+                                    value={editForm.note}
+                                    onChange={(value) => setEditForm(prev => ({ ...prev, note: value }))}
                                     rows={3}
-                                    maxLength={200}
+                                    maxLength={500}
                                 />
 
                                 <div className="flex space-x-fib-2">
@@ -292,6 +245,7 @@ export default function ShoppingItemDetailPage() {
                                         size="md"
                                         className="flex-1"
                                         onClick={handleSave}
+                                        loading={updateItemMutation.isLoading}
                                     >
                                         保存
                                     </TouchButton>
@@ -302,11 +256,10 @@ export default function ShoppingItemDetailPage() {
                                         onClick={() => {
                                             setIsEditing(false);
                                             setEditForm({
-                                                title: item.title,
-                                                category: item.category,
+                                                name: item.name,
+                                                category: item.category || '',
                                                 quantity: item.quantity,
-                                                notes: item.notes || '',
-                                                price: item.price || 0,
+                                                note: item.note || '',
                                             });
                                         }}
                                     >
@@ -318,20 +271,15 @@ export default function ShoppingItemDetailPage() {
                             <>
                                 <div>
                                     <h1 className="text-mobile-2xl font-bold text-neutral-900 mb-fib-1">
-                                        {item.title}
+                                        {item.name}
                                     </h1>
                                     <div className="flex items-center space-x-fib-2">
                                         <span className="text-mobile-sm text-neutral-600">
-                                            {item.category}
+                                            {item.category || 'カテゴリなし'}
                                         </span>
                                         <span className="text-mobile-sm text-neutral-600">
                                             数量: {item.quantity}
                                         </span>
-                                        {item.price && (
-                                            <span className="text-mobile-sm font-medium text-neutral-900">
-                                                ¥{item.price}
-                                            </span>
-                                        )}
                                     </div>
                                 </div>
 
@@ -347,6 +295,7 @@ export default function ShoppingItemDetailPage() {
                                                 variant={item.status === status ? 'primary' : 'outline'}
                                                 size="sm"
                                                 onClick={() => handleStatusChange(status)}
+                                                loading={updateStatusMutation.isLoading}
                                             >
                                                 {getStatusLabel(status)}
                                             </TouchButton>
@@ -355,40 +304,38 @@ export default function ShoppingItemDetailPage() {
                                 </div>
 
                                 {/* Notes */}
-                                {item.notes && (
+                                {item.note && (
                                     <div>
                                         <h3 className="text-mobile-sm font-medium text-neutral-700 mb-fib-1">
                                             メモ
                                         </h3>
                                         <p className="text-mobile-sm text-neutral-600 bg-neutral-50 rounded-lg p-fib-2">
-                                            {item.notes}
+                                            {item.note}
                                         </p>
                                     </div>
                                 )}
 
                                 {/* Purchase Info */}
-                                {item.status === 'purchased' && item.purchasedBy && (
+                                {item.status === 'purchased' && (
                                     <div className="bg-success-50 rounded-lg p-fib-3 border border-success-200">
                                         <h3 className="text-mobile-sm font-medium text-success-800 mb-fib-1">
                                             購入情報
                                         </h3>
                                         <p className="text-mobile-sm text-success-700">
-                                            {item.purchasedBy}が購入
+                                            {item.creator_name || 'Unknown'}が購入
                                         </p>
-                                        {item.purchasedAt && (
-                                            <p className="text-mobile-xs text-success-600">
-                                                {item.purchasedAt.toLocaleString('ja-JP')}
-                                            </p>
-                                        )}
+                                        <p className="text-mobile-xs text-success-600">
+                                            {new Date(item.updated_at).toLocaleString('ja-JP')}
+                                        </p>
                                     </div>
                                 )}
 
                                 {/* Meta Info */}
                                 <div className="border-t border-neutral-200 pt-fib-3">
                                     <div className="space-y-fib-1 text-mobile-xs text-neutral-500">
-                                        <p>グループ: {item.groupName}</p>
-                                        <p>追加者: {item.addedBy}</p>
-                                        <p>追加日時: {item.addedAt.toLocaleString('ja-JP')}</p>
+                                        <p>グループ: {groupName}</p>
+                                        <p>追加者: {item.creator_name || 'Unknown'}</p>
+                                        <p>追加日時: {new Date(item.created_at).toLocaleString('ja-JP')}</p>
                                     </div>
                                 </div>
                             </>

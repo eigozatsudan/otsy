@@ -1,151 +1,100 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { ShoppingItemCard } from '@/components/ui/GoldenCard';
 import TouchButton, { FloatingActionButton, ButtonIcons, IconButton } from '@/components/ui/TouchButton';
 import { SearchInput } from '@/components/ui/MobileInput';
+import { useGroups } from '@/hooks/useGroups';
+import { useGroupItems } from '@/hooks/useShoppingItems';
 import toast from 'react-hot-toast';
 
 type ItemStatus = 'todo' | 'purchased' | 'cancelled';
 type SortOption = 'name' | 'category' | 'status' | 'recent';
-
-interface ShoppingItem {
-    id: string;
-    title: string;
-    category: string;
-    quantity: number;
-    status: ItemStatus;
-    notes?: string;
-    image?: string;
-    purchasedBy?: string;
-    purchasedAt?: Date;
-    addedBy: string;
-    addedAt: Date;
-    groupId: string;
-    groupName: string;
-}
 
 export default function ShoppingPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<ItemStatus | 'all'>('all');
     const [sortBy, setSortBy] = useState<SortOption>('recent');
     const router = useRouter();
+    const searchParams = useSearchParams();
     
     // Get group filter from URL params
-    const [selectedGroup, setSelectedGroup] = useState<string | 'all'>('all');
+    const selectedGroup = searchParams.get('group') || 'all';
     
-    React.useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const groupParam = urlParams.get('group');
-            if (groupParam) {
-                setSelectedGroup(groupParam);
-            }
-        }
-    }, []);
+    // Fetch groups and items
+    const { data: groups = [], isLoading: groupsLoading } = useGroups();
+    
+    // Get items for all groups or specific group
+    const groupsToFetch = selectedGroup === 'all' ? groups.map(g => g.id) : [selectedGroup];
+    
+    // Fetch items for each group
+    const itemQueries = groupsToFetch.map(groupId => 
+        useGroupItems(groupId, {
+            status: selectedStatus === 'all' ? undefined : selectedStatus,
+            search: searchQuery || undefined,
+        })
+    );
+    
+    // Combine all items from different groups
+    const allItems = useMemo(() => {
+        return itemQueries.flatMap(query => 
+            (query.data || []).map(item => ({
+                ...item,
+                // Map API response to component props
+                title: item.name,
+                category: item.category || 'その他',
+                quantity: parseInt(item.quantity) || 1,
+                notes: item.note,
+                image: item.image_url,
+                addedBy: item.creator_name || 'Unknown',
+                addedAt: new Date(item.created_at),
+                groupId: item.group_id,
+                groupName: groups.find(g => g.id === item.group_id)?.name || 'Unknown Group',
+            }))
+        );
+    }, [itemQueries, groups]);
+    
+    const isLoading = groupsLoading || itemQueries.some(query => query.isLoading);
 
-    // Mock data - replace with actual API calls
-    const items: ShoppingItem[] = [
-        {
-            id: '1',
-            title: 'オーガニック牛乳',
-            category: '乳製品',
-            quantity: 2,
-            status: 'todo',
-            notes: '500mlではなく1Lパックを購入',
-            addedBy: 'あなた',
-            addedAt: new Date('2025-01-06T10:00:00'),
-            groupId: '1',
-            groupName: '家族の買い物',
-        },
-        {
-            id: '2',
-            title: '全粒粉パン',
-            category: 'パン',
-            quantity: 1,
-            status: 'purchased',
-            purchasedBy: 'さら',
-            purchasedAt: new Date('2025-01-06T14:30:00'),
-            addedBy: 'みけ',
-            addedAt: new Date('2025-01-06T09:00:00'),
-            groupId: '1',
-            groupName: '家族の買い物',
-        },
-        {
-            id: '3',
-            title: '掃除用品',
-            category: '日用品',
-            quantity: 1,
-            status: 'cancelled',
-            notes: '家にあることが判明',
-            addedBy: 'りさ',
-            addedAt: new Date('2025-01-05T16:00:00'),
-            groupId: '2',
-            groupName: 'ルームメイト',
-        },
-        {
-            id: '4',
-            title: 'コーヒー豆',
-            category: '飲み物',
-            quantity: 2,
-            status: 'todo',
-            notes: 'ミディアムロースト、できればオーガニック',
-            addedBy: 'じょん',
-            addedAt: new Date('2025-01-06T11:00:00'),
-            groupId: '3',
-            groupName: 'オフィスチーム',
-        },
-        {
-            id: '5',
-            title: '新鮮な野菜',
-            category: '青果',
-            quantity: 1,
-            status: 'todo',
-            notes: 'にんじん、ブロッコリー、ピーマン',
-            addedBy: 'あなた',
-            addedAt: new Date('2025-01-06T12:00:00'),
-            groupId: '1',
-            groupName: '家族の買い物',
-        },
-    ];
+
 
     // Filter and sort items
-    const filteredItems = items
-        .filter(item => {
-            const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.groupName.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredItems = useMemo(() => {
+        return allItems
+            .filter(item => {
+                const matchesSearch = searchQuery === '' || 
+                    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    item.notes?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    item.groupName.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
-            const matchesGroup = selectedGroup === 'all' || item.groupId === selectedGroup;
+                return matchesSearch;
+            })
+            .sort((a, b) => {
+                switch (sortBy) {
+                    case 'name':
+                        return a.title.localeCompare(b.title);
+                    case 'category':
+                        return a.category.localeCompare(b.category);
+                    case 'status':
+                        const statusOrder = { todo: 0, purchased: 1, cancelled: 2 };
+                        return statusOrder[a.status] - statusOrder[b.status];
+                    case 'recent':
+                    default:
+                        return b.addedAt.getTime() - a.addedAt.getTime();
+                }
+            });
+    }, [allItems, searchQuery, sortBy]);
 
-            return matchesSearch && matchesStatus && matchesGroup;
-        })
-        .sort((a, b) => {
-            switch (sortBy) {
-                case 'name':
-                    return a.title.localeCompare(b.title);
-                case 'category':
-                    return a.category.localeCompare(b.category);
-                case 'status':
-                    const statusOrder = { todo: 0, purchased: 1, cancelled: 2 };
-                    return statusOrder[a.status] - statusOrder[b.status];
-                case 'recent':
-                default:
-                    return b.addedAt.getTime() - a.addedAt.getTime();
-            }
-        });
-
-    const statusCounts = {
-        all: items.length,
-        todo: items.filter(item => item.status === 'todo').length,
-        purchased: items.filter(item => item.status === 'purchased').length,
-        cancelled: items.filter(item => item.status === 'cancelled').length,
-    };
+    const statusCounts = useMemo(() => ({
+        all: allItems.length,
+        todo: allItems.filter(item => item.status === 'todo').length,
+        purchased: allItems.filter(item => item.status === 'purchased').length,
+        cancelled: allItems.filter(item => item.status === 'cancelled').length,
+    }), [allItems]);
 
     const handleAddItem = () => {
         router.push('/shopping/add');
@@ -162,6 +111,19 @@ export default function ShoppingPage() {
     const handleSort = (option: SortOption) => {
         setSortBy(option);
     };
+
+    if (isLoading) {
+        return (
+            <MobileLayout title="買い物リスト" showHeader showNavigation>
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                        <p className="text-neutral-600">買い物リストを読み込んでいます...</p>
+                    </div>
+                </div>
+            </MobileLayout>
+        );
+    }
 
     return (
         <MobileLayout title="買い物リスト" showHeader showNavigation>
@@ -194,18 +156,18 @@ export default function ShoppingPage() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
                                     </svg>
                                     <span className="text-mobile-sm font-medium text-primary-800">
-                                        グループでフィルター中: {items.find(item => item.groupId === selectedGroup)?.groupName}
+                                        グループでフィルター中: {groups.find(group => group.id === selectedGroup)?.name}
                                     </span>
                                 </div>
                                 <TouchButton
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => {
-                                        setSelectedGroup('all');
                                         // Remove group param from URL
                                         const url = new URL(window.location.href);
                                         url.searchParams.delete('group');
                                         window.history.replaceState({}, '', url.toString());
+                                        router.refresh();
                                     }}
                                 >
                                     クリア
