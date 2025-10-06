@@ -4,7 +4,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-@import './accessibility.css';
 
 @layer base {
   html {
@@ -166,4 +165,77 @@
   to {
     transform: scale(1.1);
   }
+}
+/* 
+Safe area utilities for mobile devices */
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pl-safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.pr-safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    border: 2px solid currentColor;
+  }
+  
+  .btn {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Focus visible for better keyboard navigation */
+.focus-visible:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.focus-visible:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
 }

@@ -90,14 +90,15 @@ export default function MobileLayout({
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.15, delay: 0.1 }}
             className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-t border-neutral-200"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <div className="px-fib-2 py-fib-1 pb-safe-bottom">
+            <div className="px-fib-2 py-fib-1">
               <div className="flex items-center justify-around">
-                <NavItem icon="home" label="Home" active />
-                <NavItem icon="list" label="Lists" />
-                <NavItem icon="plus" label="Add" />
-                <NavItem icon="chart" label="Splits" />
-                <NavItem icon="chat" label="Chat" />
+                <NavItem icon="home" label="Home" active={typeof window !== 'undefined' && window.location.pathname === '/'} />
+                <NavItem icon="list" label="Shopping" active={typeof window !== 'undefined' && window.location.pathname === '/shopping'} />
+                <NavItem icon="plus" label="Groups" active={typeof window !== 'undefined' && window.location.pathname === '/groups'} />
+                <NavItem icon="chart" label="Splits" active={typeof window !== 'undefined' && window.location.pathname === '/splits'} />
+                <NavItem icon="chat" label="Chat" active={typeof window !== 'undefined' && window.location.pathname === '/chat'} />
               </div>
             </div>
           </motion.nav>
@@ -123,8 +124,20 @@ function NavItem({ icon, label, active = false, onClick }: NavItemProps) {
     chat: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
   };
 
+  const getHref = () => {
+    switch (icon) {
+      case 'home': return '/';
+      case 'list': return '/shopping';
+      case 'plus': return '/groups';
+      case 'chart': return '/splits';
+      case 'chat': return '/chat';
+      default: return '/';
+    }
+  };
+
   return (
-    <motion.button
+    <motion.a
+      href={getHref()}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={`touch-target flex flex-col items-center justify-center space-y-1 rounded-lg transition-colors duration-150 ${
@@ -149,6 +162,6 @@ function NavItem({ icon, label, active = false, onClick }: NavItemProps) {
       <span className={`text-xs font-medium ${active ? 'text-primary-600' : 'text-neutral-500'}`}>
         {label}
       </span>
-    </motion.button>
+    </motion.a>
   );
 }

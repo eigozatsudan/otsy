@@ -91,6 +91,7 @@ export default function HomePage() {
               size="md"
               icon={ButtonIcons.Plus}
               className="flex-1"
+              onClick={() => window.location.href = '/groups'}
             >
               Create Group
             </TouchButton>
@@ -99,6 +100,7 @@ export default function HomePage() {
               size="md"
               icon={ButtonIcons.Share}
               className="flex-1"
+              onClick={() => window.location.href = '/groups'}
             >
               Join Group
             </TouchButton>
@@ -150,7 +152,7 @@ export default function HomePage() {
                   memberCount={group.memberCount}
                   recentActivity={group.recentActivity}
                   unreadCount={group.unreadCount}
-                  onClick={() => console.log('Navigate to group:', group.id)}
+                  onClick={() => window.location.href = '/shopping'}
                 />
               </motion.div>
             ))}
@@ -189,7 +191,7 @@ export default function HomePage() {
                   status={item.status}
                   notes={item.notes}
                   purchasedBy={item.purchasedBy}
-                  onClick={() => console.log('View item:', item.id)}
+                  onClick={() => window.location.href = '/shopping'}
                 />
               </motion.div>
             ))}
@@ -233,7 +235,7 @@ export default function HomePage() {
       {/* Floating Action Button */}
       <FloatingActionButton
         icon={ButtonIcons.Plus}
-        onClick={() => console.log('Quick add item')}
+        onClick={() => window.location.href = '/shopping'}
       />
     </MobileLayout>
   );
