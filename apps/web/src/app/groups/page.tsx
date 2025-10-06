@@ -59,10 +59,10 @@ export default function GroupsPage() {
   };
 
   const handleGroupClick = (groupId: string) => {
-    // Navigate to group detail page
-    console.log('Navigate to group:', groupId);
-    toast.success(`Opening ${groups.find(g => g.id === groupId)?.name}`);
-    router.push('/shopping');
+    // Navigate to group's shopping list
+    const group = groups.find(g => g.id === groupId);
+    toast.success(`${group?.name}の買い物リストを開いています`);
+    router.push(`/shopping?group=${groupId}`);
   };
 
   return (

@@ -33,6 +33,19 @@ export default function ShoppingPage() {
     const [selectedStatus, setSelectedStatus] = useState<ItemStatus | 'all'>('all');
     const [sortBy, setSortBy] = useState<SortOption>('recent');
     const router = useRouter();
+    
+    // Get group filter from URL params
+    const [selectedGroup, setSelectedGroup] = useState<string | 'all'>('all');
+    
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupParam = urlParams.get('group');
+            if (groupParam) {
+                setSelectedGroup(groupParam);
+            }
+        }
+    }, []);
 
     // Mock data - replace with actual API calls
     const items: ShoppingItem[] = [
@@ -108,8 +121,9 @@ export default function ShoppingPage() {
                 item.groupName.toLowerCase().includes(searchQuery.toLowerCase());
 
             const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
+            const matchesGroup = selectedGroup === 'all' || item.groupId === selectedGroup;
 
-            return matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus && matchesGroup;
         })
         .sort((a, b) => {
             switch (sortBy) {
@@ -134,12 +148,11 @@ export default function ShoppingPage() {
     };
 
     const handleAddItem = () => {
-        toast.success('アイテム追加機能は近日公開予定です！');
+        router.push('/shopping/add');
     };
 
     const handleItemClick = (itemId: string) => {
-        const item = items.find(i => i.id === itemId);
-        toast.success(`${item?.title}を開いています`);
+        router.push(`/shopping/${itemId}`);
     };
 
     const handleStatusFilter = (status: ItemStatus | 'all') => {
@@ -167,11 +180,46 @@ export default function ShoppingPage() {
                     />
                 </motion.section>
 
+                {/* Group Filter */}
+                {selectedGroup !== 'all' && (
+                    <motion.section
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.18, delay: 0.05 }}
+                    >
+                        <div className="bg-primary-50 rounded-lg p-fib-2 border border-primary-200">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-fib-2">
+                                    <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
+                                    </svg>
+                                    <span className="text-mobile-sm font-medium text-primary-800">
+                                        グループでフィルター中: {items.find(item => item.groupId === selectedGroup)?.groupName}
+                                    </span>
+                                </div>
+                                <TouchButton
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        setSelectedGroup('all');
+                                        // Remove group param from URL
+                                        const url = new URL(window.location.href);
+                                        url.searchParams.delete('group');
+                                        window.history.replaceState({}, '', url.toString());
+                                    }}
+                                >
+                                    クリア
+                                </TouchButton>
+                            </div>
+                        </div>
+                    </motion.section>
+                )}
+
                 {/* Status Filter Tabs */}
                 <motion.section
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.18, delay: 0.05 }}
+                    transition={{ duration: 0.18, delay: 0.1 }}
                 >
                     <div className="flex space-x-fib-1 overflow-x-auto scrollbar-hide">
                         {[

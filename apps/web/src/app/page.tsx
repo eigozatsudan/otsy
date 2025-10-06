@@ -193,7 +193,7 @@ export default function HomePage() {
                   status={item.status}
                   notes={item.notes}
                   purchasedBy={item.purchasedBy}
-                  onClick={() => router.push('/shopping')}
+                  onClick={() => router.push(`/shopping/${item.id}`)}
                 />
               </motion.div>
             ))}
@@ -237,7 +237,7 @@ export default function HomePage() {
       {/* Floating Action Button */}
       <FloatingActionButton
         icon={ButtonIcons.Plus}
-        onClick={() => router.push('/shopping')}
+        onClick={() => router.push('/shopping/add')}
       />
     </MobileLayout>
   );
